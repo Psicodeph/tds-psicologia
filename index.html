@@ -827,6 +827,17 @@ function renderStats(data){
 // ── QUERY IA ──────────────────────────────────────────────────────────────
 function setQuery(txt){ document.getElementById('query-input').value=txt; document.getElementById('query-input').focus(); }
 
+function renderMd(t){
+  return t
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^### (.+)$/gm,'<br><strong style="font-size:14px;color:var(--ink)">$1</strong>')
+    .replace(/^## (.+)$/gm,'<br><strong style="font-size:15px;color:var(--ink)">$1</strong>')
+    .replace(/^# (.+)$/gm,'<strong style="font-size:16px;color:var(--blue)">$1</strong>')
+    .replace(/^\|- .+/gm,'')
+    .replace(/^- (.+)$/gm,'&nbsp;&nbsp;• $1')
+    .replace(/\n/g,'<br>');
+}
 async function consultarIA(){
   const pregunta=document.getElementById('query-input').value.trim();
   if(!pregunta) return;
@@ -873,7 +884,7 @@ Pregunta: ${pregunta}`;
     const data=await response.json();
     const texto=data.content?.[0]?.text||"No se pudo obtener respuesta.";
     respText.className='query-response-text';
-    respText.textContent=texto;
+    respText.innerHTML=renderMd(texto);
   } catch(err){
     respText.className='query-response-text';
     respText.textContent="Error al conectar con la IA. Verificá tu conexión.";
