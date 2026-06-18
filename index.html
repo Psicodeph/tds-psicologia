@@ -10,202 +10,226 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root {
-    --blue:   #1565C0;
-    --ink:    #1a2340;
-    --ink2:   #3d4f6b;
-    --muted:  #6b7a99;
-    --border: #d4dbe8;
-    --bg:     #eef1f7;
-    --card:   #ffffff;
-    --input:  #f4f6fb;
-    --green:  #2e7d32;
-    --red:    #b71c1c;
+  :root{--blue:#1565C0;--ink:#1a2340;--ink2:#3d4f6b;--muted:#6b7a99;--border:#d4dbe8;--bg:#eef1f7;--card:#ffffff;--input:#f4f6fb;--green:#2e7d32;--red:#b71c1c;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);font-family:'Nunito','Segoe UI',Arial,sans-serif;font-size:15px;color:var(--ink);padding-bottom:60px;}
+
+  /* AUTH OVERLAY */
+  #auth-overlay{position:fixed;inset:0;background:var(--blue);z-index:9999;display:flex;align-items:center;justify-content:center;}
+  .auth-box{background:#fff;border-radius:20px;padding:44px 40px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  .auth-logo{font-size:13px;font-weight:800;letter-spacing:3px;color:var(--blue);text-transform:uppercase;margin-bottom:6px;}
+  .auth-title{font-size:24px;font-weight:900;color:var(--ink);margin-bottom:6px;}
+  .auth-sub{font-size:14px;color:var(--muted);margin-bottom:28px;font-weight:500;}
+  .auth-input{width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:10px;padding:13px 16px;font-size:16px;color:var(--ink);font-family:inherit;font-weight:700;outline:none;text-align:center;letter-spacing:3px;margin-bottom:14px;}
+  .auth-input:focus{border-color:var(--blue);background:#fff;}
+  .auth-btn{width:100%;background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+  .auth-btn:hover{opacity:.9;}
+  .auth-error{color:var(--red);font-size:13px;font-weight:700;margin-top:10px;display:none;}
+
+  /* HEADER */
+  .header{background:var(--blue);padding:24px 32px 20px;border-bottom:4px solid #0d47a1;}
+  .header-inner{max-width:900px;margin:0 auto;}
+  .header-sub{font-size:11px;letter-spacing:3px;color:#90caf9;text-transform:uppercase;margin-bottom:6px;font-weight:600;}
+  .header h1{font-size:26px;font-weight:900;color:#fff;}
+  .header-desc{margin-top:4px;font-size:14px;color:#bbdefb;font-weight:500;}
+
+  .container{max-width:900px;margin:0 auto;padding:28px 16px 0;}
+
+  /* CARDS */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:20px;box-shadow:0 2px 8px rgba(21,101,192,.06);}
+  .card-title{font-size:11px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;font-weight:800;padding-bottom:10px;border-bottom:2px solid #e3eaf7;}
+
+  /* FORM */
+  .fields{display:flex;gap:14px;flex-wrap:wrap;}
+  .field{flex:1 1 170px;}
+  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;}
+  .field input,.field select,.field textarea{width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--ink);font-size:15px;outline:none;font-family:inherit;font-weight:600;transition:border-color .2s;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);background:#fff;}
+  .field textarea{resize:vertical;min-height:88px;line-height:1.6;font-weight:500;}
+  .auto-badge{display:none;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:5px;}
+  .other-input{display:none;margin-top:8px;}
+  .other-input.visible{display:block;}
+  .age-display{font-size:16px;font-weight:800;color:var(--blue);padding:10px 0 9px;}
+
+  /* REEVAL BANNER */
+  .reeval-card{background:linear-gradient(135deg,#e3f2fd,#f0f7ff);border:1.5px solid #90caf9;border-radius:12px;padding:18px 22px;margin-bottom:20px;}
+  .reeval-title{font-size:11px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:12px;}
+  .reeval-note{font-size:12px;color:var(--muted);margin-top:8px;font-weight:500;}
+
+  /* EDIT MODE BANNER */
+  .edit-banner{background:linear-gradient(135deg,#fff3e0,#fff8f0);border:1.5px solid #ffb74d;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:none;align-items:center;justify-content:space-between;gap:10px;}
+  .edit-banner.visible{display:flex;}
+  .edit-banner-text{font-size:14px;font-weight:700;color:#e65100;}
+  .btn-cancel-edit{padding:8px 18px;font-size:13px;font-weight:700;border:1.5px solid #ffb74d;border-radius:7px;cursor:pointer;background:transparent;color:#e65100;font-family:inherit;}
+
+  /* LOEHR GRID */
+  .scale-headers{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+  .scale-head{text-align:center;font-size:10px;font-weight:800;letter-spacing:2px;padding-bottom:5px;text-transform:uppercase;}
+  .items-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+  .item-cell{background:var(--input);border-radius:8px;border:1.5px solid var(--border);padding:5px;display:flex;align-items:center;gap:4px;transition:border-color .2s;}
+  .item-cell.filled{border-color:var(--scale-color);}
+  .item-num{font-size:9px;color:var(--muted);min-width:15px;font-weight:600;}
+  .item-cell input{width:100%;background:transparent;border:none;outline:none;font-size:16px;font-weight:800;text-align:center;color:#aab5c8;-moz-appearance:textfield;font-family:inherit;}
+  .item-cell input::-webkit-outer-spin-button,.item-cell input::-webkit-inner-spin-button{-webkit-appearance:none;}
+  .item-cell.filled input{color:var(--scale-color);}
+  .sums-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px;}
+  .sum-cell{border-radius:8px;padding:8px 4px;text-align:center;border:1.5px solid var(--scale-color);background:color-mix(in srgb,var(--scale-color) 12%,#fff);}
+  .sum-label{font-size:9px;color:var(--muted);margin-bottom:2px;font-weight:700;letter-spacing:1px;}
+  .sum-value{font-size:22px;font-weight:900;color:var(--scale-color);}
+  .sum-max{font-size:9px;color:var(--muted);font-weight:600;}
+  .counter{font-size:14px;font-weight:800;}
+  .counter.done{color:var(--green);}
+  .counter.pending{color:var(--muted);}
+
+  /* BUTTONS */
+  .btn-eval{display:block;margin:0 auto 24px;padding:15px 52px;font-size:16px;font-weight:800;border:none;border-radius:10px;cursor:not-allowed;letter-spacing:.5px;background:#dde3ed;color:var(--muted);transition:all .2s;font-family:inherit;}
+  .btn-eval.ready{background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(21,101,192,.3);}
+  .btn-pdf{padding:11px 24px;font-size:14px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;font-family:inherit;}
+  .btn-pdf:hover{opacity:.88;}
+  .btn-pdf:disabled{opacity:.5;cursor:wait;}
+  .btn-save{padding:11px 24px;font-size:14px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;font-family:inherit;}
+  .btn-save:hover{opacity:.88;}
+  .btn-save:disabled{opacity:.5;cursor:wait;}
+  .btn-save.saved{background:#e8f5e9;color:var(--green);border:1.5px solid var(--green);cursor:default;}
+  .btn-reset{display:block;margin:18px auto 0;background:transparent;border:1.5px solid var(--border);color:var(--muted);border-radius:8px;padding:10px 28px;cursor:pointer;font-size:14px;font-family:inherit;font-weight:600;}
+  .btn-reset:hover{border-color:var(--blue);color:var(--blue);}
+  .btn-secondary{padding:10px 20px;font-size:14px;font-weight:700;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);color:var(--ink2);font-family:inherit;transition:all .2s;}
+  .btn-secondary:hover{border-color:var(--blue);color:var(--blue);}
+  .btn-edit-row{padding:5px 12px;font-size:11px;font-weight:800;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;background:transparent;color:var(--muted);font-family:inherit;}
+  .btn-edit-row:hover{border-color:var(--blue);color:var(--blue);}
+  .btn-delete-row{padding:5px 12px;font-size:11px;font-weight:800;border:1.5px solid #ffcdd2;border-radius:6px;cursor:pointer;background:transparent;color:var(--red);font-family:inherit;}
+  .btn-delete-row:hover{background:#ffebee;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:13px 24px;border-radius:10px;font-size:14px;font-weight:700;z-index:9999;transition:transform .3s ease,opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+  .toast.success{background:var(--green);}
+  .toast.error{background:var(--red);}
+
+  /* RESULTS */
+  .results{animation:fadeIn .4s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;}}
+  .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .results-title{font-size:13px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;font-weight:800;}
+  .results-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .hidden{display:none;}
+
+  /* PDF CAPTURE */
+  #pdf-capture{background:#fff;padding:28px 32px;border-radius:12px;border:1px solid var(--border);font-family:'Nunito','Segoe UI',Arial,sans-serif;color:var(--ink);}
+  .pdf-hdr{background:var(--blue);border-radius:10px;padding:20px 24px;margin-bottom:22px;}
+  .pdf-hdr-eye{font-size:10px;letter-spacing:3px;color:#90caf9;text-transform:uppercase;margin-bottom:6px;font-weight:700;}
+  .pdf-hdr-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:18px;}
+  .pdf-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .pdf-chip{background:rgba(255,255,255,.13);border-radius:8px;padding:10px 14px;}
+  .pdf-chip-lbl{font-size:10px;letter-spacing:2px;color:#90caf9;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
+  .pdf-chip-val{font-size:15px;font-weight:800;color:#fff;line-height:1.2;}
+  .pdf-section{font-size:11px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin:22px 0 12px;padding-bottom:8px;border-bottom:2px solid #e3eaf7;}
+  .pdf-box-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .pdf-box{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:16px 18px;}
+  .pdf-box-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;font-weight:700;}
+  .pdf-box-big{font-size:34px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:6px;}
+  .pdf-box-medium{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:6px;line-height:1.3;}
+  .pdf-box-tag{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:5px;display:inline-block;margin-bottom:8px;}
+  .pdf-box-text{font-size:13px;color:var(--ink2);line-height:1.65;font-weight:500;}
+  .anx-layout{display:grid;grid-template-columns:210px 1fr;gap:12px;}
+  .anx-left{display:flex;flex-direction:column;gap:10px;}
+  .anx-mini{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;flex:1;}
+  .anx-mini-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
+  .anx-mini-sub{font-size:11px;color:#9aabc0;margin-bottom:8px;font-weight:500;}
+  .anx-mini-score{font-size:30px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:6px;}
+  .anx-right{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;justify-content:center;}
+  .anx-right-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:700;}
+  .anx-right-text{font-size:14px;color:var(--ink2);line-height:1.75;font-weight:500;}
+  .pdf-composites{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .pdf-comp{border-radius:10px;padding:18px 20px;border:1.5px solid;}
+  .pdf-comp-desc{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
+  .pdf-comp-name{font-size:16px;font-weight:900;color:var(--ink);margin-bottom:4px;}
+  .pdf-comp-score-row{display:flex;align-items:baseline;gap:5px;margin-bottom:10px;}
+  .pdf-comp-score{font-size:38px;font-weight:900;line-height:1;}
+  .pdf-comp-max{font-size:14px;color:var(--muted);font-weight:600;}
+  .pdf-comp-bar-bg{background:rgba(0,0,0,.08);border-radius:99px;height:6px;margin-bottom:8px;}
+  .pdf-comp-bar{height:100%;border-radius:99px;}
+  .pdf-comp-level{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;}
+  .pdf-detail-card{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:4px;}
+  .pdf-detail-title{font-size:10px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:16px;}
+  .pdf-scale-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .pdf-scale-row:last-child{margin-bottom:0;}
+  .pdf-scale-key{min-width:38px;font-size:12px;font-weight:800;letter-spacing:1px;}
+  .pdf-scale-name{flex:1;font-size:13px;color:var(--ink2);font-weight:600;}
+  .pdf-scale-bar-bg{flex:2;background:#dde3ed;border-radius:99px;height:7px;}
+  .pdf-scale-bar{height:100%;border-radius:99px;}
+  .pdf-scale-score{min-width:28px;font-size:15px;font-weight:900;text-align:right;}
+  .pdf-scale-level{min-width:185px;font-size:10px;letter-spacing:1px;text-align:right;font-weight:700;}
+  .pdf-narrative{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:4px;}
+  .pdf-narrative-text{font-size:14px;color:var(--ink2);line-height:1.75;min-height:52px;outline:none;white-space:pre-wrap;word-break:break-word;font-weight:500;}
+  .pdf-narrative-text:empty::before{content:attr(data-ph);color:#b0bec5;font-style:italic;}
+  .pdf-narrative-text[contenteditable="true"]:focus{border-left:3px solid var(--blue);padding-left:10px;}
+  .pdf-footer{margin-top:24px;padding-top:16px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;}
+  .pdf-footer-sig{font-size:13px;color:var(--ink2);font-weight:600;}
+  .pdf-footer-sig strong{display:block;color:var(--ink);font-size:15px;margin-bottom:2px;font-weight:900;}
+  .pdf-footer-right{font-size:12px;color:var(--muted);text-align:right;line-height:1.6;font-weight:600;}
+
+  /* DATABASE */
+  .db-section{margin-top:40px;padding-top:20px;border-top:3px solid var(--border);}
+  .db-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .db-title{font-size:20px;font-weight:900;color:var(--ink);}
+  .db-subtitle{font-size:14px;color:var(--muted);font-weight:500;margin-top:2px;}
+  .db-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+  .db-stat{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;}
+  .db-stat-val{font-size:28px;font-weight:900;color:var(--blue);}
+  .db-stat-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-top:2px;letter-spacing:.5px;}
+  .db-table-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+  .db-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .db-table th{background:#f5f7fc;color:var(--muted);font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:800;padding:12px 14px;text-align:left;border-bottom:1.5px solid var(--border);}
+  .db-table td{padding:10px 14px;border-bottom:1px solid #eef1f7;color:var(--ink2);font-weight:600;}
+  .db-table tr:last-child td{border-bottom:none;}
+  .db-table tr:hover td{background:#f8f9fc;}
+  .db-empty{text-align:center;padding:32px;color:var(--muted);font-size:14px;font-weight:600;}
+
+  /* QUERY */
+  .query-box{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:22px 24px;}
+  .query-box-title{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:6px;}
+  .query-box-sub{font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:500;}
+  .query-examples{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .query-example{background:#e8f0fe;color:var(--blue);border:none;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .query-example:hover{background:#c5d8fc;}
+  .query-input-row{display:flex;gap:10px;}
+  .query-input{flex:1;background:var(--input);border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;font-size:15px;color:var(--ink);font-family:inherit;font-weight:600;outline:none;}
+  .query-input:focus{border-color:var(--blue);background:#fff;}
+  .btn-query{padding:12px 24px;font-size:14px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;font-family:inherit;white-space:nowrap;}
+  .btn-query:disabled{opacity:.5;cursor:wait;}
+  .query-response{margin-top:18px;background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;}
+  .query-response-lbl{font-size:10px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:10px;}
+  .query-response-text{font-size:14px;color:var(--ink2);line-height:1.75;font-weight:500;}
+  .thinking-dots::after{content:'';animation:dots 1.2s infinite;}
+  @keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+
+  @media print{
+    body{background:#fff;}
+    .header,.container>.card,.btn-eval,.results-header,.btn-reset,.db-section,#auth-overlay,.reeval-card,.edit-banner{display:none!important;}
+    #results{display:block!important;}
+    #pdf-capture{border:none;padding:0;}
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); font-family: 'Nunito','Segoe UI',Arial,sans-serif; font-size: 15px; color: var(--ink); padding-bottom: 60px; }
-
-  /* ── PAGE HEADER ─────────────────────────── */
-  .header { background: var(--blue); padding: 24px 32px 20px; border-bottom: 4px solid #0d47a1; }
-  .header-inner { max-width: 900px; margin: 0 auto; }
-  .header-sub { font-size: 11px; letter-spacing: 3px; color: #90caf9; text-transform: uppercase; margin-bottom: 6px; font-weight: 600; }
-  .header h1 { font-size: 26px; font-weight: 900; color: #fff; }
-  .header-desc { margin-top: 4px; font-size: 14px; color: #bbdefb; font-weight: 500; }
-
-  .container { max-width: 900px; margin: 0 auto; padding: 28px 16px 0; }
-
-  /* ── CARDS ───────────────────────────────── */
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 26px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(21,101,192,.06); }
-  .card-title { font-size: 11px; color: var(--blue); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px; font-weight: 800; padding-bottom: 10px; border-bottom: 2px solid #e3eaf7; }
-
-  /* ── FORM ────────────────────────────────── */
-  .fields { display: flex; gap: 14px; flex-wrap: wrap; }
-  .field { flex: 1 1 170px; }
-  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase; font-weight: 700; }
-  .field input, .field select, .field textarea { width: 100%; background: var(--input); border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--ink); font-size: 15px; outline: none; font-family: inherit; font-weight: 600; transition: border-color .2s; }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); background: #fff; }
-  .field textarea { resize: vertical; min-height: 88px; line-height: 1.6; font-weight: 500; }
-  .auto-badge { display: none; margin-top: 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 5px; }
-  .other-input { display: none; margin-top: 8px; }
-  .other-input.visible { display: block; }
-  .age-display { font-size: 16px; font-weight: 800; color: var(--blue); padding: 10px 0 9px; }
-
-  /* ── LOEHR GRID ──────────────────────────── */
-  .scale-headers { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 6px; }
-  .scale-head { text-align: center; font-size: 10px; font-weight: 800; letter-spacing: 2px; padding-bottom: 5px; text-transform: uppercase; }
-  .items-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 4px; }
-  .item-cell { background: var(--input); border-radius: 8px; border: 1.5px solid var(--border); padding: 5px; display: flex; align-items: center; gap: 4px; transition: border-color .2s; }
-  .item-cell.filled { border-color: var(--scale-color); }
-  .item-num { font-size: 9px; color: var(--muted); min-width: 15px; font-weight: 600; }
-  .item-cell input { width: 100%; background: transparent; border: none; outline: none; font-size: 16px; font-weight: 800; text-align: center; color: #aab5c8; -moz-appearance: textfield; font-family: inherit; }
-  .item-cell input::-webkit-outer-spin-button, .item-cell input::-webkit-inner-spin-button { -webkit-appearance: none; }
-  .item-cell.filled input { color: var(--scale-color); }
-  .sums-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-top: 12px; }
-  .sum-cell { border-radius: 8px; padding: 8px 4px; text-align: center; border: 1.5px solid var(--scale-color); background: color-mix(in srgb, var(--scale-color) 12%, #fff); }
-  .sum-label { font-size: 9px; color: var(--muted); margin-bottom: 2px; font-weight: 700; letter-spacing: 1px; }
-  .sum-value { font-size: 22px; font-weight: 900; color: var(--scale-color); }
-  .sum-max { font-size: 9px; color: var(--muted); font-weight: 600; }
-  .counter { font-size: 14px; font-weight: 800; }
-  .counter.done { color: var(--green); }
-  .counter.pending { color: var(--muted); }
-
-  /* ── BUTTONS ─────────────────────────────── */
-  .btn-eval { display: block; margin: 0 auto 24px; padding: 15px 52px; font-size: 16px; font-weight: 800; border: none; border-radius: 10px; cursor: not-allowed; letter-spacing: .5px; background: #dde3ed; color: var(--muted); transition: all .2s; font-family: inherit; }
-  .btn-eval.ready { background: linear-gradient(135deg,#1565C0,#1e88e5); color: #fff; cursor: pointer; box-shadow: 0 4px 16px rgba(21,101,192,.3); }
-  .btn-pdf { padding: 11px 24px; font-size: 14px; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg,#1565C0,#1e88e5); color: #fff; font-family: inherit; }
-  .btn-pdf:hover { opacity:.88; }
-  .btn-pdf:disabled { opacity:.5; cursor:wait; }
-  .btn-save { padding: 11px 24px; font-size: 14px; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg,#2e7d32,#43a047); color: #fff; font-family: inherit; }
-  .btn-save:hover { opacity:.88; }
-  .btn-save:disabled { opacity:.5; cursor:wait; }
-  .btn-save.saved { background: #e8f5e9; color: var(--green); border: 1.5px solid var(--green); cursor: default; }
-  .btn-reset { display: block; margin: 18px auto 0; background: transparent; border: 1.5px solid var(--border); color: var(--muted); border-radius: 8px; padding: 10px 28px; cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 600; }
-  .btn-reset:hover { border-color: var(--blue); color: var(--blue); }
-  .btn-secondary { padding: 10px 20px; font-size: 14px; font-weight: 700; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: var(--card); color: var(--ink2); font-family: inherit; transition: all .2s; }
-  .btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
-
-  /* ── TOAST ───────────────────────────────── */
-  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--ink); color: #fff; padding: 13px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; z-index: 9999; transition: transform .3s ease, opacity .3s; opacity: 0; pointer-events: none; white-space: nowrap; }
-  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-  .toast.success { background: var(--green); }
-  .toast.error { background: var(--red); }
-
-  /* ── RESULTS ─────────────────────────────── */
-  .results { animation: fadeIn .4s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; } }
-  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-  .results-title { font-size: 13px; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
-  .results-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-  .hidden { display: none; }
-
-  /* ════════════════════════════════════════════
-     PDF CAPTURE
-  ════════════════════════════════════════════ */
-  #pdf-capture { background: #fff; padding: 28px 32px; border-radius: 12px; border: 1px solid var(--border); font-family: 'Nunito','Segoe UI',Arial,sans-serif; color: var(--ink); }
-  .pdf-hdr { background: var(--blue); border-radius: 10px; padding: 20px 24px; margin-bottom: 22px; }
-  .pdf-hdr-eye { font-size: 10px; letter-spacing: 3px; color: #90caf9; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
-  .pdf-hdr-title { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 18px; }
-  .pdf-info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .pdf-chip { background: rgba(255,255,255,.13); border-radius: 8px; padding: 10px 14px; }
-  .pdf-chip-lbl { font-size: 10px; letter-spacing: 2px; color: #90caf9; text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
-  .pdf-chip-val { font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2; }
-  .pdf-section { font-size: 11px; color: var(--blue); letter-spacing: 3px; text-transform: uppercase; font-weight: 800; margin: 22px 0 12px; padding-bottom: 8px; border-bottom: 2px solid #e3eaf7; }
-  .pdf-box-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .pdf-box { background: #f5f7fc; border: 1.5px solid var(--border); border-radius: 10px; padding: 16px 18px; }
-  .pdf-box-lbl { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; }
-  .pdf-box-big { font-size: 34px; font-weight: 900; color: var(--ink); line-height: 1; margin-bottom: 6px; }
-  .pdf-box-medium { font-size: 17px; font-weight: 800; color: var(--ink); margin-bottom: 6px; line-height: 1.3; }
-  .pdf-box-tag { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 5px; display: inline-block; margin-bottom: 8px; }
-  .pdf-box-text { font-size: 13px; color: var(--ink2); line-height: 1.65; font-weight: 500; }
-  .anx-layout { display: grid; grid-template-columns: 210px 1fr; gap: 12px; }
-  .anx-left { display: flex; flex-direction: column; gap: 10px; }
-  .anx-mini { background: #f5f7fc; border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px; flex: 1; }
-  .anx-mini-lbl { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
-  .anx-mini-sub { font-size: 11px; color: #9aabc0; margin-bottom: 8px; font-weight: 500; }
-  .anx-mini-score { font-size: 30px; font-weight: 900; color: var(--ink); line-height: 1; margin-bottom: 6px; }
-  .anx-right { background: #f5f7fc; border: 1.5px solid var(--border); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; }
-  .anx-right-lbl { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-weight: 700; }
-  .anx-right-text { font-size: 14px; color: var(--ink2); line-height: 1.75; font-weight: 500; }
-  .pdf-composites { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .pdf-comp { border-radius: 10px; padding: 18px 20px; border: 1.5px solid; }
-  .pdf-comp-desc { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
-  .pdf-comp-name { font-size: 16px; font-weight: 900; color: var(--ink); margin-bottom: 4px; }
-  .pdf-comp-score-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 10px; }
-  .pdf-comp-score { font-size: 38px; font-weight: 900; line-height: 1; }
-  .pdf-comp-max { font-size: 14px; color: var(--muted); font-weight: 600; }
-  .pdf-comp-bar-bg { background: rgba(0,0,0,.08); border-radius: 99px; height: 6px; margin-bottom: 8px; }
-  .pdf-comp-bar { height: 100%; border-radius: 99px; }
-  .pdf-comp-level { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-  .pdf-detail-card { background: #f5f7fc; border: 1.5px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 4px; }
-  .pdf-detail-title { font-size: 10px; color: var(--blue); letter-spacing: 3px; text-transform: uppercase; font-weight: 800; margin-bottom: 16px; }
-  .pdf-scale-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .pdf-scale-row:last-child { margin-bottom: 0; }
-  .pdf-scale-key { min-width: 38px; font-size: 12px; font-weight: 800; letter-spacing: 1px; }
-  .pdf-scale-name { flex: 1; font-size: 13px; color: var(--ink2); font-weight: 600; }
-  .pdf-scale-bar-bg { flex: 2; background: #dde3ed; border-radius: 99px; height: 7px; }
-  .pdf-scale-bar { height: 100%; border-radius: 99px; }
-  .pdf-scale-score { min-width: 28px; font-size: 15px; font-weight: 900; text-align: right; }
-  .pdf-scale-level { min-width: 185px; font-size: 10px; letter-spacing: 1px; text-align: right; font-weight: 700; }
-  .pdf-narrative { background: #f5f7fc; border: 1.5px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 4px; }
-  .pdf-narrative-text { font-size: 14px; color: var(--ink2); line-height: 1.75; min-height: 52px; outline: none; white-space: pre-wrap; word-break: break-word; font-weight: 500; }
-  .pdf-narrative-text:empty::before { content: attr(data-ph); color: #b0bec5; font-style: italic; }
-  .pdf-narrative-text[contenteditable="true"]:focus { border-left: 3px solid var(--blue); padding-left: 10px; }
-  .pdf-footer { margin-top: 24px; padding-top: 16px; border-top: 2px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 8px; }
-  .pdf-footer-sig { font-size: 13px; color: var(--ink2); font-weight: 600; }
-  .pdf-footer-sig strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 2px; font-weight: 900; }
-  .pdf-footer-right { font-size: 12px; color: var(--muted); text-align: right; line-height: 1.6; font-weight: 600; }
-
-  /* ── DATABASE SECTION ────────────────────── */
-  .db-section { margin-top: 40px; padding-top: 20px; border-top: 3px solid var(--border); }
-  .db-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  .db-title { font-size: 20px; font-weight: 900; color: var(--ink); }
-  .db-subtitle { font-size: 14px; color: var(--muted); font-weight: 500; margin-top: 2px; }
-  .db-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
-  .db-stat { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; }
-  .db-stat-val { font-size: 28px; font-weight: 900; color: var(--blue); }
-  .db-stat-lbl { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 2px; letter-spacing: .5px; }
-
-  /* Profiles table */
-  .db-table-wrap { background: var(--card); border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
-  .db-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .db-table th { background: #f5f7fc; color: var(--muted); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; padding: 12px 14px; text-align: left; border-bottom: 1.5px solid var(--border); }
-  .db-table td { padding: 11px 14px; border-bottom: 1px solid #eef1f7; color: var(--ink2); font-weight: 600; }
-  .db-table tr:last-child td { border-bottom: none; }
-  .db-table tr:hover td { background: #f8f9fc; }
-  .db-empty { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; font-weight: 600; }
-
-  /* Query interface */
-  .query-box { background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 22px 24px; }
-  .query-box-title { font-size: 14px; font-weight: 800; color: var(--ink); margin-bottom: 6px; }
-  .query-box-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; font-weight: 500; }
-  .query-examples { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .query-example { background: #e8f0fe; color: var(--blue); border: none; padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background .2s; }
-  .query-example:hover { background: #c5d8fc; }
-  .query-input-row { display: flex; gap: 10px; }
-  .query-input { flex: 1; background: var(--input); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 15px; color: var(--ink); font-family: inherit; font-weight: 600; outline: none; }
-  .query-input:focus { border-color: var(--blue); background: #fff; }
-  .btn-query { padding: 12px 24px; font-size: 14px; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; background: linear-gradient(135deg,#1565C0,#1e88e5); color: #fff; font-family: inherit; white-space: nowrap; }
-  .btn-query:disabled { opacity:.5; cursor:wait; }
-  .query-response { margin-top: 18px; background: #f5f7fc; border: 1.5px solid var(--border); border-radius: 10px; padding: 18px 20px; }
-  .query-response-lbl { font-size: 10px; color: var(--blue); letter-spacing: 3px; text-transform: uppercase; font-weight: 800; margin-bottom: 10px; }
-  .query-response-text { font-size: 14px; color: var(--ink2); line-height: 1.75; font-weight: 500; white-space: pre-wrap; }
-  .thinking-dots::after { content: ''; animation: dots 1.2s infinite; }
-  @keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} }
-
-  @media print {
-    body { background: #fff; }
-    .header, .container > .card, .btn-eval, .results-header, .btn-reset, .db-section { display: none !important; }
-    #results { display: block !important; }
-    #pdf-capture { border: none; padding: 0; }
-  }
-  @media (max-width: 620px) {
-    .pdf-composites, .pdf-box-grid, .pdf-info-grid, .db-stats { grid-template-columns: 1fr; }
-    .anx-layout { grid-template-columns: 1fr; }
-    .pdf-scale-name, .pdf-scale-level { display: none; }
+  @media(max-width:620px){
+    .pdf-composites,.pdf-box-grid,.pdf-info-grid,.db-stats{grid-template-columns:1fr;}
+    .anx-layout{grid-template-columns:1fr;}
+    .pdf-scale-name,.pdf-scale-level{display:none;}
   }
 </style>
 </head>
 <body>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">TDS · Honduras</div>
+    <div class="auth-title">Perfil Psicológico</div>
+    <div class="auth-sub">Ingresá la contraseña para continuar</div>
+    <input type="password" class="auth-input" id="auth-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')verificarPassword()">
+    <button class="auth-btn" onclick="verificarPassword()">Ingresar</button>
+    <div class="auth-error" id="auth-error">Contraseña incorrecta. Intentá de nuevo.</div>
+  </div>
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -220,7 +244,27 @@
 
 <div class="container">
 
-  <!-- ══ 1. DATOS ═══════════════════════════════════════════ -->
+  <!-- EDIT BANNER -->
+  <div class="edit-banner" id="edit-banner">
+    <div class="edit-banner-text">✏️ Modo edición — <span id="edit-banner-name"></span></div>
+    <button class="btn-cancel-edit" onclick="cancelarEdicion()">Cancelar</button>
+  </div>
+
+  <!-- RE-EVALUACIÓN -->
+  <div class="reeval-card">
+    <div class="reeval-title">¿Re-evaluación de un jugador existente?</div>
+    <div class="fields">
+      <div class="field" style="flex:2 1 260px;">
+        <label>Buscar jugador</label>
+        <select id="sel-reeval" onchange="cargarDatosFijos()">
+          <option value="">— Nueva evaluación —</option>
+        </select>
+      </div>
+    </div>
+    <div class="reeval-note">Si seleccionás un jugador, se auto-completan sus datos fijos (CI, temperamento, datos personales). Solo llenás lo que cambió.</div>
+  </div>
+
+  <!-- 1. DATOS -->
   <div class="card">
     <div class="card-title">Datos del Atleta</div>
     <div class="fields">
@@ -237,7 +281,7 @@
           <option value="Sub-16 Femenino">Sub-16 Femenino</option>
           <option value="__otro__">Otro</option>
         </select>
-        <input type="text" id="inp-cat-other" class="other-input" placeholder="Ej. Sub-13 Masculino, Atletismo…">
+        <input type="text" id="inp-cat-other" class="other-input" placeholder="Ej. Sub-13 Masculino…">
       </div>
       <div class="field">
         <label>Centro de Formación (CFT)</label>
@@ -255,22 +299,13 @@
       </div>
     </div>
     <div class="fields" style="margin-top:14px;">
-      <div class="field">
-        <label>Fecha de Nacimiento</label>
-        <input type="date" id="inp-dob" oninput="updateAge()">
-      </div>
-      <div class="field">
-        <label>Fecha de Aplicación</label>
-        <input type="date" id="inp-date" oninput="updateAge()">
-      </div>
-      <div class="field" style="flex:0 1 140px;">
-        <label>Edad calculada</label>
-        <div class="age-display" id="edad-calc">—</div>
-      </div>
+      <div class="field"><label>Fecha de Nacimiento</label><input type="date" id="inp-dob" oninput="updateAge()"></div>
+      <div class="field"><label>Fecha de Aplicación</label><input type="date" id="inp-date" oninput="updateAge()"></div>
+      <div class="field" style="flex:0 1 140px;"><label>Edad calculada</label><div class="age-display" id="edad-calc">—</div></div>
     </div>
   </div>
 
-  <!-- ══ 2. COGNITIVA + PERSONALIDAD + ANSIEDAD ════════════ -->
+  <!-- 2. COGNITIVA + PERSONALIDAD + ANSIEDAD -->
   <div class="card">
     <div class="card-title">Área Cognitiva y Personalidad</div>
     <div class="fields">
@@ -293,7 +328,7 @@
     <div class="fields" style="margin-top:14px;">
       <div class="field" style="flex:1 1 100%;">
         <label>Resumen del Temperamento (editable)</label>
-        <textarea id="inp-temp-desc" placeholder="Describe el temperamento del jugador en relación a su rendimiento deportivo…"></textarea>
+        <textarea id="inp-temp-desc" placeholder="Describe el temperamento del jugador…"></textarea>
       </div>
     </div>
     <div style="margin-top:22px;padding-top:18px;border-top:1.5px solid #e3eaf7;">
@@ -317,7 +352,7 @@
     </div>
   </div>
 
-  <!-- ══ 3. LOEHR ═══════════════════════════════════════════ -->
+  <!-- 3. LOEHR -->
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <div class="card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Loehr IPRD</div>
@@ -328,27 +363,27 @@
     <div class="sums-row" id="sums-row"></div>
   </div>
 
-  <!-- ══ 4. CONCLUSIÓN Y RECOMENDACIONES ═══════════════════ -->
+  <!-- 4. CONCLUSIÓN Y RECOMENDACIONES -->
   <div class="card">
     <div class="card-title">Conclusión y Recomendaciones</div>
     <div class="field" style="margin-bottom:14px;">
       <label>Conclusión</label>
-      <textarea id="inp-conclusion" style="min-height:120px;" placeholder="Descripción del perfil psicológico general, fortalezas y áreas de atención prioritaria…"></textarea>
+      <textarea id="inp-conclusion" style="min-height:120px;" placeholder="Descripción del perfil psicológico general…"></textarea>
     </div>
     <div class="field">
       <label>Recomendaciones</label>
-      <textarea id="inp-recomendaciones" style="min-height:120px;" placeholder="Recomendaciones para el entrenador y el equipo técnico…"></textarea>
+      <textarea id="inp-recomendaciones" style="min-height:120px;" placeholder="Recomendaciones para el entrenador…"></textarea>
     </div>
   </div>
 
   <button class="btn-eval" id="btn-eval" disabled>Faltan 42 respuestas</button>
 
-  <!-- ══ RESULTADOS / PDF ═══════════════════════════════════ -->
+  <!-- RESULTADOS -->
   <div class="hidden" id="results">
     <div class="results-header">
       <div class="results-title" id="results-title">Perfil Psicológico</div>
       <div class="results-actions">
-        <button class="btn-save" id="btn-save" onclick="guardarPerfil()">💾 Guardar en base de datos</button>
+        <button class="btn-save" id="btn-save" onclick="guardarPerfil()">💾 Guardar</button>
         <button class="btn-pdf" id="btn-pdf" onclick="downloadPDF()">📥 Descargar PDF</button>
       </div>
     </div>
@@ -400,69 +435,40 @@
         <div id="scale-details"></div>
       </div>
       <div class="pdf-section">Conclusión</div>
-      <div class="pdf-narrative">
-        <div class="pdf-narrative-text" id="pdf-conclusion" contenteditable="true" data-ph="La conclusión aparecerá aquí…"></div>
-      </div>
+      <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-conclusion" contenteditable="true" data-ph="La conclusión aparecerá aquí…"></div></div>
       <div class="pdf-section">Recomendaciones</div>
-      <div class="pdf-narrative">
-        <div class="pdf-narrative-text" id="pdf-recomendaciones" contenteditable="true" data-ph="Las recomendaciones aparecerán aquí…"></div>
-      </div>
+      <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-recomendaciones" contenteditable="true" data-ph="Las recomendaciones aparecerán aquí…"></div></div>
       <div class="pdf-footer">
-        <div class="pdf-footer-sig">
-          <strong>Lic. Melany Ordóñez</strong>
-          Máster en Psicología del Deporte
-        </div>
-        <div class="pdf-footer-right" id="pdf-footer-right">
-          Federación Nacional Autónoma de Fútbol de Honduras<br>
-          Sistema de Desarrollo del Talento · TDS
-        </div>
+        <div class="pdf-footer-sig"><strong>Lic. Melany Ordóñez</strong>Máster en Psicología del Deporte</div>
+        <div class="pdf-footer-right" id="pdf-footer-right">Federación Nacional Autónoma de Fútbol de Honduras<br>Sistema de Desarrollo del Talento · TDS</div>
       </div>
-    </div><!-- /pdf-capture -->
+    </div>
 
     <button class="btn-reset" onclick="resetAll()">↺ Nueva evaluación</button>
   </div>
 
-  <!-- ══ BASE DE DATOS ══════════════════════════════════════ -->
+  <!-- BASE DE DATOS -->
   <div class="db-section">
     <div class="db-title-row">
-      <div>
-        <div class="db-title">📊 Base de Datos</div>
-        <div class="db-subtitle">Perfiles guardados · Consultas con IA</div>
-      </div>
+      <div><div class="db-title">📊 Base de Datos</div><div class="db-subtitle">Perfiles guardados · Consultas con IA</div></div>
       <button class="btn-secondary" onclick="cargarPerfiles()">↻ Actualizar</button>
     </div>
-
-    <!-- Stats -->
     <div class="db-stats">
       <div class="db-stat"><div class="db-stat-val" id="stat-total">—</div><div class="db-stat-lbl">Total perfiles</div></div>
+      <div class="db-stat"><div class="db-stat-val" id="stat-jugadores">—</div><div class="db-stat-lbl">Jugadores únicos</div></div>
       <div class="db-stat"><div class="db-stat-val" id="stat-centros">—</div><div class="db-stat-lbl">Centros</div></div>
-      <div class="db-stat"><div class="db-stat-val" id="stat-cat">—</div><div class="db-stat-lbl">Categorías</div></div>
       <div class="db-stat"><div class="db-stat-val" id="stat-avg">—</div><div class="db-stat-lbl">Prom. Autoconfianza</div></div>
     </div>
-
-    <!-- Table -->
     <div class="db-table-wrap">
       <table class="db-table">
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>CFT</th>
-            <th>Temperamento</th>
-            <th>Autoconf.</th>
-            <th>C. Emocional</th>
-            <th>Concentración</th>
-            <th>Motivación</th>
-            <th>Fecha</th>
-          </tr>
-        </thead>
-        <tbody id="db-tbody">
-          <tr><td colspan="9" class="db-empty">Cargando perfiles…</td></tr>
-        </tbody>
+        <thead><tr>
+          <th>Nombre</th><th>Categoría</th><th>CFT</th><th>Temperamento</th>
+          <th>Autoconf.</th><th>C. Emocional</th><th>Concentración</th><th>Motivación</th>
+          <th>Fecha</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="db-tbody"><tr><td colspan="10" class="db-empty">Cargando…</td></tr></tbody>
       </table>
     </div>
-
-    <!-- Query interface -->
     <div class="query-box">
       <div class="query-box-title">🤖 Consultá tu base de datos</div>
       <div class="query-box-sub">Hacé preguntas en lenguaje natural sobre los perfiles guardados</div>
@@ -474,7 +480,7 @@
         <button class="query-example" onclick="setQuery(this.textContent)">¿Qué jugadores necesitan atención especial en control emocional?</button>
       </div>
       <div class="query-input-row">
-        <input type="text" class="query-input" id="query-input" placeholder="Escribí tu pregunta aquí…" onkeydown="if(event.key==='Enter') consultarIA()">
+        <input type="text" class="query-input" id="query-input" placeholder="Escribí tu pregunta aquí…" onkeydown="if(event.key==='Enter')consultarIA()">
         <button class="btn-query" id="btn-query" onclick="consultarIA()">Consultar</button>
       </div>
       <div class="query-response hidden" id="query-response">
@@ -482,117 +488,171 @@
         <div class="query-response-text" id="query-response-text"></div>
       </div>
     </div>
-
-  </div><!-- /db-section -->
+  </div>
 
 </div><!-- /container -->
 
 <script>
-// ── SUPABASE ─────────────────────────────────────────────────────────────
-const { createClient } = supabase;
-const sb = createClient(
-  'https://esbmtenfcjbrrocrnfep.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA'
-);
+const{createClient}=supabase;
+const sb=createClient('https://esbmtenfcjbrrocrnfep.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA');
 
-// ── CONSTANTS ─────────────────────────────────────────────────────────────
-const SCALES = {
-  AC:  { label:"Autoconfianza",         color:"#1565C0", items:[1,8,15,22,29,36] },
-  EN:  { label:"Energía Negativa",      color:"#c62828", items:[2,9,16,23,30,37] },
-  CAT: { label:"Control Atencional",    color:"#2e7d32", items:[3,10,17,24,31,38] },
-  CVI: { label:"Control Visualización", color:"#6a1b9a", items:[4,11,18,25,32,39] },
-  NM:  { label:"Nivel Motivacional",    color:"#e65100", items:[5,12,19,26,33,40] },
-  EP:  { label:"Energía Positiva",      color:"#00838f", items:[6,13,20,27,34,41] },
-  ACT: { label:"Control de Actitudes",  color:"#f9a825", items:[7,14,21,28,35,42] },
+const SCALES={
+  AC:{label:"Autoconfianza",color:"#1565C0",items:[1,8,15,22,29,36]},
+  EN:{label:"Energía Negativa",color:"#c62828",items:[2,9,16,23,30,37]},
+  CAT:{label:"Control Atencional",color:"#2e7d32",items:[3,10,17,24,31,38]},
+  CVI:{label:"Control Visualización",color:"#6a1b9a",items:[4,11,18,25,32,39]},
+  NM:{label:"Nivel Motivacional",color:"#e65100",items:[5,12,19,26,33,40]},
+  EP:{label:"Energía Positiva",color:"#00838f",items:[6,13,20,27,34,41]},
+  ACT:{label:"Control de Actitudes",color:"#f9a825",items:[7,14,21,28,35,42]},
 };
-const COMPOSITES = [
-  { label:"Autoconfianza",     max:30, scales:["AC"],        desc:"Pronóstico de éxito competitivo" },
-  { label:"Control Emocional", max:60, scales:["EP","EN"],   desc:"Energía positiva + control negativo" },
-  { label:"Concentración",     max:60, scales:["CAT","CVI"], desc:"Atención + visualización" },
-  { label:"Motivación",        max:30, scales:["NM"],        desc:"Nivel motivacional" },
+const COMPOSITES=[
+  {label:"Autoconfianza",max:30,scales:["AC"],desc:"Pronóstico de éxito competitivo"},
+  {label:"Control Emocional",max:60,scales:["EP","EN"],desc:"Energía positiva + control negativo"},
+  {label:"Concentración",max:60,scales:["CAT","CVI"],desc:"Atención + visualización"},
+  {label:"Motivación",max:30,scales:["NM"],desc:"Nivel motivacional"},
 ];
-const TEMP_SUBS = {
-  "Sanguíneo":   "Extrovertido · Estable",
-  "Colérico":    "Extrovertido · Inestable",
-  "Flemático":   "Introvertido · Estable",
-  "Melancólico": "Introvertido · Inestable",
+const TEMP_SUBS={"Sanguíneo":"Extrovertido · Estable","Colérico":"Extrovertido · Inestable","Flemático":"Introvertido · Estable","Melancólico":"Introvertido · Inestable"};
+const TEMP_DEFS={
+  "Sanguíneo":"Sistema nervioso rápido y equilibrado. Extrovertido, adaptable y comunicativo. Eleva el espíritu del equipo de forma natural. Responde bien al refuerzo positivo y a objetivos de corto plazo.",
+  "Colérico":"Líder apasionado con alta competitividad y determinación. Toma decisiones rápidas. Puede reaccionar impulsivamente bajo presión. Se beneficia del trabajo en regulación emocional.",
+  "Flemático":"Constante, fiable y calmado bajo presión. Mantiene rendimiento estable en situaciones de alta demanda. Puede requerir estímulo externo para tomar iniciativa.",
+  "Melancólico":"Perfeccionista y analítico. Procesa el error con profundidad. Se beneficia de trabajo en gestión del error y construcción progresiva de la autoconfianza.",
 };
-const TEMP_DEFS = {
-  "Sanguíneo":   "Sistema nervioso rápido y equilibrado. Extrovertido, adaptable y comunicativo. Eleva el espíritu del equipo de forma natural. Responde bien al refuerzo positivo y a objetivos de corto plazo. Su entusiasmo puede ser contagioso, aunque requiere estructura para sostener la concentración.",
-  "Colérico":    "Líder apasionado con alta competitividad y determinación. Toma decisiones rápidas y asume retos con confianza. Puede reaccionar impulsivamente bajo presión. Se beneficia del trabajo en regulación emocional y canalización de la intensidad competitiva.",
-  "Flemático":   "Constante, fiable y calmado bajo presión. Mantiene rendimiento estable en situaciones de alta demanda. Su mayor fortaleza es la consistencia. Puede requerir estímulo externo para tomar iniciativa y mostrar su potencial de forma visible.",
-  "Melancólico": "Perfeccionista y analítico. Procesa el error con profundidad y puede ser propenso a la ansiedad ante situaciones de alta exigencia. Se beneficia de trabajo estructurado en gestión del error y construcción progresiva de la autoconfianza.",
-};
-const answers = new Array(43).fill(0);
-let perfilesBD = [];
-let perfilGuardado = false;
+const answers=new Array(43).fill(0);
+let perfilesBD=[];
+let perfilGuardado=false;
+let editandoId=null;
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+async function verificarPassword(){
+  const inp=document.getElementById('auth-input').value.trim();
+  const errEl=document.getElementById('auth-error');
+  errEl.style.display='none';
+  try{
+    const{data,error}=await sb.from('configuracion').select('valor').eq('clave','password').single();
+    if(error) throw error;
+    if(inp===data.valor){
+      sessionStorage.setItem('tds-auth','ok');
+      document.getElementById('auth-overlay').style.display='none';
+      cargarPerfiles();
+    } else {
+      errEl.style.display='block';
+      document.getElementById('auth-input').value='';
+    }
+  } catch(e){
+    errEl.textContent='Error de conexión. Intentá de nuevo.';
+    errEl.style.display='block';
+  }
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
-function getLevel(score, max) {
-  const p = score/max;
-  if (p>=26/30) return { label:"HABILIDAD EXCELENTE",    bg:"#e8f5e9", text:"#1b5e20", border:"#2e7d32" };
-  if (p>=20/30) return { label:"MEJORAR Y PERFECCIONAR", bg:"#fff3e0", text:"#e65100", border:"#f57c00" };
-  return               { label:"ATENCIÓN ESPECIAL",      bg:"#ffebee", text:"#b71c1c", border:"#c62828" };
+function getLevel(score,max){
+  const p=score/max;
+  if(p>=26/30)return{label:"HABILIDAD EXCELENTE",bg:"#e8f5e9",text:"#1b5e20",border:"#2e7d32"};
+  if(p>=20/30)return{label:"MEJORAR Y PERFECCIONAR",bg:"#fff3e0",text:"#e65100",border:"#f57c00"};
+  return{label:"ATENCIÓN ESPECIAL",bg:"#ffebee",text:"#b71c1c",border:"#c62828"};
 }
-function ciDiag(v) {
-  if (v>=130) return { label:"MUY SUPERIOR", bg:"#e8f5e9", color:"#1b5e20" };
-  if (v>=120) return { label:"SUPERIOR",     bg:"#e8f5e9", color:"#1b5e20" };
-  if (v>=110) return { label:"ALTO",          bg:"#e8f5e9", color:"#1b5e20" };
-  if (v>=90)  return { label:"NORMAL",        bg:"#e3f2fd", color:"#1565C0" };
-  if (v>=80)  return { label:"NORMAL BAJO",   bg:"#fff3e0", color:"#e65100" };
-  return              { label:"BAJO",          bg:"#ffebee", color:"#b71c1c" };
+function ciDiag(v){
+  if(v>=130)return{label:"MUY SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
+  if(v>=120)return{label:"SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
+  if(v>=110)return{label:"ALTO",bg:"#e8f5e9",color:"#1b5e20"};
+  if(v>=90)return{label:"NORMAL",bg:"#e3f2fd",color:"#1565C0"};
+  if(v>=80)return{label:"NORMAL BAJO",bg:"#fff3e0",color:"#e65100"};
+  return{label:"BAJO",bg:"#ffebee",color:"#b71c1c"};
 }
-function anxLevel(v) {
-  if (v<=35) return { label:"BAJO",  bg:"#e8f5e9", color:"#1b5e20" };
-  if (v<=55) return { label:"MEDIO", bg:"#e3f2fd", color:"#1565C0" };
-  return             { label:"ALTO", bg:"#ffebee", color:"#b71c1c" };
+function anxLevel(v){
+  if(v<=35)return{label:"BAJO",bg:"#e8f5e9",color:"#1b5e20"};
+  if(v<=55)return{label:"MEDIO",bg:"#e3f2fd",color:"#1565C0"};
+  return{label:"ALTO",bg:"#ffebee",color:"#b71c1c"};
 }
-function calcAge(dob, app) {
-  if (!dob) return null;
-  const base = app ? new Date(app) : new Date();
-  const birth = new Date(dob);
-  let age = base.getFullYear()-birth.getFullYear();
-  const m = base.getMonth()-birth.getMonth();
-  if (m<0||(m===0&&base.getDate()<birth.getDate())) age--;
+function calcAge(dob,app){
+  if(!dob)return null;
+  const base=app?new Date(app):new Date(),birth=new Date(dob);
+  let age=base.getFullYear()-birth.getFullYear();
+  const m=base.getMonth()-birth.getMonth();
+  if(m<0||(m===0&&base.getDate()<birth.getDate()))age--;
   return age>=0?age:null;
 }
-function formatDate(val) {
-  if (!val) return '—';
-  const [y,m,d] = val.split('-');
+function formatDate(val){
+  if(!val)return'—';
+  const[y,m,d]=val.split('-');
   const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+  return`${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
 }
-function applyTag(el, d) { el.textContent=d.label; el.style.background=d.bg; el.style.color=d.color; }
-function toast(msg, type='') {
-  const t = document.getElementById('toast');
-  t.textContent=msg; t.className=`toast ${type} show`;
-  setTimeout(()=>{ t.className='toast'; },3200);
+function applyTag(el,d){el.textContent=d.label;el.style.background=d.bg;el.style.color=d.color;}
+function toast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className=`toast ${type} show`;
+  setTimeout(()=>{t.className='toast';},3200);
 }
+function scoreColor30(v){if(v==null)return'#aaa';if(v>=26)return'#2e7d32';if(v>=20)return'#e65100';return'#b71c1c';}
+function lv60color(v){if(v==null)return'#aaa';if(v>=50)return'#2e7d32';if(v>=40)return'#e65100';return'#b71c1c';}
 
-// ── FORM ──────────────────────────────────────────────────────────────────
-function updateAge() {
-  const age=calcAge(document.getElementById('inp-dob').value, document.getElementById('inp-date').value);
+// ── FORM REACTIVITY ───────────────────────────────────────────────────────
+function updateAge(){
+  const age=calcAge(document.getElementById('inp-dob').value,document.getElementById('inp-date').value);
   document.getElementById('edad-calc').textContent=age!==null?`${age} años`:'—';
 }
-function toggleOther() {
-  document.getElementById('inp-cat-other').classList.toggle('visible', document.getElementById('inp-cat').value==='__otro__');
+function toggleOther(){
+  document.getElementById('inp-cat-other').classList.toggle('visible',document.getElementById('inp-cat').value==='__otro__');
 }
-function updateCiBadge() {
-  const v=parseInt(document.getElementById('inp-ci').value), b=document.getElementById('ci-badge');
+function updateCiBadge(){
+  const v=parseInt(document.getElementById('inp-ci').value),b=document.getElementById('ci-badge');
   if(isNaN(v)){b.style.display='none';return;}
-  const d=ciDiag(v); b.style.display='inline-block'; b.textContent=d.label; b.style.background=d.bg; b.style.color=d.color;
+  const d=ciDiag(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
 }
-function updateAnxBadge(id) {
-  const v=parseInt(document.getElementById(`inp-${id}`).value), b=document.getElementById(`${id}-badge`);
+function updateAnxBadge(id){
+  const v=parseInt(document.getElementById(`inp-${id}`).value),b=document.getElementById(`${id}-badge`);
   if(isNaN(v)){b.style.display='none';return;}
-  const d=anxLevel(v); b.style.display='inline-block'; b.textContent=d.label; b.style.background=d.bg; b.style.color=d.color;
+  const d=anxLevel(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
 }
-function fillTempDesc() {
+function fillTempDesc(){
   const key=document.getElementById('inp-temp').value;
-  if(!key) return;
+  if(!key)return;
   const ta=document.getElementById('inp-temp-desc');
   const isDefault=Object.values(TEMP_DEFS).some(d=>d===ta.value);
-  if(!ta.value||isDefault) ta.value=TEMP_DEFS[key]||'';
+  if(!ta.value||isDefault)ta.value=TEMP_DEFS[key]||'';
+}
+
+// ── RE-EVALUACIÓN ─────────────────────────────────────────────────────────
+function poblarDropdownJugadores(perfiles){
+  const sel=document.getElementById('sel-reeval');
+  const nombres=[...new Set(perfiles.map(p=>p.nombre).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">— Nueva evaluación —</option>';
+  nombres.forEach(n=>{
+    const opt=document.createElement('option');
+    opt.value=n; opt.textContent=n;
+    sel.appendChild(opt);
+  });
+}
+
+function cargarDatosFijos(){
+  const nombre=document.getElementById('sel-reeval').value;
+  if(!nombre)return;
+  // Busca el registro más reciente de ese jugador
+  const registros=perfilesBD.filter(p=>p.nombre===nombre);
+  if(!registros.length)return;
+  const rec=registros[0]; // ya vienen ordenados por fecha desc
+  document.getElementById('inp-name').value=rec.nombre||'';
+  if(rec.categoria&&rec.categoria!=='__otro__'){
+    const opts=[...document.getElementById('inp-cat').options].map(o=>o.value);
+    if(opts.includes(rec.categoria)){
+      document.getElementById('inp-cat').value=rec.categoria;
+      document.getElementById('inp-cat-other').classList.remove('visible');
+    } else {
+      document.getElementById('inp-cat').value='__otro__';
+      document.getElementById('inp-cat-other').value=rec.categoria;
+      document.getElementById('inp-cat-other').classList.add('visible');
+    }
+  }
+  if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
+  if(rec.fecha_nacimiento)document.getElementById('inp-dob').value=rec.fecha_nacimiento;
+  if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
+  if(rec.temperamento){document.getElementById('inp-temp').value=rec.temperamento;}
+  if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
+  updateAge();
+  toast(`✓ Datos de ${nombre} cargados — completá solo lo que cambió`,'success');
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ── LOEHR GRID ────────────────────────────────────────────────────────────
@@ -600,14 +660,13 @@ const headersEl=document.getElementById("scale-headers");
 const gridEl=document.getElementById("items-grid");
 const sumsEl=document.getElementById("sums-row");
 Object.entries(SCALES).forEach(([key,sc])=>{
-  const d=document.createElement("div"); d.className="scale-head"; d.style.color=sc.color; d.style.borderBottom=`2px solid ${sc.color}`; d.textContent=key;
-  headersEl.appendChild(d);
+  const d=document.createElement("div");d.className="scale-head";d.style.color=sc.color;d.style.borderBottom=`2px solid ${sc.color}`;d.textContent=key;headersEl.appendChild(d);
 });
 for(let row=0;row<6;row++){
-  const rowEl=document.createElement("div"); rowEl.className="items-row";
+  const rowEl=document.createElement("div");rowEl.className="items-row";
   Object.entries(SCALES).forEach(([key,sc])=>{
-    const item=sc.items[row], cell=document.createElement("div");
-    cell.className="item-cell"; cell.style.setProperty("--scale-color",sc.color); cell.id=`cell-${item}`;
+    const item=sc.items[row],cell=document.createElement("div");
+    cell.className="item-cell";cell.style.setProperty("--scale-color",sc.color);cell.id=`cell-${item}`;
     cell.innerHTML=`<span class="item-num">${item}</span><input type="number" min="1" max="5" id="inp-${item}" placeholder="-">`;
     rowEl.appendChild(cell);
     cell.querySelector("input").addEventListener("input",e=>onAnswer(item,e.target.value));
@@ -615,25 +674,25 @@ for(let row=0;row<6;row++){
   gridEl.appendChild(rowEl);
 }
 Object.entries(SCALES).forEach(([key,sc])=>{
-  const d=document.createElement("div"); d.className="sum-cell"; d.style.setProperty("--scale-color",sc.color);
+  const d=document.createElement("div");d.className="sum-cell";d.style.setProperty("--scale-color",sc.color);
   d.innerHTML=`<div class="sum-label">SUMA</div><div class="sum-value" id="sumval-${key}">0</div><div class="sum-max">/30</div>`;
   sumsEl.appendChild(d);
 });
 document.getElementById("inp-date").value=new Date().toISOString().split("T")[0];
 
 function onAnswer(item,val){
-  const n=parseInt(val), cell=document.getElementById(`cell-${item}`);
+  const n=parseInt(val),cell=document.getElementById(`cell-${item}`);
   if(val===""||isNaN(n)||n<1||n>5){answers[item]=0;cell.classList.remove("filled");}
   else{answers[item]=n;cell.classList.add("filled");}
-  updateSums(); updateCounter();
+  updateSums();updateCounter();
 }
 function scaleScore(key){return SCALES[key].items.reduce((s,i)=>s+(answers[i]||0),0);}
 function updateSums(){Object.keys(SCALES).forEach(k=>{document.getElementById(`sumval-${k}`).textContent=scaleScore(k);});}
 function updateCounter(){
   const filled=answers.slice(1).filter(v=>v>0).length;
-  const counter=document.getElementById("counter"), btn=document.getElementById("btn-eval");
-  counter.textContent=`${filled} / 42`; counter.className=filled===42?"counter done":"counter pending";
-  if(filled===42){btn.disabled=false;btn.className="btn-eval ready";btn.textContent="⚡ VER PERFIL COMPLETO";}
+  const counter=document.getElementById("counter"),btn=document.getElementById("btn-eval");
+  counter.textContent=`${filled} / 42`;counter.className=filled===42?"counter done":"counter pending";
+  if(filled===42){btn.disabled=false;btn.className="btn-eval ready";btn.textContent=editandoId?"⚡ VER PERFIL":"⚡ VER PERFIL COMPLETO";}
   else{btn.disabled=true;btn.className="btn-eval";btn.textContent=`Faltan ${42-filled} respuestas`;}
 }
 document.getElementById("btn-eval").addEventListener("click",showResults);
@@ -654,17 +713,14 @@ function showResults(){
     <div class="pdf-chip"><div class="pdf-chip-lbl">Centro de Formación</div><div class="pdf-chip-val">${cft}</div></div>
     <div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Aplicación</div><div class="pdf-chip-val">${formatDate(date)}</div></div>
     <div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Nacimiento</div><div class="pdf-chip-val">${dob?formatDate(dob):'—'}</div></div>
-    <div class="pdf-chip"><div class="pdf-chip-lbl">Edad</div><div class="pdf-chip-val">${age!==null?age+' años':'—'}</div></div>
-  `;
+    <div class="pdf-chip"><div class="pdf-chip-lbl">Edad</div><div class="pdf-chip-val">${age!==null?age+' años':'—'}</div></div>`;
   const ciVal=parseInt(document.getElementById("inp-ci").value);
   if(!isNaN(ciVal)){document.getElementById("pdf-ci").textContent=ciVal;applyTag(document.getElementById("pdf-ci-tag"),ciDiag(ciVal));}
   else{document.getElementById("pdf-ci").textContent="—";document.getElementById("pdf-ci-tag").textContent="No aplicado";}
   const tempKey=document.getElementById("inp-temp").value;
   const tempDesc=document.getElementById("inp-temp-desc").value.trim();
-  if(tempKey){
-    const sub=TEMP_SUBS[tempKey]||'';
-    document.getElementById("pdf-temp-name").innerHTML=`${tempKey} <span style="font-size:13px;color:var(--muted);font-weight:600;">· ${sub}</span>`;
-  } else { document.getElementById("pdf-temp-name").textContent="—"; }
+  if(tempKey){const sub=TEMP_SUBS[tempKey]||'';document.getElementById("pdf-temp-name").innerHTML=`${tempKey} <span style="font-size:13px;color:var(--muted);font-weight:600;">· ${sub}</span>`;}
+  else document.getElementById("pdf-temp-name").textContent="—";
   document.getElementById("pdf-temp-desc").textContent=tempDesc||"—";
   const aeVal=parseInt(document.getElementById("inp-ae").value);
   const arVal=parseInt(document.getElementById("inp-ar").value);
@@ -673,16 +729,16 @@ function showResults(){
   if(!isNaN(arVal)){document.getElementById("pdf-ar").textContent=arVal;applyTag(document.getElementById("pdf-ar-tag"),anxLevel(arVal));}
   else{document.getElementById("pdf-ar").textContent="—";document.getElementById("pdf-ar-tag").textContent="No aplicado";}
   document.getElementById("pdf-anx-desc").textContent=document.getElementById("inp-anx-desc").value.trim()||"—";
-  const compEl=document.getElementById("composites"); compEl.innerHTML="";
+  const compEl=document.getElementById("composites");compEl.innerHTML="";
   COMPOSITES.forEach(c=>{
-    const score=c.scales.reduce((s,k)=>s+scaleScore(k),0), lv=getLevel(score,c.max), pct=(score/c.max)*100;
-    const div=document.createElement("div"); div.className="pdf-comp"; div.style.background=lv.bg; div.style.borderColor=lv.border;
+    const score=c.scales.reduce((s,k)=>s+scaleScore(k),0),lv=getLevel(score,c.max),pct=(score/c.max)*100;
+    const div=document.createElement("div");div.className="pdf-comp";div.style.background=lv.bg;div.style.borderColor=lv.border;
     div.innerHTML=`<div class="pdf-comp-desc" style="color:${lv.text}">${c.desc}</div><div class="pdf-comp-name">${c.label}</div><div class="pdf-comp-score-row"><span class="pdf-comp-score" style="color:${lv.text}">${score}</span><span class="pdf-comp-max">/ ${c.max}</span></div><div class="pdf-comp-bar-bg"><div class="pdf-comp-bar" style="width:${pct}%;background:${lv.border}"></div></div><div class="pdf-comp-level" style="color:${lv.text}">${lv.label}</div>`;
     compEl.appendChild(div);
   });
-  const detEl=document.getElementById("scale-details"); detEl.innerHTML="";
+  const detEl=document.getElementById("scale-details");detEl.innerHTML="";
   Object.entries(SCALES).forEach(([key,sc])=>{
-    const score=scaleScore(key), lv=getLevel(score,30);
+    const score=scaleScore(key),lv=getLevel(score,30);
     detEl.innerHTML+=`<div class="pdf-scale-row"><div class="pdf-scale-key" style="color:${sc.color}">${key}</div><div class="pdf-scale-name">${sc.label}</div><div class="pdf-scale-bar-bg"><div class="pdf-scale-bar" style="width:${(score/30)*100}%;background:${sc.color}"></div></div><div class="pdf-scale-score" style="color:${sc.color}">${score}</div><div class="pdf-scale-level" style="color:${lv.text}">${lv.label}</div></div>`;
   });
   document.getElementById("pdf-conclusion").textContent=document.getElementById("inp-conclusion").value.trim()||"";
@@ -690,16 +746,17 @@ function showResults(){
   document.getElementById("pdf-footer-right").innerHTML=`${formatDate(date)}<br>Federación Nacional Autónoma de Fútbol de Honduras<br>Sistema de Desarrollo del Talento · TDS`;
   perfilGuardado=false;
   const btnS=document.getElementById("btn-save");
-  btnS.className="btn-save"; btnS.disabled=false; btnS.textContent="💾 Guardar en base de datos";
+  btnS.className="btn-save";btnS.disabled=false;
+  btnS.textContent=editandoId?"💾 Actualizar registro":"💾 Guardar";
   document.getElementById("results").classList.remove("hidden");
   document.getElementById("results").scrollIntoView({behavior:"smooth"});
 }
 
-// ── GUARDAR EN SUPABASE ───────────────────────────────────────────────────
+// ── GUARDAR / ACTUALIZAR ──────────────────────────────────────────────────
 async function guardarPerfil(){
-  if(perfilGuardado) return;
+  if(perfilGuardado)return;
   const btn=document.getElementById("btn-save");
-  btn.disabled=true; btn.textContent="Guardando…";
+  btn.disabled=true;btn.textContent=editandoId?"Actualizando…":"Guardando…";
   const catSel=document.getElementById("inp-cat").value;
   const cat=catSel==="__otro__"?(document.getElementById("inp-cat-other").value||"Otro"):catSel;
   const dob=document.getElementById("inp-dob").value;
@@ -708,124 +765,146 @@ async function guardarPerfil(){
   const aeVal=parseInt(document.getElementById("inp-ae").value);
   const arVal=parseInt(document.getElementById("inp-ar").value);
   const tempKey=document.getElementById("inp-temp").value;
-  const ac=scaleScore('AC'), en=scaleScore('EN'), cat2=scaleScore('CAT'),
-        cvi=scaleScore('CVI'), nm=scaleScore('NM'), ep=scaleScore('EP'), act=scaleScore('ACT');
+  const ac=scaleScore('AC'),en=scaleScore('EN'),cat2=scaleScore('CAT'),cvi=scaleScore('CVI'),nm=scaleScore('NM'),ep=scaleScore('EP'),act=scaleScore('ACT');
   const perfil={
-    nombre:        document.getElementById("inp-name").value||"Sin nombre",
-    categoria:     cat,
-    cft:           document.getElementById("inp-cft").value,
-    fecha_nacimiento: dob||null,
-    fecha_aplicacion: date||null,
-    edad:          calcAge(dob,date),
-    ci:            isNaN(ciVal)?null:ciVal,
-    ci_diagnostico: isNaN(ciVal)?null:ciDiag(ciVal).label,
-    temperamento:  tempKey||null,
-    temperamento_resumen: document.getElementById("inp-temp-desc").value.trim()||null,
-    ansiedad_estado:      isNaN(aeVal)?null:aeVal,
-    ansiedad_estado_nivel: isNaN(aeVal)?null:anxLevel(aeVal).label,
-    ansiedad_rasgo:        isNaN(arVal)?null:arVal,
-    ansiedad_rasgo_nivel:  isNaN(arVal)?null:anxLevel(arVal).label,
-    ansiedad_interpretacion: document.getElementById("inp-anx-desc").value.trim()||null,
-    loehr_ac:  ac, loehr_en: en, loehr_cat: cat2, loehr_cvi: cvi,
-    loehr_nm:  nm, loehr_ep: ep, loehr_act: act,
-    loehr_autoconfianza:     ac,
-    loehr_control_emocional: ep+en,
-    loehr_concentracion:     cat2+cvi,
-    loehr_motivacion:        nm,
-    conclusion:       document.getElementById("inp-conclusion").value.trim()||null,
-    recomendaciones:  document.getElementById("inp-recomendaciones").value.trim()||null,
+    nombre:document.getElementById("inp-name").value||"Sin nombre",
+    categoria:cat,cft:document.getElementById("inp-cft").value,
+    fecha_nacimiento:dob||null,fecha_aplicacion:date||null,edad:calcAge(dob,date),
+    ci:isNaN(ciVal)?null:ciVal,ci_diagnostico:isNaN(ciVal)?null:ciDiag(ciVal).label,
+    temperamento:tempKey||null,temperamento_resumen:document.getElementById("inp-temp-desc").value.trim()||null,
+    ansiedad_estado:isNaN(aeVal)?null:aeVal,ansiedad_estado_nivel:isNaN(aeVal)?null:anxLevel(aeVal).label,
+    ansiedad_rasgo:isNaN(arVal)?null:arVal,ansiedad_rasgo_nivel:isNaN(arVal)?null:anxLevel(arVal).label,
+    ansiedad_interpretacion:document.getElementById("inp-anx-desc").value.trim()||null,
+    loehr_ac:ac,loehr_en:en,loehr_cat:cat2,loehr_cvi:cvi,loehr_nm:nm,loehr_ep:ep,loehr_act:act,
+    loehr_autoconfianza:ac,loehr_control_emocional:ep+en,loehr_concentracion:cat2+cvi,loehr_motivacion:nm,
+    conclusion:document.getElementById("inp-conclusion").value.trim()||null,
+    recomendaciones:document.getElementById("inp-recomendaciones").value.trim()||null,
   };
   try{
-    const {error}=await sb.from('perfiles').insert([perfil]);
-    if(error) throw error;
+    let error;
+    if(editandoId){
+      ({error}=await sb.from('perfiles').update(perfil).eq('id',editandoId));
+    } else {
+      ({error}=await sb.from('perfiles').insert([perfil]));
+    }
+    if(error)throw error;
     perfilGuardado=true;
-    btn.className="btn-save saved"; btn.textContent="✓ Guardado";
-    toast(`✓ Perfil de ${perfil.nombre} guardado`, 'success');
+    btn.className="btn-save saved";btn.textContent="✓ "+(editandoId?"Actualizado":"Guardado");
+    toast(`✓ Perfil de ${perfil.nombre} ${editandoId?'actualizado':'guardado'}`,'success');
+    editandoId=null;
+    document.getElementById('edit-banner').classList.remove('visible');
     cargarPerfiles();
-  } catch(err){
-    btn.disabled=false; btn.textContent="💾 Guardar en base de datos";
-    toast("Error al guardar. Revisá tu conexión.", 'error');
-    console.error(err);
+  }catch(err){
+    btn.disabled=false;btn.textContent=editandoId?"💾 Actualizar registro":"💾 Guardar";
+    toast("Error al guardar. Revisá tu conexión.",'error');console.error(err);
   }
 }
 
-// ── PDF DOWNLOAD ──────────────────────────────────────────────────────────
-async function downloadPDF(){
-  const btn=document.getElementById("btn-pdf");
-  btn.disabled=true; btn.textContent="⏳ Generando…";
-  try{
-    const {jsPDF}=window.jspdf;
-    const canvas=await html2canvas(document.getElementById("pdf-capture"),{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false});
-    const imgData=canvas.toDataURL("image/png");
-    const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-    const margin=10,pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight();
-    const imgW=pageW-margin*2, imgH=(canvas.height*imgW)/canvas.width;
-    if(imgH<=pageH-margin*2){
-      pdf.addImage(imgData,"PNG",margin,margin,imgW,imgH);
-    } else {
-      const ratio=canvas.width/imgW; let srcY=0, remaining=imgH;
-      while(remaining>0){
-        const sliceH=Math.min(remaining,pageH-margin*2);
-        const sc=document.createElement("canvas"); sc.width=canvas.width; sc.height=Math.round(sliceH*ratio);
-        sc.getContext("2d").drawImage(canvas,0,Math.round(srcY*ratio),canvas.width,sc.height,0,0,canvas.width,sc.height);
-        pdf.addImage(sc.toDataURL("image/png"),"PNG",margin,margin,imgW,sliceH);
-        remaining-=sliceH; srcY+=sliceH; if(remaining>0) pdf.addPage();
-      }
+// ── EDITAR REGISTRO ───────────────────────────────────────────────────────
+function editarRegistro(id){
+  const rec=perfilesBD.find(p=>p.id===id);
+  if(!rec)return;
+  editandoId=id;
+  document.getElementById('inp-name').value=rec.nombre||'';
+  if(rec.categoria){
+    const opts=[...document.getElementById('inp-cat').options].map(o=>o.value);
+    if(opts.includes(rec.categoria)){document.getElementById('inp-cat').value=rec.categoria;document.getElementById('inp-cat-other').classList.remove('visible');}
+    else{document.getElementById('inp-cat').value='__otro__';document.getElementById('inp-cat-other').value=rec.categoria;document.getElementById('inp-cat-other').classList.add('visible');}
+  }
+  if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
+  if(rec.fecha_nacimiento)document.getElementById('inp-dob').value=rec.fecha_nacimiento;
+  if(rec.fecha_aplicacion)document.getElementById('inp-date').value=rec.fecha_aplicacion;
+  if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
+  if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
+  if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
+  if(rec.ansiedad_estado){document.getElementById('inp-ae').value=rec.ansiedad_estado;updateAnxBadge('ae');}
+  if(rec.ansiedad_rasgo){document.getElementById('inp-ar').value=rec.ansiedad_rasgo;updateAnxBadge('ar');}
+  if(rec.ansiedad_interpretacion)document.getElementById('inp-anx-desc').value=rec.ansiedad_interpretacion;
+  if(rec.conclusion)document.getElementById('inp-conclusion').value=rec.conclusion;
+  if(rec.recomendaciones)document.getElementById('inp-recomendaciones').value=rec.recomendaciones;
+  // Llenar Loehr
+  const loehrMap={AC:'loehr_ac',EN:'loehr_en',CAT:'loehr_cat',CVI:'loehr_cvi',NM:'loehr_nm',EP:'loehr_ep',ACT:'loehr_act'};
+  Object.entries(SCALES).forEach(([key,sc])=>{
+    const val=rec[loehrMap[key]];
+    if(val){
+      const perItem=Math.round(val/6);
+      sc.items.forEach(item=>{
+        answers[item]=perItem;
+        const inp=document.getElementById(`inp-${item}`);
+        const cell=document.getElementById(`cell-${item}`);
+        if(inp){inp.value=perItem;cell.classList.add('filled');}
+      });
     }
-    pdf.save(`Perfil_${(document.getElementById("inp-name").value||"Atleta").replace(/\s+/g,"_")}.pdf`);
-  } catch(err){ alert("No se pudo generar el PDF."); console.error(err); }
-  btn.disabled=false; btn.textContent="📥 Descargar PDF";
+  });
+  updateSums();updateAge();
+  const banner=document.getElementById('edit-banner');
+  document.getElementById('edit-banner-name').textContent=rec.nombre||'registro';
+  banner.classList.add('visible');
+  document.getElementById('results').classList.add('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+  toast(`Modo edición: ${rec.nombre}`,'');
+}
+
+function cancelarEdicion(){
+  editandoId=null;
+  document.getElementById('edit-banner').classList.remove('visible');
+  resetAll();
+}
+
+// ── ELIMINAR REGISTRO ─────────────────────────────────────────────────────
+async function eliminarRegistro(id,nombre){
+  if(!confirm(`¿Eliminar el perfil de ${nombre}? Esta acción no se puede deshacer.`))return;
+  const{error}=await sb.from('perfiles').delete().eq('id',id);
+  if(error){toast('Error al eliminar','error');return;}
+  toast(`Perfil de ${nombre} eliminado`,'');
+  cargarPerfiles();
 }
 
 // ── CARGAR PERFILES ───────────────────────────────────────────────────────
 async function cargarPerfiles(){
   try{
-    const {data,error}=await sb.from('perfiles').select('*').order('created_at',{ascending:false});
-    if(error) throw error;
+    const{data,error}=await sb.from('perfiles').select('*').order('created_at',{ascending:false});
+    if(error)throw error;
     perfilesBD=data||[];
     renderTabla(perfilesBD);
     renderStats(perfilesBD);
-  } catch(err){
-    document.getElementById("db-tbody").innerHTML=`<tr><td colspan="9" class="db-empty">Error al cargar datos.</td></tr>`;
+    poblarDropdownJugadores(perfilesBD);
+  }catch(err){
+    document.getElementById("db-tbody").innerHTML=`<tr><td colspan="10" class="db-empty">Error al cargar datos.</td></tr>`;
     console.error(err);
   }
 }
 
 function renderTabla(data){
   const tbody=document.getElementById("db-tbody");
-  if(!data||data.length===0){
-    tbody.innerHTML=`<tr><td colspan="9" class="db-empty">No hay perfiles guardados aún.</td></tr>`;
-    return;
-  }
-  tbody.innerHTML=data.map(p=>{
-    const lv=lv60(p.loehr_control_emocional), lc=lv60(p.loehr_concentracion);
-    return`<tr>
-      <td><strong>${p.nombre||'—'}</strong></td>
-      <td>${p.categoria||'—'}</td>
-      <td>${p.cft||'—'}</td>
-      <td>${p.temperamento||'—'}</td>
-      <td style="color:${scoreColor30(p.loehr_autoconfianza)};font-weight:800;">${p.loehr_autoconfianza??'—'}<span style="color:#aaa;font-weight:500">/30</span></td>
-      <td style="color:${lv.color};font-weight:800;">${p.loehr_control_emocional??'—'}<span style="color:#aaa;font-weight:500">/60</span></td>
-      <td style="color:${lc.color};font-weight:800;">${p.loehr_concentracion??'—'}<span style="color:#aaa;font-weight:500">/60</span></td>
-      <td style="color:${scoreColor30(p.loehr_motivacion)};font-weight:800;">${p.loehr_motivacion??'—'}<span style="color:#aaa;font-weight:500">/30</span></td>
-      <td style="color:var(--muted)">${p.fecha_aplicacion?formatDate(p.fecha_aplicacion):'—'}</td>
-    </tr>`;
-  }).join('');
+  if(!data||data.length===0){tbody.innerHTML=`<tr><td colspan="10" class="db-empty">No hay perfiles guardados aún.</td></tr>`;return;}
+  tbody.innerHTML=data.map(p=>`<tr>
+    <td><strong>${p.nombre||'—'}</strong></td>
+    <td>${p.categoria||'—'}</td>
+    <td>${p.cft||'—'}</td>
+    <td>${p.temperamento||'—'}</td>
+    <td style="color:${scoreColor30(p.loehr_autoconfianza)};font-weight:800;">${p.loehr_autoconfianza??'—'}<span style="color:#aaa;font-weight:500">/30</span></td>
+    <td style="color:${lv60color(p.loehr_control_emocional)};font-weight:800;">${p.loehr_control_emocional??'—'}<span style="color:#aaa;font-weight:500">/60</span></td>
+    <td style="color:${lv60color(p.loehr_concentracion)};font-weight:800;">${p.loehr_concentracion??'—'}<span style="color:#aaa;font-weight:500">/60</span></td>
+    <td style="color:${scoreColor30(p.loehr_motivacion)};font-weight:800;">${p.loehr_motivacion??'—'}<span style="color:#aaa;font-weight:500">/30</span></td>
+    <td style="color:var(--muted)">${p.fecha_aplicacion?formatDate(p.fecha_aplicacion):'—'}</td>
+    <td style="display:flex;gap:6px;">
+      <button class="btn-edit-row" onclick="editarRegistro('${p.id}')">✏️ Editar</button>
+      <button class="btn-delete-row" onclick="eliminarRegistro('${p.id}','${(p.nombre||'').replace(/'/g,"\\'")}')">🗑</button>
+    </td>
+  </tr>`).join('');
 }
-
-function scoreColor30(v){ if(v==null)return'#aaa'; if(v>=26)return'#2e7d32'; if(v>=20)return'#e65100'; return'#b71c1c'; }
-function lv60(v){ if(v==null)return{color:'#aaa'}; if(v>=50)return{color:'#2e7d32'}; if(v>=40)return{color:'#e65100'}; return{color:'#b71c1c'}; }
 
 function renderStats(data){
   document.getElementById("stat-total").textContent=data.length||0;
+  document.getElementById("stat-jugadores").textContent=new Set(data.map(p=>p.nombre).filter(Boolean)).size||0;
   document.getElementById("stat-centros").textContent=new Set(data.map(p=>p.cft).filter(Boolean)).size||0;
-  document.getElementById("stat-cat").textContent=new Set(data.map(p=>p.categoria).filter(Boolean)).size||0;
   const vals=data.map(p=>p.loehr_autoconfianza).filter(v=>v!=null);
   document.getElementById("stat-avg").textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):'—';
 }
 
 // ── QUERY IA ──────────────────────────────────────────────────────────────
-function setQuery(txt){ document.getElementById('query-input').value=txt; document.getElementById('query-input').focus(); }
+function setQuery(txt){document.getElementById('query-input').value=txt;document.getElementById('query-input').focus();}
 
 function renderMd(t){
   return t
@@ -834,90 +913,101 @@ function renderMd(t){
     .replace(/^### (.+)$/gm,'<br><strong style="font-size:14px;color:var(--ink)">$1</strong>')
     .replace(/^## (.+)$/gm,'<br><strong style="font-size:15px;color:var(--ink)">$1</strong>')
     .replace(/^# (.+)$/gm,'<strong style="font-size:16px;color:var(--blue)">$1</strong>')
-    .replace(/^\|- .+/gm,'')
     .replace(/^- (.+)$/gm,'&nbsp;&nbsp;• $1')
     .replace(/\n/g,'<br>');
 }
+
 async function consultarIA(){
   const pregunta=document.getElementById('query-input').value.trim();
-  if(!pregunta) return;
-  if(perfilesBD.length===0){ toast('Primero cargá los perfiles con el botón "Actualizar"','error'); return; }
+  if(!pregunta)return;
+  if(perfilesBD.length===0){toast('Primero cargá los perfiles','error');return;}
   const btn=document.getElementById('btn-query');
-  btn.disabled=true; btn.textContent='Analizando…';
-  const respDiv=document.getElementById('query-response');
-  const respText=document.getElementById('query-response-text');
+  btn.disabled=true;btn.textContent='Analizando…';
+  const respDiv=document.getElementById('query-response'),respText=document.getElementById('query-response-text');
   respDiv.classList.remove('hidden');
-  respText.className='query-response-text thinking-dots';
-  respText.textContent='Analizando datos';
-
+  respText.className='query-response-text thinking-dots';respText.textContent='Analizando datos';
   const resumenDatos=JSON.stringify(perfilesBD.map(p=>({
-    nombre:p.nombre, categoria:p.categoria, cft:p.cft, edad:p.edad,
-    ci:p.ci, ci_diagnostico:p.ci_diagnostico,
-    temperamento:p.temperamento,
-    ansiedad_estado:p.ansiedad_estado, ansiedad_estado_nivel:p.ansiedad_estado_nivel,
-    ansiedad_rasgo:p.ansiedad_rasgo, ansiedad_rasgo_nivel:p.ansiedad_rasgo_nivel,
-    loehr_ac:p.loehr_ac, loehr_en:p.loehr_en, loehr_cat:p.loehr_cat,
-    loehr_cvi:p.loehr_cvi, loehr_nm:p.loehr_nm, loehr_ep:p.loehr_ep, loehr_act:p.loehr_act,
-    loehr_autoconfianza:p.loehr_autoconfianza, loehr_control_emocional:p.loehr_control_emocional,
-    loehr_concentracion:p.loehr_concentracion, loehr_motivacion:p.loehr_motivacion,
+    nombre:p.nombre,categoria:p.categoria,cft:p.cft,edad:p.edad,
+    ci:p.ci,temperamento:p.temperamento,
+    ansiedad_estado:p.ansiedad_estado,ansiedad_estado_nivel:p.ansiedad_estado_nivel,
+    ansiedad_rasgo:p.ansiedad_rasgo,ansiedad_rasgo_nivel:p.ansiedad_rasgo_nivel,
+    loehr_ac:p.loehr_ac,loehr_en:p.loehr_en,loehr_cat:p.loehr_cat,loehr_cvi:p.loehr_cvi,
+    loehr_nm:p.loehr_nm,loehr_ep:p.loehr_ep,loehr_act:p.loehr_act,
+    loehr_autoconfianza:p.loehr_autoconfianza,loehr_control_emocional:p.loehr_control_emocional,
+    loehr_concentracion:p.loehr_concentracion,loehr_motivacion:p.loehr_motivacion,
+    fecha_aplicacion:p.fecha_aplicacion,
   })));
-
-  const prompt=`Sos una psicóloga del deporte especialista en análisis de rendimiento. Tenés acceso a la base de datos de perfiles psicológicos del programa TDS (Talent Development Scheme) de la Federación de Fútbol de Honduras.
-
-Los datos de los jugadores son:
-${resumenDatos}
-
-Escalas Loehr (máximo /30 cada una): AC=Autoconfianza, EN=Energía Negativa, CAT=Control Atencional, CVI=Control Visualización, NM=Nivel Motivacional, EP=Energía Positiva, ACT=Control de Actitudes.
-Compuestos: Autoconfianza (/30), Control Emocional (/60 = EP+EN), Concentración (/60 = CAT+CVI), Motivación (/30).
-Niveles: ≥87% = Habilidad Excelente, 67–86% = Mejorar y Perfeccionar, <67% = Atención Especial.
-
-Respondé esta pregunta de forma clara, concisa y útil para el trabajo con entrenadores y jugadores. Usá los datos reales. Si hay pocos datos, indicalo. Respondé en español.
-
-Pregunta: ${pregunta}`;
-
+  const prompt=`Sos una psicóloga del deporte especialista en análisis de rendimiento del programa TDS de la Federación de Fútbol de Honduras.\n\nDatos de jugadores:\n${resumenDatos}\n\nEscalas Loehr (/30): AC=Autoconfianza, EN=Energía Negativa, CAT=Control Atencional, CVI=Control Visualización, NM=Nivel Motivacional, EP=Energía Positiva, ACT=Control de Actitudes.\nCompuestos: Autoconfianza(/30), Control Emocional(/60=EP+EN), Concentración(/60=CAT+CVI), Motivación(/30).\nNiveles: ≥87%=Habilidad Excelente, 67-86%=Mejorar y Perfeccionar, <67%=Atención Especial.\n\nRespondé de forma clara y útil en español.\n\nPregunta: ${pregunta}`;
   try{
-    const response=await fetch("/api/consulta",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt})
-    });
+    const response=await fetch("/api/consulta",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
     const data=await response.json();
     const texto=data.content?.[0]?.text||"No se pudo obtener respuesta.";
     respText.className='query-response-text';
     respText.innerHTML=renderMd(texto);
-  } catch(err){
+  }catch(err){
     respText.className='query-response-text';
-    respText.textContent="Error al conectar con la IA. Verificá tu conexión.";
-    console.error(err);
+    respText.textContent="Error al conectar con la IA.";console.error(err);
   }
-  btn.disabled=false; btn.textContent='Consultar';
+  btn.disabled=false;btn.textContent='Consultar';
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────
+async function downloadPDF(){
+  const btn=document.getElementById("btn-pdf");
+  btn.disabled=true;btn.textContent="⏳ Generando…";
+  try{
+    const{jsPDF}=window.jspdf;
+    const canvas=await html2canvas(document.getElementById("pdf-capture"),{scale:2,backgroundColor:"#ffffff",useCORS:true,logging:false});
+    const imgData=canvas.toDataURL("image/png");
+    const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    const margin=10,pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight();
+    const imgW=pageW-margin*2,imgH=(canvas.height*imgW)/canvas.width;
+    if(imgH<=pageH-margin*2){pdf.addImage(imgData,"PNG",margin,margin,imgW,imgH);}
+    else{
+      const ratio=canvas.width/imgW;let srcY=0,remaining=imgH;
+      while(remaining>0){
+        const sliceH=Math.min(remaining,pageH-margin*2);
+        const sc=document.createElement("canvas");sc.width=canvas.width;sc.height=Math.round(sliceH*ratio);
+        sc.getContext("2d").drawImage(canvas,0,Math.round(srcY*ratio),canvas.width,sc.height,0,0,canvas.width,sc.height);
+        pdf.addImage(sc.toDataURL("image/png"),"PNG",margin,margin,imgW,sliceH);
+        remaining-=sliceH;srcY+=sliceH;if(remaining>0)pdf.addPage();
+      }
+    }
+    pdf.save(`Perfil_${(document.getElementById("inp-name").value||"Atleta").replace(/\s+/g,"_")}.pdf`);
+  }catch(err){alert("No se pudo generar el PDF.");console.error(err);}
+  btn.disabled=false;btn.textContent="📥 Descargar PDF";
 }
 
 // ── RESET ─────────────────────────────────────────────────────────────────
 function resetAll(){
   for(let i=1;i<=42;i++){
     answers[i]=0;
-    const inp=document.getElementById(`inp-${i}`); if(inp) inp.value="";
-    const cell=document.getElementById(`cell-${i}`); if(cell) cell.classList.remove("filled");
+    const inp=document.getElementById(`inp-${i}`);if(inp)inp.value="";
+    const cell=document.getElementById(`cell-${i}`);if(cell)cell.classList.remove("filled");
   }
   ["inp-name","inp-cat-other","inp-ci","inp-temp-desc","inp-ae","inp-ar","inp-anx-desc","inp-conclusion","inp-recomendaciones"]
-    .forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
   document.getElementById("inp-cat").value="Sub-15 Masculino";
   document.getElementById("inp-cft").value="Tegucigalpa";
   document.getElementById("inp-temp").value="";
   document.getElementById("inp-dob").value="";
   document.getElementById("inp-date").value=new Date().toISOString().split("T")[0];
   document.getElementById("edad-calc").textContent="—";
-  ["ci-badge","ae-badge","ar-badge"].forEach(id=>{ document.getElementById(id).style.display="none"; });
+  document.getElementById("sel-reeval").value="";
+  ["ci-badge","ae-badge","ar-badge"].forEach(id=>{document.getElementById(id).style.display="none";});
   document.getElementById("inp-cat-other").classList.remove("visible");
-  perfilGuardado=false;
-  updateSums(); updateCounter();
+  document.getElementById("edit-banner").classList.remove("visible");
+  editandoId=null;perfilGuardado=false;
+  updateSums();updateCounter();
   document.getElementById("results").classList.add("hidden");
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-cargarPerfiles();
+if(sessionStorage.getItem('tds-auth')==='ok'){
+  document.getElementById('auth-overlay').style.display='none';
+  cargarPerfiles();
+}
 </script>
 </body>
 </html>
