@@ -779,6 +779,8 @@ function showResults(){
 // GUARDAR
 async function guardarPerfil(){
   if(perfilGuardado)return;
+  // Refresh PDF view with current form values before saving
+  showResults();
   var btn=document.getElementById('btn-save');
   btn.disabled=true;btn.textContent=editandoId?'Actualizando…':'Guardando…';
   var catSel=document.getElementById('inp-cat').value;
