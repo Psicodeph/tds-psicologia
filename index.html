@@ -470,7 +470,7 @@
     <div class="db-table-wrap">
       <table class="db-table">
         <thead><tr>
-          <th>Nombre</th><th>Categoría</th><th>CFT</th><th>Temperamento</th>
+          <th>Nombre</th><th>Fecha Nac.</th><th>CFT</th><th>Temperamento</th>
           <th>Autoconf.</th><th>C. Emocional</th><th>Concentración</th><th>Motivación</th>
           <th>Fecha</th><th>Acciones</th>
         </tr></thead>
@@ -701,10 +701,7 @@ function onAnswer(item,val){
   updateSums();updateCounter();
 }
 function scaleScore(key){
-  const manual=parseInt(document.getElementById(`sumval-${key}`).value);
-  const fromItems=SCALES[key].items.reduce((s,i)=>s+(answers[i]||0),0);
-  // If items are filled use calculated value, otherwise use manual input
-  return fromItems>0?fromItems:(!isNaN(manual)?manual:0);
+  return parseInt(document.getElementById(`sumval-${key}`).value)||0;
 }
 function allSumsManual(){
   return Object.keys(SCALES).every(k=>{
@@ -713,7 +710,12 @@ function allSumsManual(){
   });
 }
 function onSumInput(){updateCounter();}
-function updateSums(){Object.keys(SCALES).forEach(k=>{document.getElementById(`sumval-${k}`).value=scaleScore(k);});}
+function updateSums(){
+  Object.keys(SCALES).forEach(k=>{
+    const fromItems=SCALES[k].items.reduce((s,i)=>s+(answers[i]||0),0);
+    if(fromItems>0) document.getElementById(`sumval-${k}`).value=fromItems;
+  });
+}
 function updateCounter(){
   const filled=answers.slice(1).filter(v=>v>0).length;
   const sumsOk=allSumsManual();
@@ -910,8 +912,8 @@ function renderTabla(data){
   const tbody=document.getElementById("db-tbody");
   if(!data||data.length===0){tbody.innerHTML=`<tr><td colspan="10" class="db-empty">No hay perfiles guardados aún.</td></tr>`;return;}
   tbody.innerHTML=data.map(p=>`<tr>
-    <td><strong>${p.nombre||'—'}</strong></td>
-    <td>${p.categoria||'—'}</td>
+    <td><strong style="color:var(--blue);cursor:pointer;text-decoration:underline;" onclick="verPerfil('${p.id}')">${p.nombre||'—'}</strong></td>
+    <td>${p.fecha_nacimiento?formatDate(p.fecha_nacimiento):'—'}</td>
     <td>${p.cft||'—'}</td>
     <td>${p.temperamento||'—'}</td>
     <td style="color:${scoreColor30(p.loehr_autoconfianza)};font-weight:800;">${p.loehr_autoconfianza??'—'}<span style="color:#aaa;font-weight:500">/30</span></td>
