@@ -77,6 +77,9 @@
   .sum-label{font-size:9px;color:var(--muted);margin-bottom:2px;font-weight:700;letter-spacing:1px;}
   .sum-value{font-size:22px;font-weight:900;color:var(--scale-color);}
   .sum-max{font-size:9px;color:var(--muted);font-weight:600;}
+  input.sum-value{width:100%;background:transparent;border:none;outline:none;font-size:22px;font-weight:900;color:var(--scale-color);text-align:center;-moz-appearance:textfield;font-family:inherit;padding:0;}
+  input.sum-value::-webkit-outer-spin-button,input.sum-value::-webkit-inner-spin-button{-webkit-appearance:none;}
+  input.sum-value:focus{background:rgba(255,255,255,.15);border-radius:4px;}
   .counter{font-size:14px;font-weight:800;}
   .counter.done{color:var(--green);}
   .counter.pending{color:var(--muted);}
@@ -358,10 +361,11 @@
 
   <!-- 3. LOEHR -->
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <div class="card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Loehr IPRD</div>
       <div class="counter pending" id="counter">0 / 42</div>
     </div>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px;">💡 Podés llenar los 42 ítems <strong>o</strong> escribir directamente las sumas por escala en las celdas de abajo.</div>
     <div class="scale-headers" id="scale-headers"></div>
     <div id="items-grid"></div>
     <div class="sums-row" id="sums-row"></div>
@@ -685,7 +689,7 @@ for(let row=0;row<6;row++){
 }
 Object.entries(SCALES).forEach(([key,sc])=>{
   const d=document.createElement("div");d.className="sum-cell";d.style.setProperty("--scale-color",sc.color);
-  d.innerHTML=`<div class="sum-label">SUMA</div><div class="sum-value" id="sumval-${key}">0</div><div class="sum-max">/30</div>`;
+  d.innerHTML=`<div class="sum-label">SUMA</div><input type="number" class="sum-value" id="sumval-${key}" min="0" max="30" placeholder="0" oninput="onSumInput()"><div class="sum-max">/30</div>`;
   sumsEl.appendChild(d);
 });
 document.getElementById("inp-date").value=new Date().toISOString().split("T")[0];
@@ -696,14 +700,30 @@ function onAnswer(item,val){
   else{answers[item]=n;cell.classList.add("filled");}
   updateSums();updateCounter();
 }
-function scaleScore(key){return SCALES[key].items.reduce((s,i)=>s+(answers[i]||0),0);}
-function updateSums(){Object.keys(SCALES).forEach(k=>{document.getElementById(`sumval-${k}`).textContent=scaleScore(k);});}
+function scaleScore(key){
+  const manual=parseInt(document.getElementById(`sumval-${key}`).value);
+  const fromItems=SCALES[key].items.reduce((s,i)=>s+(answers[i]||0),0);
+  // If items are filled use calculated value, otherwise use manual input
+  return fromItems>0?fromItems:(!isNaN(manual)?manual:0);
+}
+function allSumsManual(){
+  return Object.keys(SCALES).every(k=>{
+    const v=parseInt(document.getElementById(`sumval-${k}`).value);
+    return !isNaN(v)&&v>0;
+  });
+}
+function onSumInput(){updateCounter();}
+function updateSums(){Object.keys(SCALES).forEach(k=>{document.getElementById(`sumval-${k}`).value=scaleScore(k);});}
 function updateCounter(){
   const filled=answers.slice(1).filter(v=>v>0).length;
+  const sumsOk=allSumsManual();
+  const ready=filled===42||sumsOk;
   const counter=document.getElementById("counter"),btn=document.getElementById("btn-eval");
-  counter.textContent=`${filled} / 42`;counter.className=filled===42?"counter done":"counter pending";
-  if(filled===42){btn.disabled=false;btn.className="btn-eval ready";btn.textContent=editandoId?"⚡ VER PERFIL":"⚡ VER PERFIL COMPLETO";}
-  else{btn.disabled=true;btn.className="btn-eval";btn.textContent=`Faltan ${42-filled} respuestas`;}
+  if(filled===42){counter.textContent="42 / 42";counter.className="counter done";}
+  else if(sumsOk){counter.textContent="✓ Sumas ingresadas";counter.className="counter done";}
+  else{counter.textContent=`${filled} / 42`;counter.className="counter pending";}
+  if(ready){btn.disabled=false;btn.className="btn-eval ready";btn.textContent=editandoId?"⚡ VER PERFIL":"⚡ VER PERFIL COMPLETO";}
+  else{btn.disabled=true;btn.className="btn-eval";btn.textContent=filled>0?`Faltan ${42-filled} respuestas`:"Completá los ítems o ingresá las sumas";}
 }
 document.getElementById("btn-eval").addEventListener("click",showResults);
 
