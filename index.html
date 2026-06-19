@@ -472,7 +472,7 @@
         <thead><tr>
           <th>Nombre</th><th>Fecha Nac.</th><th>CFT</th><th>Temperamento</th>
           <th>Autoconf.</th><th>C. Emocional</th><th>Concentración</th><th>Motivación</th>
-          <th>Fecha</th><th>Acciones</th>
+          <th>Acciones</th>
         </tr></thead>
         <tbody id="db-tbody"><tr><td colspan="10" class="db-empty">Cargando…</td></tr></tbody>
       </table>
@@ -920,7 +920,6 @@ function renderTabla(data){
     <td style="color:${lv60color(p.loehr_control_emocional)};font-weight:800;">${p.loehr_control_emocional??'—'}<span style="color:#aaa;font-weight:500">/60</span></td>
     <td style="color:${lv60color(p.loehr_concentracion)};font-weight:800;">${p.loehr_concentracion??'—'}<span style="color:#aaa;font-weight:500">/60</span></td>
     <td style="color:${scoreColor30(p.loehr_motivacion)};font-weight:800;">${p.loehr_motivacion??'—'}<span style="color:#aaa;font-weight:500">/30</span></td>
-    <td style="color:var(--muted)">${p.fecha_aplicacion?formatDate(p.fecha_aplicacion):'—'}</td>
     <td style="display:flex;gap:6px;">
       <button class="btn-edit-row" onclick="editarRegistro('${p.id}')">✏️ Editar</button>
       <button class="btn-delete-row" onclick="eliminarRegistro('${p.id}','${(p.nombre||'').replace(/'/g,"\\'")}')">🗑</button>
