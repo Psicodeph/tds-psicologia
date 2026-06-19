@@ -713,8 +713,10 @@ function showResults(){
   var cft=document.getElementById('inp-cft').value;
   var dob=document.getElementById('inp-dob').value;
   var date=document.getElementById('inp-date').value;
-  var ageEval=calcAge(dob,date);
-  var ageActual=calcAge(dob,null);
+  var edadManual=parseInt(document.getElementById('edad-calc').value);
+  var edadFallback=(!isNaN(edadManual)&&edadManual>0)?edadManual:null;
+  var ageEval=calcAge(dob,date)||edadFallback;
+  var ageActual=calcAge(dob,null)||edadFallback;
   document.getElementById('results-title').textContent='Perfil · '+name+' · '+cat;
   document.getElementById('pdf-header-info').innerHTML=
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Nombre</div><div class="pdf-chip-val">'+name+'</div></div>'+
