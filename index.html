@@ -301,7 +301,11 @@
     <div class="fields" style="margin-top:14px;">
       <div class="field"><label>Fecha de Nacimiento</label><input type="date" id="inp-dob" oninput="updateAge()"></div>
       <div class="field"><label>Fecha de Aplicación</label><input type="date" id="inp-date" oninput="updateAge()"></div>
-      <div class="field" style="flex:0 1 140px;"><label>Edad calculada</label><div class="age-display" id="edad-calc">—</div></div>
+      <div class="field" style="flex:0 1 140px;">
+        <label>Edad</label>
+        <input type="number" id="edad-calc" min="1" max="99" placeholder="—" style="font-weight:800;color:var(--blue);">
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;font-weight:600;">Auto-calculada · editable</div>
+      </div>
     </div>
   </div>
 
@@ -567,11 +571,17 @@ function anxLevel(v){
 }
 function calcAge(dob,app){
   if(!dob)return null;
-  const base=app?new Date(app):new Date(),birth=new Date(dob);
+  const parseLocal=s=>{
+    if(!s)return new Date();
+    const[y,m,d]=s.substring(0,10).split('-').map(Number);
+    return new Date(y,m-1,d);
+  };
+  const base=parseLocal(app||null),birth=parseLocal(dob);
   let age=base.getFullYear()-birth.getFullYear();
   const m=base.getMonth()-birth.getMonth();
   if(m<0||(m===0&&base.getDate()<birth.getDate()))age--;
-  return age>=0?age:null;
+  if(age<0||age>100)return null;
+  return age;
 }
 function formatDate(val){
   if(!val)return'—';
@@ -591,7 +601,7 @@ function lv60color(v){if(v==null)return'#aaa';if(v>=50)return'#2e7d32';if(v>=40)
 // ── FORM REACTIVITY ───────────────────────────────────────────────────────
 function updateAge(){
   const age=calcAge(document.getElementById('inp-dob').value,document.getElementById('inp-date').value);
-  document.getElementById('edad-calc').textContent=age!==null?`${age} años`:'—';
+  if(age!==null) document.getElementById('edad-calc').value=age;
 }
 function toggleOther(){
   document.getElementById('inp-cat-other').classList.toggle('visible',document.getElementById('inp-cat').value==='__otro__');
@@ -769,7 +779,7 @@ async function guardarPerfil(){
   const perfil={
     nombre:document.getElementById("inp-name").value||"Sin nombre",
     categoria:cat,cft:document.getElementById("inp-cft").value,
-    fecha_nacimiento:dob||null,fecha_aplicacion:date||null,edad:calcAge(dob,date),
+    fecha_nacimiento:dob||null,fecha_aplicacion:date||null,edad:parseInt(document.getElementById('edad-calc').value)||calcAge(dob,date)||null,
     ci:isNaN(ciVal)?null:ciVal,ci_diagnostico:isNaN(ciVal)?null:ciDiag(ciVal).label,
     temperamento:tempKey||null,temperamento_resumen:document.getElementById("inp-temp-desc").value.trim()||null,
     ansiedad_estado:isNaN(aeVal)?null:aeVal,ansiedad_estado_nivel:isNaN(aeVal)?null:anxLevel(aeVal).label,
@@ -814,6 +824,7 @@ function editarRegistro(id){
   if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
   if(rec.fecha_nacimiento)document.getElementById('inp-dob').value=rec.fecha_nacimiento;
   if(rec.fecha_aplicacion)document.getElementById('inp-date').value=rec.fecha_aplicacion;
+  if(rec.edad)document.getElementById('edad-calc').value=rec.edad;
   if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
   if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
   if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
@@ -993,6 +1004,7 @@ function resetAll(){
   document.getElementById("inp-dob").value="";
   document.getElementById("inp-date").value=new Date().toISOString().split("T")[0];
   document.getElementById("edad-calc").textContent="—";
+  document.getElementById('edad-calc').value='';
   document.getElementById("sel-reeval").value="";
   ["ci-badge","ae-badge","ar-badge"].forEach(id=>{document.getElementById(id).style.display="none";});
   document.getElementById("inp-cat-other").classList.remove("visible");
