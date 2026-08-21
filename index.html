@@ -1158,3 +1158,197 @@ async function downloadPDF(){
   }
   btn.disabled=false;btn.textContent='📥 Descargar PDF';
 }
+
+// ── RESET ─────────────────────────────────────────────────────────────────
+function resetAll(){
+  for(var i=1;i<=42;i++){
+    answers[i]=0;
+    var inp=document.getElementById('inp-'+i);if(inp)inp.value='';
+    var cell=document.getElementById('cell-'+i);if(cell)cell.classList.remove('filled');
+  }
+  ['inp-name','inp-cat-other','inp-ci','inp-temp-desc','inp-ae','inp-ar','inp-anx-desc',
+   'inp-loehr-interp','inp-conclusion','inp-recomendaciones']
+    .forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('inp-cat').value='Sub-15 Masculino';
+  document.getElementById('inp-cft').value='Tegucigalpa';
+  document.getElementById('inp-temp').value='';
+  document.getElementById('inp-dob').value='';
+  document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('edad-calc').value='';
+  document.getElementById('sel-reeval').value='';
+  ['ci-badge','ae-badge','ar-badge'].forEach(function(id){document.getElementById(id).style.display='none';});
+  document.getElementById('inp-cat-other').classList.remove('visible');
+  document.getElementById('edit-banner').classList.remove('visible');
+  if(document.getElementById('ci-invalida'))document.getElementById('ci-invalida').checked=false;
+  if(document.getElementById('temp-invalida'))document.getElementById('temp-invalida').checked=false;
+  Object.keys(SCALES).forEach(function(k){var el=document.getElementById('sumval-'+k);if(el)el.value='';});
+  editandoId=null;perfilGuardado=false;
+  clearDraft();
+  updateCounter();
+  document.getElementById('results').classList.add('hidden');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── AUTO-SAVE ─────────────────────────────────────────────────────────────
+var autosaveTimer=null;
+var DRAFT_KEY='tds_draft_v1';
+var lastAIResponse='';
+
+function g(id){return document.getElementById(id);}
+
+function autoSaveForm(){
+  var draft={
+    nombre:g('inp-name')?g('inp-name').value:'',
+    cat:g('inp-cat')?g('inp-cat').value:'',
+    catOther:g('inp-cat-other')?g('inp-cat-other').value:'',
+    cft:g('inp-cft')?g('inp-cft').value:'',
+    dob:g('inp-dob')?g('inp-dob').value:'',
+    date:g('inp-date')?g('inp-date').value:'',
+    edad:g('edad-calc')?g('edad-calc').value:'',
+    ci:g('inp-ci')?g('inp-ci').value:'',
+    ciInvalida:g('ci-invalida')?g('ci-invalida').checked:false,
+    temp:g('inp-temp')?g('inp-temp').value:'',
+    tempInvalida:g('temp-invalida')?g('temp-invalida').checked:false,
+    tempDesc:g('inp-temp-desc')?g('inp-temp-desc').value:'',
+    ae:g('inp-ae')?g('inp-ae').value:'',
+    ar:g('inp-ar')?g('inp-ar').value:'',
+    anxDesc:g('inp-anx-desc')?g('inp-anx-desc').value:'',
+    loehrInterp:g('inp-loehr-interp')?g('inp-loehr-interp').value:'',
+    conclusion:g('inp-conclusion')?g('inp-conclusion').value:'',
+    recomendaciones:g('inp-recomendaciones')?g('inp-recomendaciones').value:'',
+    sums:{},
+    answers:answers.slice()
+  };
+  Object.keys(SCALES).forEach(function(k){
+    var el=g('sumval-'+k);
+    draft.sums[k]=el?el.value:'';
+  });
+  try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));showAutosaveBar();}
+  catch(e){console.log('Autosave error',e);}
+}
+
+function showAutosaveBar(){
+  var bar=g('autosave-bar');
+  if(!bar)return;
+  bar.classList.add('show');
+  clearTimeout(autosaveTimer);
+  autosaveTimer=setTimeout(function(){bar.classList.remove('show');},2500);
+}
+
+function restoreDraft(){
+  try{
+    var raw=localStorage.getItem(DRAFT_KEY);
+    if(!raw)return;
+    var d=JSON.parse(raw);
+    if(!d.nombre&&!d.ci&&!d.ae)return; // empty draft
+    if(d.nombre&&g('inp-name'))g('inp-name').value=d.nombre;
+    if(d.cat&&g('inp-cat'))g('inp-cat').value=d.cat;
+    if(d.catOther&&g('inp-cat-other')){g('inp-cat-other').value=d.catOther;if(d.cat==='__otro__')g('inp-cat-other').classList.add('visible');}
+    if(d.cft&&g('inp-cft'))g('inp-cft').value=d.cft;
+    if(d.dob&&g('inp-dob'))g('inp-dob').value=d.dob;
+    if(d.date&&g('inp-date'))g('inp-date').value=d.date;
+    if(d.edad&&g('edad-calc'))g('edad-calc').value=d.edad;
+    if(d.ci&&g('inp-ci'))g('inp-ci').value=d.ci;
+    if(d.ciInvalida&&g('ci-invalida'))g('ci-invalida').checked=d.ciInvalida;
+    if(d.temp&&g('inp-temp'))g('inp-temp').value=d.temp;
+    if(d.tempInvalida&&g('temp-invalida'))g('temp-invalida').checked=d.tempInvalida;
+    if(d.tempDesc&&g('inp-temp-desc'))g('inp-temp-desc').value=d.tempDesc;
+    if(d.ae&&g('inp-ae'))g('inp-ae').value=d.ae;
+    if(d.ar&&g('inp-ar'))g('inp-ar').value=d.ar;
+    if(d.anxDesc&&g('inp-anx-desc'))g('inp-anx-desc').value=d.anxDesc;
+    if(d.loehrInterp&&g('inp-loehr-interp'))g('inp-loehr-interp').value=d.loehrInterp;
+    if(d.conclusion&&g('inp-conclusion'))g('inp-conclusion').value=d.conclusion;
+    if(d.recomendaciones&&g('inp-recomendaciones'))g('inp-recomendaciones').value=d.recomendaciones;
+    if(d.sums)Object.keys(SCALES).forEach(function(k){
+      var el=g('sumval-'+k);
+      if(el&&d.sums[k])el.value=d.sums[k];
+    });
+    if(d.answers)d.answers.forEach(function(v,i){
+      if(i>0&&v>0){
+        answers[i]=v;
+        var inp=g('inp-'+i),cell=g('cell-'+i);
+        if(inp)inp.value=v;
+        if(cell)cell.classList.add('filled');
+      }
+    });
+    updateCiBadge();updateAnxBadge('ae');updateAnxBadge('ar');updateSums();updateCounter();
+    toast('Borrador restaurado — podés continuar donde lo dejaste','success');
+  }catch(e){console.log('Restore error',e);}
+}
+
+function clearDraft(){try{localStorage.removeItem(DRAFT_KEY);}catch(e){}}
+
+function hookAutosave(){
+  ['inp-name','inp-cat','inp-cat-other','inp-cft','inp-dob','inp-date',
+   'edad-calc','inp-ci','inp-temp','inp-temp-desc','inp-ae','inp-ar',
+   'inp-anx-desc','inp-loehr-interp','inp-conclusion','inp-recomendaciones']
+    .forEach(function(id){
+      var el=document.getElementById(id);
+      if(!el)return;
+      el.addEventListener('input',autoSaveForm);
+      el.addEventListener('change',autoSaveForm);
+    });
+  ['ci-invalida','temp-invalida'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.addEventListener('change',autoSaveForm);
+  });
+  var grid=document.getElementById('items-grid');
+  if(grid)grid.addEventListener('input',autoSaveForm);
+  var sums=document.getElementById('sums-row');
+  if(sums)sums.addEventListener('input',autoSaveForm);
+}
+
+// ── SUCCESS MODAL ─────────────────────────────────────────────────────────
+function showSuccessModal(nombre){
+  var modal=document.getElementById('success-modal');
+  if(!modal)return;
+  var sub=document.getElementById('success-sub');
+  if(sub)sub.textContent='El perfil de '+nombre+' fue guardado correctamente.';
+  modal.classList.add('show');
+  setTimeout(function(){modal.classList.remove('show');},2800);
+}
+
+// ── AI REPORT PDF ─────────────────────────────────────────────────────────
+async function generarReporteIA(){
+  if(!lastAIResponse)return;
+  var btn=document.getElementById('btn-ai-report');
+  if(btn){btn.disabled=true;btn.textContent='Generando…';}
+  try{
+    var jsPDF=window.jspdf.jsPDF;
+    var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    var margin=18,pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight(),lineH=7;
+    pdf.setFillColor(21,101,192);pdf.rect(0,0,pageW,28,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(14);pdf.setFont(undefined,'bold');
+    pdf.text('Análisis · TDS Honduras',margin,18);
+    pdf.setFontSize(9);pdf.setFont(undefined,'normal');
+    var today=new Date();
+    pdf.text(today.toLocaleDateString('es-HN',{day:'numeric',month:'long',year:'numeric'}),pageW-margin,18,{align:'right'});
+    var y=42;
+    pdf.setTextColor(26,35,64);pdf.setFontSize(11);pdf.setFont(undefined,'normal');
+    var clean=lastAIResponse
+      .replace(/\*\*(.+?)\*\*/g,'$1')
+      .replace(/^#{1,3} /gm,'')
+      .replace(/^- /gm,'• ');
+    var lines=pdf.splitTextToSize(clean,pageW-margin*2);
+    lines.forEach(function(line){
+      if(y>pageH-margin){pdf.addPage();y=margin;}
+      pdf.text(line,margin,y);
+      y+=lineH;
+    });
+    pdf.setTextColor(107,122,153);pdf.setFontSize(9);
+    pdf.text('Lic. Melany Ordóñez · Máster en Psicología del Deporte · TDS Honduras',margin,pageH-10);
+    pdf.save('Analisis_TDS_'+today.toISOString().split('T')[0]+'.pdf');
+  }catch(e){toast('Error al generar reporte','error');console.error(e);}
+  if(btn){btn.disabled=false;btn.textContent='📄 Generar reporte PDF';}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+if(sessionStorage.getItem('tds-auth')==='ok'){
+  document.getElementById('auth-overlay').style.display='none';
+  hookAutosave();
+  restoreDraft();
+  cargarPerfiles();
+}
+</script>
+</body>
+</html>
