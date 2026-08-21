@@ -13,6 +13,28 @@
 :root{--blue:#1565C0;--ink:#1a2340;--ink2:#3d4f6b;--muted:#6b7a99;--border:#d4dbe8;--bg:#eef1f7;--card:#fff;--input:#f4f6fb;--green:#2e7d32;--red:#b71c1c;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);font-family:'Nunito','Segoe UI',Arial,sans-serif;font-size:15px;color:var(--ink);padding-bottom:60px;}
+
+/* SUCCESS MODAL */
+#success-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;}
+#success-modal.show{display:flex;}
+.success-box{background:#fff;border-radius:20px;padding:44px 48px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:popIn .3s ease;}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+.success-icon{font-size:56px;margin-bottom:14px;}
+.success-title{font-size:24px;font-weight:900;color:var(--green);margin-bottom:8px;}
+.success-sub{font-size:15px;color:var(--muted);font-weight:500;}
+/* AUTOSAVE INDICATOR */
+.autosave-bar{position:fixed;bottom:0;left:0;right:0;background:#1a2340;color:#90caf9;font-size:12px;font-weight:700;padding:6px 20px;text-align:center;z-index:500;letter-spacing:1px;transition:opacity .3s;opacity:0;}
+.autosave-bar.show{opacity:1;}
+/* PDF PAGE BREAKS */
+#pdf-capture .pdf-section{page-break-before:auto;}
+#pdf-capture .pdf-box-grid,#pdf-capture .anx-layout,#pdf-capture .pdf-composites,#pdf-capture .pdf-detail-card,#pdf-capture .pdf-narrative{page-break-inside:avoid;}
+/* AI REPORT BUTTON */
+.btn-ai-report{padding:10px 20px;font-size:13px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#6a1b9a,#ab47bc);color:#fff;font-family:inherit;margin-top:12px;}
+.btn-ai-report:hover{opacity:.88;}
+/* INVALIDA BADGE */
+.invalida-check{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:var(--red);font-weight:700;cursor:pointer;}
+.invalida-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--red);}
+
 /* AUTH */
 #auth-overlay{position:fixed;inset:0;background:var(--blue);z-index:9999;display:flex;align-items:center;justify-content:center;}
 .auth-box{background:#fff;border-radius:20px;padding:44px 40px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);}
@@ -218,6 +240,8 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="success-modal"><div class="success-box"><div class="success-icon">✅</div><div class="success-title">¡Guardado con éxito!</div><div class="success-sub" id="success-sub">El perfil fue guardado correctamente.</div></div></div>
+<div class="autosave-bar" id="autosave-bar">💾 Borrador guardado automáticamente</div>
 
 <div class="header">
   <div class="header-inner">
@@ -298,6 +322,7 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
         <label>Puntuación CI</label>
         <input type="number" id="inp-ci" min="0" max="200" placeholder="Ej. 90" oninput="updateCiBadge()">
         <div class="auto-badge" id="ci-badge"></div>
+        <label class="invalida-check"><input type="checkbox" id="ci-invalida" onchange="updateCiBadge()"> Prueba Inválida</label>
       </div>
       <div class="field" style="flex:2 1 280px;">
         <label>Tipo de Temperamento · Eysenck</label>
@@ -308,6 +333,7 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
           <option value="Flemático">Flemático (Introvertido-Estable)</option>
           <option value="Melancólico">Melancólico (Introvertido-Inestable)</option>
         </select>
+        <label class="invalida-check"><input type="checkbox" id="temp-invalida"> Prueba Inválida</label>
       </div>
     </div>
     <div class="fields" style="margin-top:14px;">
@@ -346,6 +372,12 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
     <div class="scale-headers" id="scale-headers"></div>
     <div id="items-grid"></div>
     <div class="sums-row" id="sums-row"></div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1.5px solid #e3eaf7;">
+      <div class="field">
+        <label>Interpretación del perfil Loehr (editable)</label>
+        <textarea id="inp-loehr-interp" style="min-height:100px;" placeholder="Análisis e interpretación de los resultados del Inventario Loehr. Fortalezas identificadas, áreas de atención y aspectos a trabajar con el jugador…"></textarea>
+      </div>
+    </div>
   </div>
 
   <div class="card">
@@ -416,6 +448,8 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
         <div class="pdf-detail-title">Detalle por Escala</div>
         <div id="scale-details"></div>
       </div>
+      <div class="pdf-section">Interpretación · Loehr IPRD</div>
+      <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-loehr-interp" contenteditable="true" data-ph="Interpretación del perfil Loehr…"></div></div>
       <div class="pdf-section">Conclusión</div>
       <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-conclusion" contenteditable="true" data-ph="La conclusión aparecerá aquí…"></div></div>
       <div class="pdf-section">Recomendaciones</div>
@@ -468,7 +502,7 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
         <button class="btn-query" id="btn-query" onclick="consultarIA()">Consultar</button>
       </div>
       <div class="query-response hidden" id="query-response">
-        <div class="query-response-lbl">Respuesta</div>
+        <div class="query-response-lbl" style="display:flex;justify-content:space-between;align-items:center;">Respuesta<button class="btn-ai-report hidden" id="btn-ai-report" onclick="generarReporteIA()">📄 Generar reporte PDF</button></div>
         <div class="query-response-text" id="query-response-text"></div>
       </div>
     </div>
@@ -518,6 +552,8 @@ async function verificarPassword(){
     if(inp===data.valor){
       sessionStorage.setItem('tds-auth','ok');
       document.getElementById('auth-overlay').style.display='none';
+      hookAutosave();
+      restoreDraft();
       cargarPerfiles();
     } else {
       errEl.textContent='Contraseña incorrecta. Intentá de nuevo.';
@@ -731,16 +767,21 @@ function showResults(){
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Nacimiento</div><div class="pdf-chip-val">'+(dob?formatDate(dob):'—')+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad al evaluar</div><div class="pdf-chip-val">'+(ageEval!==null?ageEval+' años':'—')+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad actual</div><div class="pdf-chip-val">'+(ageActual!==null?ageActual+' años':'—')+'</div></div>';
+  var ciInvalida=document.getElementById('ci-invalida')&&document.getElementById('ci-invalida').checked;
   var ciVal=parseInt(document.getElementById('inp-ci').value);
-  if(!isNaN(ciVal)){document.getElementById('pdf-ci').textContent=ciVal;applyTag(document.getElementById('pdf-ci-tag'),ciDiag(ciVal));}
+  if(ciInvalida){document.getElementById('pdf-ci').textContent='—';applyTag(document.getElementById('pdf-ci-tag'),{label:'PRUEBA INVÁLIDA',bg:'#ffebee',color:'#b71c1c'});}
+  else if(!isNaN(ciVal)){document.getElementById('pdf-ci').textContent=ciVal;applyTag(document.getElementById('pdf-ci-tag'),ciDiag(ciVal));}
   else{document.getElementById('pdf-ci').textContent='—';document.getElementById('pdf-ci-tag').textContent='No aplicado';}
+  var tempInvalida=document.getElementById('temp-invalida')&&document.getElementById('temp-invalida').checked;
   var tempKey=document.getElementById('inp-temp').value;
   var tempDesc=document.getElementById('inp-temp-desc').value.trim();
-  if(tempKey){
+  if(tempInvalida){document.getElementById('pdf-temp-name').textContent='PRUEBA INVÁLIDA';document.getElementById('pdf-temp-desc').textContent='—';}
+  else if(tempKey){
     var sub=TEMP_SUBS[tempKey]||'';
     document.getElementById('pdf-temp-name').innerHTML=tempKey+' <span style="font-size:13px;color:var(--muted);font-weight:600;">· '+sub+'</span>';
-  } else {document.getElementById('pdf-temp-name').textContent='—';}
-  document.getElementById('pdf-temp-desc').textContent=tempDesc||'—';
+    document.getElementById('pdf-temp-desc').textContent=tempDesc||'—';
+  } else {document.getElementById('pdf-temp-name').textContent='—';document.getElementById('pdf-temp-desc').textContent='—';}
+  document.getElementById('pdf-loehr-interp').textContent=document.getElementById('inp-loehr-interp').value.trim()||'';
   var aeVal=parseInt(document.getElementById('inp-ae').value);
   var arVal=parseInt(document.getElementById('inp-ar').value);
   if(!isNaN(aeVal)){document.getElementById('pdf-ae').textContent=aeVal;applyTag(document.getElementById('pdf-ae-tag'),anxLevel(aeVal));}
@@ -817,6 +858,7 @@ async function guardarPerfil(){
     loehr_nm:nm,loehr_ep:ep,loehr_act:act,
     loehr_autoconfianza:ac,loehr_control_emocional:ep+en,
     loehr_concentracion:cat2+cvi,loehr_motivacion:nm,
+    loehr_interpretacion:document.getElementById('inp-loehr-interp').value.trim()||null,
     conclusion:document.getElementById('inp-conclusion').value.trim()||null,
     recomendaciones:document.getElementById('inp-recomendaciones').value.trim()||null,
   };
@@ -827,7 +869,8 @@ async function guardarPerfil(){
     if(result.error)throw result.error;
     perfilGuardado=true;
     btn.className='btn-save saved';btn.textContent='✓ '+(editandoId?'Actualizado':'Guardado');
-    toast('Perfil de '+perfil.nombre+' '+(editandoId?'actualizado':'guardado'),'success');
+    showSuccessModal(perfil.nombre);
+    clearDraft();
     editandoId=null;
     document.getElementById('edit-banner').classList.remove('visible');
     cargarPerfiles();
@@ -995,12 +1038,17 @@ function renderStats(data){
 // QUERY IA
 function setQuery(txt){document.getElementById('query-input').value=txt;document.getElementById('query-input').focus();}
 function renderMd(t){
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  return t
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/^### (.+)$/gm,'<br><strong style="font-size:14px;color:var(--ink)">$1</strong>')
-    .replace(/^## (.+)$/gm,'<br><strong style="font-size:15px;color:var(--ink)">$1</strong>')
-    .replace(/^# (.+)$/gm,'<strong style="font-size:16px;color:var(--blue)">$1</strong>')
-    .replace(/^- (.+)$/gm,'&nbsp;&nbsp;• $1')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^### (.+)$/gm,'<br><strong style="font-size:14px;color:var(--blue);display:block;margin-top:8px;">$1</strong>')
+    .replace(/^## (.+)$/gm,'<br><strong style="font-size:15px;color:var(--blue);display:block;margin-top:10px;">$1</strong>')
+    .replace(/^# (.+)$/gm,'<strong style="font-size:16px;color:var(--ink);display:block;margin-top:10px;">$1</strong>')
+    .replace(/^- (.+)$/gm,'<span style="display:block;padding-left:12px;margin:2px 0;">• $1</span>')
+    .replace(/\|(.+)\|/g,function(m){return '<span style="display:inline-block;padding:2px 8px;background:#f5f7fc;border-radius:4px;margin:2px;font-size:13px;">'+m.replace(/\|/g,' | ')+'</span>';})
+    .replace(/\n\n/g,'<br><br>')
     .replace(/\n/g,'<br>');
 }
 async function consultarIA(){
@@ -1030,8 +1078,10 @@ async function consultarIA(){
     var response=await fetch('/api/consulta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
     var data=await response.json();
     var texto=(data.content&&data.content[0]&&data.content[0].text)||'No se pudo obtener respuesta.';
+    lastAIResponse=texto;
     respText.className='query-response-text';
     respText.innerHTML=renderMd(texto);
+    document.getElementById('btn-ai-report').classList.remove('hidden');
   } catch(err){
     respText.className='query-response-text';
     respText.textContent='Error al conectar con la IA.';console.error(err);
@@ -1043,61 +1093,68 @@ async function consultarIA(){
 async function downloadPDF(){
   var btn=document.getElementById('btn-pdf');
   btn.disabled=true;btn.textContent='⏳ Generando…';
+  var nombre=(document.getElementById('inp-name').value||'Atleta').replace(/\s+/g,'_');
   try{
     var jsPDF=window.jspdf.jsPDF;
-    var canvas=await html2canvas(document.getElementById('pdf-capture'),{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
-    var imgData=canvas.toDataURL('image/png');
+    var capture=document.getElementById('pdf-capture');
+    // Capture full element
+    var canvas=await html2canvas(capture,{scale:2.2,backgroundColor:'#ffffff',useCORS:true,logging:false,allowTaint:true});
     var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var margin=10,pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight();
-    var imgW=pageW-margin*2,imgH=(canvas.height*imgW)/canvas.width;
-    if(imgH<=pageH-margin*2){
-      pdf.addImage(imgData,'PNG',margin,margin,imgW,imgH);
-    } else {
-      var ratio=canvas.width/imgW,srcY=0,remaining=imgH;
-      while(remaining>0){
-        var sliceH=Math.min(remaining,pageH-margin*2);
-        var sc=document.createElement('canvas');sc.width=canvas.width;sc.height=Math.round(sliceH*ratio);
-        sc.getContext('2d').drawImage(canvas,0,Math.round(srcY*ratio),canvas.width,sc.height,0,0,canvas.width,sc.height);
-        pdf.addImage(sc.toDataURL('image/png'),'PNG',margin,margin,imgW,sliceH);
-        remaining-=sliceH;srcY+=sliceH;if(remaining>0)pdf.addPage();
+    var margin=12;
+    var pageW=pdf.internal.pageSize.getWidth();
+    var pageH=pdf.internal.pageSize.getHeight();
+    var usableW=pageW-margin*2;
+    var usableH=pageH-margin*2;
+    var imgW=usableW;
+    var imgH=(canvas.height*imgW)/canvas.width;
+    var pxPerMm=canvas.width/imgW;
+    // Get section boundaries relative to capture element
+    var captureRect=capture.getBoundingClientRect();
+    var sectionEls=Array.from(capture.querySelectorAll(
+      '.pdf-hdr,.pdf-section,.pdf-box-grid,.anx-layout,.pdf-composites,.pdf-detail-card,.pdf-narrative,.pdf-footer'
+    ));
+    // Build list of section tops in mm
+    var sectionMms=[0];
+    sectionEls.forEach(function(el){
+      var r=el.getBoundingClientRect();
+      var topMm=(r.top-captureRect.top)*(imgH/captureRect.height);
+      var botMm=(r.bottom-captureRect.top)*(imgH/captureRect.height);
+      if(topMm>2)sectionMms.push(topMm);
+    });
+    sectionMms.push(imgH);
+    sectionMms=sectionMms.filter(function(v,i,a){return a.indexOf(v)===i;}).sort(function(a,b){return a-b;});
+    // Build pages: fill each page greedily, cutting only at section boundaries
+    var pages=[];
+    var pageStart=0;
+    while(pageStart<imgH){
+      var pageEnd=pageStart+usableH;
+      if(pageEnd>=imgH){pages.push([pageStart,imgH]);break;}
+      // Find the last section boundary before pageEnd
+      var cutAt=pageEnd;
+      for(var i=sectionMms.length-1;i>=0;i--){
+        if(sectionMms[i]<=pageEnd&&sectionMms[i]>pageStart){cutAt=sectionMms[i];break;}
       }
+      if(cutAt===pageStart)cutAt=pageEnd; // no boundary found, force cut
+      pages.push([pageStart,cutAt]);
+      pageStart=cutAt;
     }
-    pdf.save('Perfil_'+(document.getElementById('inp-name').value||'Atleta').replace(/\s+/g,'_')+'.pdf');
-  } catch(err){alert('No se pudo generar el PDF.');console.error(err);}
+    // Render each page
+    pages.forEach(function(range,pi){
+      var startMm=range[0],endMm=range[1];
+      var startPx=Math.floor(startMm*pxPerMm);
+      var endPx=Math.ceil(endMm*pxPerMm);
+      var sliceH=endPx-startPx;
+      var sc=document.createElement('canvas');
+      sc.width=canvas.width;sc.height=sliceH;
+      sc.getContext('2d').drawImage(canvas,0,startPx,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      var sliceMm=endMm-startMm;
+      if(pi>0)pdf.addPage();
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',margin,margin,imgW,sliceMm);
+    });
+    pdf.save('Perfil_'+nombre+'.pdf');
+  }catch(err){
+    console.error(err);
+    alert('No se pudo generar el PDF. Intenta de nuevo.');
+  }
   btn.disabled=false;btn.textContent='📥 Descargar PDF';
 }
-
-// RESET
-function resetAll(){
-  for(var i=1;i<=42;i++){
-    answers[i]=0;
-    var inp=document.getElementById('inp-'+i);if(inp)inp.value='';
-    var cell=document.getElementById('cell-'+i);if(cell)cell.classList.remove('filled');
-  }
-  ['inp-name','inp-cat-other','inp-ci','inp-temp-desc','inp-ae','inp-ar','inp-anx-desc','inp-conclusion','inp-recomendaciones']
-    .forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('inp-cat').value='Sub-15 Masculino';
-  document.getElementById('inp-cft').value='Tegucigalpa';
-  document.getElementById('inp-temp').value='';
-  document.getElementById('inp-dob').value='';
-  document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('edad-calc').value='';
-  document.getElementById('sel-reeval').value='';
-  ['ci-badge','ae-badge','ar-badge'].forEach(function(id){document.getElementById(id).style.display='none';});
-  document.getElementById('inp-cat-other').classList.remove('visible');
-  document.getElementById('edit-banner').classList.remove('visible');
-  Object.keys(SCALES).forEach(function(k){var el=document.getElementById('sumval-'+k);if(el)el.value='';});
-  editandoId=null;perfilGuardado=false;
-  updateCounter();
-  document.getElementById('results').classList.add('hidden');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-// INIT
-if(sessionStorage.getItem('tds-auth')==='ok'){
-  document.getElementById('auth-overlay').style.display='none';
-  cargarPerfiles();
-}
-</script>
-</body>
-</html>
