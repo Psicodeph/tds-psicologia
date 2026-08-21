@@ -439,6 +439,11 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
       <div class="db-stat"><div class="db-stat-val" id="stat-centros">—</div><div class="db-stat-lbl">Centros</div></div>
       <div class="db-stat"><div class="db-stat-val" id="stat-avg">—</div><div class="db-stat-lbl">Prom. Autoconfianza</div></div>
     </div>
+    <div style="margin-bottom:12px;">
+      <input type="text" id="db-search" placeholder="🔍 Buscar por nombre, CFT, temperamento, categoría…"
+        oninput="filtrarYRenderTabla()"
+        style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:11px 16px;font-size:15px;color:var(--ink);font-family:inherit;font-weight:600;outline:none;">
+    </div>
     <div class="db-table-wrap">
       <table class="db-table">
         <thead><tr>
@@ -942,10 +947,22 @@ async function cargarPerfiles(){
   }
 }
 
+function filtrarYRenderTabla(){
+  var q=document.getElementById('db-search')?.value?.toLowerCase()||'';
+  var filtrado=perfilesBD.filter(function(p){
+    return !q||(p.nombre||'').toLowerCase().includes(q)||
+           (p.cft||'').toLowerCase().includes(q)||
+           (p.temperamento||'').toLowerCase().includes(q)||
+           (p.categoria||'').toLowerCase().includes(q);
+  });
+  renderTabla(filtrado);
+}
+
 function renderTabla(data){
   var tbody=document.getElementById('db-tbody');
-  if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="8" class="db-empty">No hay perfiles guardados aún.</td></tr>';return;}
-  tbody.innerHTML=data.map(function(p){
+  if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="8" class="db-empty">No se encontraron perfiles.</td></tr>';return;}
+  var sorted=data.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
+  tbody.innerHTML=sorted.map(function(p){
     return '<tr>'+
       '<td class="name-cell">'+
         '<button class="name-btn" onclick="toggleMenu(event,\''+p.id+'\')">'+escHtml(p.nombre||'—')+'</button>'+
@@ -997,6 +1014,8 @@ async function consultarIA(){
   respText.className='query-response-text thinking-dots';respText.textContent='Analizando datos';
   var resumenDatos=JSON.stringify(perfilesBD.map(function(p){return{
     nombre:p.nombre,categoria:p.categoria,cft:p.cft,edad:p.edad,
+    fecha_nacimiento:p.fecha_nacimiento,
+    anio_nacimiento:p.fecha_nacimiento?p.fecha_nacimiento.substring(0,4):null,
     ci:p.ci,temperamento:p.temperamento,
     ansiedad_estado:p.ansiedad_estado,ansiedad_estado_nivel:p.ansiedad_estado_nivel,
     ansiedad_rasgo:p.ansiedad_rasgo,ansiedad_rasgo_nivel:p.ansiedad_rasgo_nivel,
@@ -1006,7 +1025,7 @@ async function consultarIA(){
     loehr_concentracion:p.loehr_concentracion,loehr_motivacion:p.loehr_motivacion,
     fecha_aplicacion:p.fecha_aplicacion,
   };}));
-  var prompt='Sos una psicóloga del deporte del programa TDS de Honduras.\n\nDatos:\n'+resumenDatos+'\n\nEscalas Loehr(/30): AC=Autoconfianza, EN=Energía Negativa, CAT=Control Atencional, CVI=Control Visualización, NM=Nivel Motivacional, EP=Energía Positiva, ACT=Control de Actitudes.\nCompuestos: Autoconfianza(/30), Control Emocional(/60=EP+EN), Concentración(/60=CAT+CVI), Motivación(/30).\nNiveles: ≥87%=Habilidad Excelente, 67-86%=Mejorar y Perfeccionar, <67%=Atención Especial.\n\nRespondé en español.\n\nPregunta: '+pregunta;
+  var prompt='Sos una psicóloga del deporte del programa TDS de Honduras. Tenés acceso a todos los perfiles psicológicos guardados. IMPORTANTE: Los datos están completos — si el usuario pregunta por jugadores de cierta categoría o año de nacimiento, buscalos en el campo anio_nacimiento o categoria. Nunca digas que no tenés datos si hay perfiles en la lista.\n\nPerfiles ('+perfilesBD.length+' jugadores):\n'+resumenDatos+'\n\nEscalas Loehr(/30): AC=Autoconfianza, EN=Energía Negativa, CAT=Control Atencional, CVI=Control Visualización, NM=Nivel Motivacional, EP=Energía Positiva, ACT=Control de Actitudes.\nCompuestos: Autoconfianza(/30), Control Emocional(/60=EP+EN), Concentración(/60=CAT+CVI), Motivación(/30).\nNiveles: ≥87%=Habilidad Excelente, 67-86%=Mejorar y Perfeccionar, <67%=Atención Especial.\nSexo: si la categoría contiene "Masculino" es masculino, si contiene "Femenino" es femenino.\n\nRespondé en español con los datos reales de los perfiles.\n\nPregunta: '+pregunta;
   try{
     var response=await fetch('/api/consulta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
     var data=await response.json();
