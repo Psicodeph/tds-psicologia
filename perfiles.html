@@ -166,6 +166,7 @@ tr:hover td{background:#f8f9fc;}
         <th>Concentración</th>
         <th>Motivación</th>
         <th>Aplicación</th>
+        <th>Última actividad</th>
       </tr></thead>
       <tbody id="tbody"><tr><td colspan="9" class="empty">Cargando perfiles…</td></tr></tbody>
     </table>
@@ -207,7 +208,7 @@ async function verificarPassword(){
 
 // LOAD
 async function cargar(){
-  var res=await sb.from('perfiles').select('*').order('created_at',{ascending:false});
+  var res=await sb.from('perfiles').select('*').order('updated_at',{ascending:false,nullsFirst:false});
   if(res.error){console.error(res.error);return;}
   perfiles=res.data||[];
   renderStats();
@@ -241,7 +242,16 @@ function filtrar(){
     var matchCat=!cat||p.categoria===cat;
     return matchQ&&matchCft&&matchCat;
   });
-  var sorted=filtered.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
+  // Keep DB order (updated_at desc) when no search, alphabetical when filtering
+  var sorted;
+  var q=document.getElementById('db-search').value;
+  var cft=document.getElementById('filter-cft').value;
+  var cat=document.getElementById('filter-cat').value;
+  if(q||cft||cat){
+    sorted=filtered.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
+  } else {
+    sorted=filtered; // keep updated_at desc order from DB
+  }
   document.getElementById('results-count').textContent=sorted.length+' perfil'+(sorted.length!==1?'es':'')+' encontrado'+(sorted.length!==1?'s':'');
   renderTabla(sorted);
 }
@@ -251,6 +261,13 @@ function sc(v,max){
   var p=v/max;
   var cls=p>=26/30?'sc-green':p>=20/30?'sc-amber':'sc-red';
   return'<span class="score '+cls+'">'+v+'<span style="color:#aaa;font-weight:500;">/'+max+'</span></span>';
+}
+
+function fmtDateTime(val){
+  if(!val)return'—';
+  var d=new Date(val);
+  var m=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
 
 function fmtDate(val){
@@ -286,6 +303,7 @@ function renderTabla(data){
       '<td>'+sc(p.loehr_concentracion,60)+'</td>'+
       '<td>'+sc(p.loehr_motivacion,30)+'</td>'+
       '<td style="color:var(--muted);font-size:16px;">'+fmtDate(p.fecha_aplicacion)+'</td>'+
+      '<td style="color:var(--blue);font-size:15px;font-weight:700;">'+fmtDateTime(p.updated_at||p.created_at)+'</td>'+
     '</tr>';
   }).join('');
 }
