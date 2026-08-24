@@ -325,9 +325,13 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
     <div class="fields">
       <div class="field" style="flex:0 1 200px;">
         <label>Puntuación CI</label>
-        <input type="number" id="inp-ci" min="0" max="200" placeholder="Ej. 90" oninput="updateCiBadge()">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="number" id="inp-ci" min="0" max="200" placeholder="Ej. 90" oninput="updateCiBadge()" style="flex:1;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--red);font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+            <input type="checkbox" id="ci-invalida" onchange="updateCiBadge()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--red);"> Inválida
+          </label>
+        </div>
         <div class="auto-badge" id="ci-badge"></div>
-        <label class="invalida-check"><input type="checkbox" id="ci-invalida" onchange="updateCiBadge()"> Prueba Inválida</label>
       </div>
       <div class="field" style="flex:2 1 280px;">
         <label>Tipo de Temperamento · Eysenck</label>
@@ -337,8 +341,9 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
           <option value="Colérico">Colérico (Extrovertido-Inestable)</option>
           <option value="Flemático">Flemático (Introvertido-Estable)</option>
           <option value="Melancólico">Melancólico (Introvertido-Inestable)</option>
+          <option value="__invalida__" style="color:var(--red);font-weight:700;">❌ Prueba Inválida</option>
         </select>
-        <label class="invalida-check"><input type="checkbox" id="temp-invalida"> Prueba Inválida</label>
+        <input type="hidden" id="temp-invalida">
       </div>
     </div>
     <div class="fields" style="margin-top:14px;">
@@ -640,10 +645,11 @@ function updateAnxBadge(id){
   const d=anxLevel(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
 }
 function fillTempDesc(){
-  const key=document.getElementById('inp-temp').value;
+  var key=document.getElementById('inp-temp').value;
   if(!key)return;
-  const ta=document.getElementById('inp-temp-desc');
-  const isDefault=Object.values(TEMP_DEFS).some(function(d){return d===ta.value;});
+  if(key==='__invalida__'){document.getElementById('inp-temp-desc').value='';return;}
+  var ta=document.getElementById('inp-temp-desc');
+  var isDefault=Object.values(TEMP_DEFS).some(function(d){return d===ta.value;});
   if(!ta.value||isDefault)ta.value=TEMP_DEFS[key]||'';
 }
 
@@ -780,7 +786,7 @@ function showResults(){
   var tempInvalida=document.getElementById('temp-invalida')&&document.getElementById('temp-invalida').checked;
   var tempKey=document.getElementById('inp-temp').value;
   var tempDesc=document.getElementById('inp-temp-desc').value.trim();
-  if(tempInvalida){document.getElementById('pdf-temp-name').textContent='PRUEBA INVÁLIDA';document.getElementById('pdf-temp-desc').textContent='—';}
+  if(tempInvalida||tempKey==='__invalida__'){document.getElementById('pdf-temp-name').textContent='PRUEBA INVÁLIDA';document.getElementById('pdf-temp-desc').textContent='—';}
   else if(tempKey){
     var sub=TEMP_SUBS[tempKey]||'';
     document.getElementById('pdf-temp-name').innerHTML=tempKey+' <span style="font-size:13px;color:var(--muted);font-weight:600;">· '+sub+'</span>';
@@ -1003,13 +1009,17 @@ function filtrarYRenderTabla(){
            (p.temperamento||'').toLowerCase().includes(q)||
            (p.categoria||'').toLowerCase().includes(q);
   });
-  renderTabla(filtrado);
+  // If no search, show only last 5 (already sorted newest first from DB)
+  // If searching, show all matches
+  var toShow=q?filtrado:filtrado.slice(0,5);
+  renderTabla(toShow, !q && perfilesBD.length>5);
 }
 
-function renderTabla(data){
+function renderTabla(data, showMoreLink){
   var tbody=document.getElementById('db-tbody');
   if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="8" class="db-empty">No se encontraron perfiles.</td></tr>';return;}
   var sorted=data.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
+  var extra=showMoreLink?'<tr><td colspan="8" style="text-align:center;padding:14px;"><button onclick="document.getElementById(\'db-search\').focus();filtrarYRenderTabla()" style="background:none;border:none;color:var(--blue);font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;">Ver todos los perfiles →</button></td></tr>':'';
   tbody.innerHTML=sorted.map(function(p){
     return '<tr>'+
       '<td class="name-cell">'+
@@ -1028,7 +1038,7 @@ function renderTabla(data){
       '<td style="color:'+lv60color(p.loehr_concentracion)+';font-weight:800;">'+(p.loehr_concentracion!=null?p.loehr_concentracion:'—')+'<span style="color:#aaa;font-weight:500">/60</span></td>'+
       '<td style="color:'+scoreColor30(p.loehr_motivacion)+';font-weight:800;">'+(p.loehr_motivacion!=null?p.loehr_motivacion:'—')+'<span style="color:#aaa;font-weight:500">/30</span></td>'+
     '</tr>';
-  }).join('');
+  }).join('')+extra;
 }
 function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
