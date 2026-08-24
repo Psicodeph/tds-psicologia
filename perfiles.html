@@ -167,7 +167,7 @@ var perfiles=[];
 
 // LOAD
 async function cargar(){
-  var res=await sb.from('perfiles').select('*').order('updated_at',{ascending:false,nullsFirst:false});
+  var res=await sb.from('perfiles').select('*').order('created_at',{ascending:false});
   if(res.error){console.error(res.error);return;}
   perfiles=res.data||[];
   renderStats();
