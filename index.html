@@ -560,6 +560,7 @@ async function verificarPassword(){
     if(error) throw error;
     if(inp===data.valor){
       sessionStorage.setItem('tds-auth','ok');
+      localStorage.setItem('tds-auth-persist','ok');
       document.getElementById('auth-overlay').style.display='none';
       hookAutosave();
       restoreDraft();
@@ -1361,7 +1362,8 @@ async function generarReporteIA(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-if(sessionStorage.getItem('tds-auth')==='ok'){
+if(sessionStorage.getItem('tds-auth')==='ok'||localStorage.getItem('tds-auth-persist')==='ok'){
+  sessionStorage.setItem('tds-auth','ok');
   document.getElementById('auth-overlay').style.display='none';
   hookAutosave();
   cargarPerfiles().then(function(){
