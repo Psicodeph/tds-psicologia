@@ -1000,6 +1000,10 @@ async function cargarPerfiles(){
   }
 }
 
+function mostrarTodos(){
+  window.location.href='/perfiles';
+}
+
 function filtrarYRenderTabla(){
   var q=document.getElementById('db-search')?.value?.toLowerCase()||'';
   var filtrado=perfilesBD.filter(function(p){
@@ -1018,7 +1022,7 @@ function renderTabla(data, showMoreLink){
   var tbody=document.getElementById('db-tbody');
   if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="8" class="db-empty">No se encontraron perfiles.</td></tr>';return;}
   var sorted=data.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
-  var extra=showMoreLink?'<tr><td colspan="8" style="text-align:center;padding:14px;"><button onclick="document.getElementById(\'db-search\').focus();filtrarYRenderTabla()" style="background:none;border:none;color:var(--blue);font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;">Ver todos los perfiles →</button></td></tr>':'';
+  var extra=showMoreLink?'<tr><td colspan="8" style="text-align:center;padding:14px;"><button onclick="mostrarTodos()" style="background:none;border:none;color:var(--blue);font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline;">Ver todos los perfiles ('+perfilesBD.length+') →</button></td></tr>':'';
   tbody.innerHTML=sorted.map(function(p){
     return '<tr>'+
       '<td class="name-cell">'+
@@ -1360,8 +1364,18 @@ async function generarReporteIA(){
 if(sessionStorage.getItem('tds-auth')==='ok'){
   document.getElementById('auth-overlay').style.display='none';
   hookAutosave();
-  restoreDraft();
-  cargarPerfiles();
+  cargarPerfiles().then(function(){
+    var params=new URLSearchParams(window.location.search);
+    var verId=params.get('ver');
+    var editId=params.get('editar');
+    if(verId){
+      setTimeout(function(){verPerfil(verId);},600);
+    } else if(editId){
+      setTimeout(function(){editarRegistro(editId);},600);
+    } else {
+      restoreDraft();
+    }
+  });
 }
 </script>
 </body>
