@@ -245,13 +245,14 @@ function renderTabla(data){
     return;
   }
   tbody.innerHTML=data.map(function(p){
+    var pid=p.id;
     return'<tr>'+
       '<td class="name-cell">'+
-        '<button class="name-btn" onclick="toggleMenu(event,''+p.id+'')">'+escHtml(p.nombre||'—')+'</button>'+
-        '<div class="action-menu" id="menu-'+p.id+'">'+
-          '<button class="action-menu-btn" onclick="irAPerfil(''+p.id+'','ver')">📥 Ver y descargar PDF</button>'+
-          '<button class="action-menu-btn" onclick="irAPerfil(''+p.id+'','editar')">✏️ Editar perfil</button>'+
-          '<button class="action-menu-btn danger" onclick="eliminar(''+p.id+'')">🗑 Eliminar</button>'+
+        '<button class="name-btn" onclick="toggleMenu(event,\''+pid+'\')">'+escHtml(p.nombre||'—')+'</button>'+
+        '<div class="action-menu" id="menu-'+pid+'">'+
+          '<button class="action-menu-btn" onclick="irAPerfil(\''+pid+'\',\'ver\')">📥 Ver y descargar PDF</button>'+
+          '<button class="action-menu-btn" onclick="irAPerfil(\''+pid+'\',\'editar\')">✏️ Editar perfil</button>'+
+          '<button class="action-menu-btn danger" onclick="eliminar(\''+pid+'\')">🗑 Eliminar</button>'+
         '</div>'+
       '</td>'+
       '<td>'+fmtDate(p.fecha_nacimiento)+'</td>'+
