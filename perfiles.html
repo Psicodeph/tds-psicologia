@@ -193,6 +193,7 @@ async function verificarPassword(){
     if(res.error)throw res.error;
     if(inp===res.data.valor){
       sessionStorage.setItem('tds-auth','ok');
+      localStorage.setItem('tds-auth-persist','ok');
       document.getElementById('auth-overlay').style.display='none';
       cargar();
     } else {
@@ -347,6 +348,13 @@ function toast(msg,type){
 if(sessionStorage.getItem('tds-auth')==='ok'){
   document.getElementById('auth-overlay').style.display='none';
   cargar();
+} else {
+  // Also check localStorage for persistent session
+  if(localStorage.getItem('tds-auth-persist')==='ok'){
+    sessionStorage.setItem('tds-auth','ok');
+    document.getElementById('auth-overlay').style.display='none';
+    cargar();
+  }
 }
 </script>
 </body>
