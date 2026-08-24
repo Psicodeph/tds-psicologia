@@ -559,10 +559,10 @@ async function verificarPassword(){
     const{data,error}=await sb.from('configuracion').select('valor').eq('clave','password').single();
     if(error) throw error;
     if(inp===data.valor){
-      sessionStorage.setItem('tds-auth','ok');
-      localStorage.setItem('tds-auth-persist','ok');
+      marcarSesionActiva();
       document.getElementById('auth-overlay').style.display='none';
       hookAutosave();
+      iniciarControlInactividad();
       restoreDraft();
       cargarPerfiles();
     } else {
@@ -1362,10 +1362,60 @@ async function generarReporteIA(){
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-if(sessionStorage.getItem('tds-auth')==='ok'||localStorage.getItem('tds-auth-persist')==='ok'){
-  sessionStorage.setItem('tds-auth','ok');
+// ── CONTROL DE SESIÓN (20 min inactividad) ──────────────────────────────
+var SESSION_KEY='tds-auth';
+var SESSION_TIME_KEY='tds-auth-time';
+var TIMEOUT_MIN=20;
+var inactivityTimer=null;
+
+function marcarSesionActiva(){
+  sessionStorage.setItem(SESSION_KEY,'ok');
+  sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
+}
+
+function sesionValida(){
+  if(sessionStorage.getItem(SESSION_KEY)!=='ok')return false;
+  var last=parseInt(sessionStorage.getItem(SESSION_TIME_KEY)||'0');
+  if(!last)return false;
+  var mins=(Date.now()-last)/60000;
+  if(mins>TIMEOUT_MIN){cerrarSesion();return false;}
+  return true;
+}
+
+function cerrarSesion(){
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_TIME_KEY);
+}
+
+function reiniciarInactividad(){
+  if(sessionStorage.getItem(SESSION_KEY)==='ok'){
+    sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
+  }
+  clearTimeout(inactivityTimer);
+  inactivityTimer=setTimeout(function(){
+    try{autoSaveForm();}catch(e){}
+    cerrarSesion();
+    alert('Sesión cerrada por inactividad. Tu trabajo quedó guardado — al ingresar de nuevo lo vas a recuperar.');
+    location.reload();
+  },TIMEOUT_MIN*60000);
+}
+
+function iniciarControlInactividad(){
+  ['click','keydown','scroll','mousemove','touchstart'].forEach(function(evt){
+    document.addEventListener(evt,reiniciarInactividad,{passive:true});
+  });
+  // Save draft before leaving the page
+  window.addEventListener('beforeunload',function(){
+    try{autoSaveForm();}catch(e){}
+  });
+  reiniciarInactividad();
+}
+
+if(sesionValida()){
+  marcarSesionActiva();
   document.getElementById('auth-overlay').style.display='none';
   hookAutosave();
+  iniciarControlInactividad();
   cargarPerfiles().then(function(){
     var params=new URLSearchParams(window.location.search);
     var verId=params.get('ver');
