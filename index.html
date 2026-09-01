@@ -684,8 +684,9 @@ function cargarDatosFijos(){
   if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
   if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
   if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
+  if(rec.ansiedad_rasgo){document.getElementById('inp-ar').value=rec.ansiedad_rasgo;updateAnxBadge('ar');}
   updateAge();
-  toast('Datos de '+nombre+' cargados','success');
+  toast('Datos de '+nombre+' cargados — Ansiedad Rasgo incluida (editable)','success');
 }
 
 // LOEHR GRID
