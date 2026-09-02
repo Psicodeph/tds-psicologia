@@ -266,14 +266,17 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
   <div class="reeval-card">
     <div class="reeval-title">¿Re-evaluación de un jugador existente?</div>
     <div class="fields">
-      <div class="field" style="flex:2 1 260px;">
-        <label>Buscar jugador</label>
-        <select id="sel-reeval" onchange="cargarDatosFijos()">
-          <option value="">— Nueva evaluación —</option>
-        </select>
+      <div class="field" style="flex:2 1 260px;position:relative;">
+        <label>Buscar jugador por nombre</label>
+        <input type="text" id="inp-buscar-jugador" placeholder="Escribí el nombre del jugador…"
+          oninput="buscarJugadores()" onfocus="buscarJugadores()" autocomplete="off">
+        <div id="lista-jugadores" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.15);max-height:280px;overflow-y:auto;z-index:300;margin-top:4px;"></div>
+      </div>
+      <div class="field" style="flex:0 1 auto;display:flex;align-items:flex-end;">
+        <button onclick="limpiarBusquedaJugador()" style="padding:12px 20px;font-size:16px;font-weight:700;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:var(--muted);font-family:inherit;">Limpiar</button>
       </div>
     </div>
-    <div class="reeval-note">Seleccioná un jugador para auto-completar sus datos fijos. Solo llenás lo que cambió.</div>
+    <div class="reeval-note" id="reeval-info">Escribí el nombre de un jugador existente para auto-completar sus datos fijos (CI, temperamento, ansiedad rasgo). Solo llenás lo que cambió.</div>
   </div>
 
   <div class="card">
@@ -655,22 +658,84 @@ function fillTempDesc(){
 
 // RE-EVAL
 function poblarDropdownJugadores(perfiles){
-  const sel=document.getElementById('sel-reeval');
-  const nombres=[...new Set(perfiles.map(function(p){return p.nombre;}).filter(Boolean))].sort();
-  sel.innerHTML='<option value="">— Nueva evaluación —</option>';
-  nombres.forEach(function(n){
-    const opt=document.createElement('option');
-    opt.value=n;opt.textContent=n;sel.appendChild(opt);
-  });
+  // Replaced by search — no-op
 }
-function cargarDatosFijos(){
-  const nombre=document.getElementById('sel-reeval').value;
+
+function evaluacionesDe(nombre){
+  return perfilesBD
+    .filter(function(p){return (p.nombre||'').trim().toLowerCase()===(nombre||'').trim().toLowerCase();})
+    .sort(function(a,b){
+      var da=a.fecha_aplicacion||a.created_at||'';
+      var db=b.fecha_aplicacion||b.created_at||'';
+      return da.localeCompare(db);
+    });
+}
+
+function buscarJugadores(){
+  var q=document.getElementById('inp-buscar-jugador').value.trim().toLowerCase();
+  var lista=document.getElementById('lista-jugadores');
+  if(!q){lista.style.display='none';return;}
+  var nombres={};
+  perfilesBD.forEach(function(p){
+    if(!p.nombre)return;
+    var key=p.nombre.trim();
+    if(!nombres[key])nombres[key]={nombre:key,count:0,cft:p.cft,cat:p.categoria};
+    nombres[key].count++;
+  });
+  var matches=Object.keys(nombres).map(function(k){return nombres[k];})
+    .filter(function(n){return n.nombre.toLowerCase().indexOf(q)!==-1;})
+    .sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');})
+    .slice(0,8);
+  if(matches.length===0){
+    lista.innerHTML='<div style="padding:16px 18px;color:var(--muted);font-size:17px;font-weight:600;">Sin resultados — se creara un perfil nuevo</div>';
+    lista.style.display='block';
+    return;
+  }
+  lista.innerHTML=matches.map(function(m){
+    var safeName=m.nombre.replace(/'/g,"\\'");
+    return '<div onclick="seleccionarJugador(\''+safeName+'\')" '+
+      'style="padding:14px 18px;cursor:pointer;border-bottom:1px solid #eef1f7;display:flex;justify-content:space-between;align-items:center;gap:12px;" '+
+      'onmouseover="this.style.background=\'#f4f6fb\'" onmouseout="this.style.background=\'#fff\'">'+
+      '<div><div style="font-size:19px;font-weight:800;color:#1a2340;">'+m.nombre+'</div>'+
+      '<div style="font-size:15px;color:#6b7a99;font-weight:600;">'+(m.cft||'-')+' - '+(m.cat||'-')+'</div></div>'+
+      '<span style="background:#e8f0fe;color:#1565C0;font-size:14px;font-weight:800;padding:5px 12px;border-radius:14px;white-space:nowrap;">'+
+      m.count+' eval'+(m.count!==1?'s':'')+'</span></div>';
+  }).join('');
+  lista.style.display='block';
+}
+
+function seleccionarJugador(nombre){
+  document.getElementById('inp-buscar-jugador').value=nombre;
+  document.getElementById('lista-jugadores').style.display='none';
+  cargarDatosFijos(nombre);
+}
+
+function limpiarBusquedaJugador(){
+  document.getElementById('inp-buscar-jugador').value='';
+  document.getElementById('lista-jugadores').style.display='none';
+  resetAll();
+}
+
+document.addEventListener('click',function(e){
+  var lista=document.getElementById('lista-jugadores');
+  var input=document.getElementById('inp-buscar-jugador');
+  if(lista&&input&&!lista.contains(e.target)&&e.target!==input){
+    lista.style.display='none';
+  }
+});
+
+function cargarDatosFijos(nombreParam){
+  var nombre=nombreParam||document.getElementById('inp-buscar-jugador').value.trim();
   if(!nombre)return;
-  const rec=perfilesBD.find(function(p){return p.nombre===nombre;});
-  if(!rec)return;
+  var evals=evaluacionesDe(nombre);
+  if(evals.length===0)return;
+  // Use the LATEST evaluation as base
+  var rec=evals[evals.length-1];
   document.getElementById('inp-name').value=rec.nombre||'';
-  const opts=[...document.getElementById('inp-cat').options].map(function(o){return o.value;});
-  if(rec.categoria&&opts.includes(rec.categoria)){
+  var opts=[];
+  var catOpts=document.getElementById('inp-cat').options;
+  for(var i=0;i<catOpts.length;i++)opts.push(catOpts[i].value);
+  if(rec.categoria&&opts.indexOf(rec.categoria)!==-1){
     document.getElementById('inp-cat').value=rec.categoria;
     document.getElementById('inp-cat-other').classList.remove('visible');
   } else if(rec.categoria){
@@ -685,8 +750,20 @@ function cargarDatosFijos(){
   if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
   if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
   if(rec.ansiedad_rasgo){document.getElementById('inp-ar').value=rec.ansiedad_rasgo;updateAnxBadge('ar');}
+  // Set today's date for the new evaluation
+  document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
   updateAge();
-  toast('Datos de '+nombre+' cargados — Ansiedad Rasgo incluida (editable)','success');
+  var info=document.getElementById('reeval-info');
+  if(info)info.innerHTML='<strong style="color:var(--blue);">Evaluacion #'+(evals.length+1)+'</strong> de '+rec.nombre+
+    ' - Datos fijos precargados desde la evaluacion #'+evals.length+' ('+fmtFecha(rec.fecha_aplicacion)+')';
+  toast('Datos de '+nombre+' cargados - sera la evaluacion #'+(evals.length+1),'success');
+}
+
+function fmtFecha(v){
+  if(!v)return'-';
+  var p=v.substring(0,10).split('-');
+  var m=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return parseInt(p[2])+' '+m[parseInt(p[1])-1]+' '+p[0];
 }
 
 // LOEHR GRID
@@ -758,6 +835,27 @@ function updateCounter(){
 }
 document.getElementById('btn-eval').addEventListener('click',showResults);
 
+function calcNumEvaluacion(nombre,fechaAplicacion){
+  if(editandoId){
+    // Editing existing — find its actual position
+    var evals=evaluacionesDe(nombre);
+    for(var i=0;i<evals.length;i++){
+      if(evals[i].id===editandoId)return '#'+(i+1);
+    }
+  }
+  if(viendoId){
+    var evals2=evaluacionesDe(nombre);
+    for(var j=0;j<evals2.length;j++){
+      if(evals2[j].id===viendoId)return '#'+(j+1);
+    }
+  }
+  // New evaluation — count existing + 1
+  var existing=evaluacionesDe(nombre);
+  return '#'+(existing.length+1);
+}
+
+var viendoId=null;
+
 // SHOW RESULTS
 function showResults(){
   var name=document.getElementById('inp-name').value||'Atleta';
@@ -778,7 +876,8 @@ function showResults(){
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Aplicación</div><div class="pdf-chip-val">'+formatDate(date)+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Nacimiento</div><div class="pdf-chip-val">'+(dob?formatDate(dob):'—')+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad al evaluar</div><div class="pdf-chip-val">'+(ageEval!==null?ageEval+' años':'—')+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad actual</div><div class="pdf-chip-val">'+(ageActual!==null?ageActual+' años':'—')+'</div></div>';
+    '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad actual</div><div class="pdf-chip-val">'+(ageActual!==null?ageActual+' años':'—')+'</div></div>'+
+    '<div class="pdf-chip" style="background:rgba(255,255,255,.22);"><div class="pdf-chip-lbl">N° de Evaluación</div><div class="pdf-chip-val">'+calcNumEvaluacion(name,date)+'</div></div>';
   var ciInvalida=document.getElementById('ci-invalida')&&document.getElementById('ci-invalida').checked;
   var ciVal=parseInt(document.getElementById('inp-ci').value);
   if(ciInvalida){document.getElementById('pdf-ci').textContent='—';applyTag(document.getElementById('pdf-ci-tag'),{label:'PRUEBA INVÁLIDA',bg:'#ffebee',color:'#b71c1c'});}
@@ -943,6 +1042,7 @@ function verPerfil(id){
   });
   updateAge();
   editandoId=null;
+  viendoId=id;
   document.getElementById('edit-banner').classList.remove('visible');
   showResults();
   toast('Perfil de '+(rec.nombre||'jugador')+' cargado','success');
@@ -1195,7 +1295,9 @@ function resetAll(){
   document.getElementById('inp-dob').value='';
   document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('edad-calc').value='';
-  document.getElementById('sel-reeval').value='';
+  var bj=document.getElementById('inp-buscar-jugador');if(bj)bj.value='';
+  var lj=document.getElementById('lista-jugadores');if(lj)lj.style.display='none';
+  viendoId=null;
   ['ci-badge','ae-badge','ar-badge'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('inp-cat-other').classList.remove('visible');
   document.getElementById('edit-banner').classList.remove('visible');
@@ -1421,10 +1523,20 @@ if(sesionValida()){
     var params=new URLSearchParams(window.location.search);
     var verId=params.get('ver');
     var editId=params.get('editar');
+    var nuevaId=params.get('nueva');
     if(verId){
       setTimeout(function(){verPerfil(verId);},600);
     } else if(editId){
       setTimeout(function(){editarRegistro(editId);},600);
+    } else if(nuevaId){
+      setTimeout(function(){
+        var rec=perfilesBD.find(function(p){return p.id===nuevaId;});
+        if(rec){
+          document.getElementById('inp-buscar-jugador').value=rec.nombre||'';
+          cargarDatosFijos(rec.nombre);
+          window.scrollTo({top:0,behavior:'smooth'});
+        }
+      },600);
     } else {
       restoreDraft();
     }
