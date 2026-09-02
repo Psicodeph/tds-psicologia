@@ -70,6 +70,50 @@ tr:hover td{background:#f8f9fc;}
 .sc-red{color:#b71c1c;}
 .sc-grey{color:#aaa;}
 
+/* HISTORY MODAL */
+#hist-modal{position:fixed;inset:0;background:rgba(15,20,35,.6);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;}
+#hist-modal.open{display:flex;}
+.hist-box{background:#fff;border-radius:18px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.3);animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.hist-header{background:var(--blue);padding:22px 28px;border-radius:18px 18px 0 0;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:sticky;top:0;z-index:5;}
+.hist-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;}
+.hist-sub{font-size:16px;color:#bbdefb;font-weight:600;}
+.hist-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:38px;height:38px;border-radius:10px;font-size:22px;cursor:pointer;font-family:inherit;flex-shrink:0;line-height:1;}
+.hist-close:hover{background:rgba(255,255,255,.35);}
+.hist-body{padding:24px 28px 28px;}
+.hist-card{background:var(--input);border:1.5px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:14px;transition:all .2s;}
+.hist-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(21,101,192,.12);}
+.hist-card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.hist-num{display:inline-flex;align-items:center;justify-content:center;background:var(--blue);color:#fff;font-size:15px;font-weight:900;padding:6px 14px;border-radius:20px;}
+.hist-num.latest{background:var(--green);}
+.hist-date{font-size:17px;font-weight:700;color:var(--ink);}
+.hist-meta{font-size:15px;color:var(--muted);font-weight:600;margin-top:2px;}
+.hist-scores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.hist-score{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.hist-score-lbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.hist-score-val{font-size:24px;font-weight:900;}
+.hist-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.hist-btn{padding:10px 18px;font-size:16px;font-weight:800;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:var(--ink2);font-family:inherit;}
+.hist-btn:hover{border-color:var(--blue);color:var(--blue);}
+.hist-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+.hist-btn.primary:hover{opacity:.88;}
+.hist-empty{text-align:center;padding:40px;color:var(--muted);font-size:18px;font-weight:600;}
+
+/* PLAYER SEARCH MODAL */
+#search-modal{position:fixed;inset:0;background:rgba(15,20,35,.6);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:60px 20px 20px;}
+#search-modal.open{display:flex;}
+.search-box{background:#fff;border-radius:18px;max-width:600px;width:100%;box-shadow:0 24px 70px rgba(0,0,0,.3);overflow:hidden;}
+.search-box-header{padding:22px 26px 16px;border-bottom:1.5px solid var(--border);}
+.search-box-title{font-size:20px;font-weight:900;color:var(--ink);margin-bottom:12px;}
+.search-box-input{width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:10px;padding:14px 18px;font-size:20px;color:var(--ink);font-family:inherit;font-weight:600;outline:none;}
+.search-box-input:focus{border-color:var(--blue);background:#fff;}
+.search-results{max-height:400px;overflow-y:auto;padding:10px;}
+.search-item{padding:14px 18px;border-radius:10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.search-item:hover{background:var(--input);}
+.search-item-name{font-size:19px;font-weight:800;color:var(--ink);}
+.search-item-meta{font-size:15px;color:var(--muted);font-weight:600;}
+.search-item-count{background:#e8f0fe;color:var(--blue);font-size:14px;font-weight:800;padding:4px 12px;border-radius:14px;white-space:nowrap;}
+
 /* TOAST */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:14px 28px;border-radius:12px;font-size:18px;font-weight:700;z-index:9999;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
@@ -138,6 +182,7 @@ tr:hover td{background:#f8f9fc;}
     <table>
       <thead><tr>
         <th>Nombre</th>
+        <th>Eval.</th>
         <th>Fecha Nac.</th>
         <th>CFT</th>
         <th>Temperamento</th>
@@ -148,10 +193,24 @@ tr:hover td{background:#f8f9fc;}
         <th>Aplicación</th>
         <th>Última actividad</th>
       </tr></thead>
-      <tbody id="tbody"><tr><td colspan="9" class="empty">Cargando perfiles…</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="10" class="empty">Cargando perfiles…</td></tr></tbody>
     </table>
   </div>
 
+</div>
+
+<!-- HISTORY MODAL -->
+<div id="hist-modal">
+  <div class="hist-box">
+    <div class="hist-header">
+      <div>
+        <div class="hist-title" id="hist-name">Jugador</div>
+        <div class="hist-sub" id="hist-count">— evaluaciones</div>
+      </div>
+      <button class="hist-close" onclick="cerrarHistorico()">×</button>
+    </div>
+    <div class="hist-body" id="hist-body"></div>
+  </div>
 </div>
 
 <script>
@@ -241,7 +300,7 @@ function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 function renderTabla(data){
   var tbody=document.getElementById('tbody');
   if(!data||data.length===0){
-    tbody.innerHTML='<tr><td colspan="9" class="empty">No se encontraron perfiles con ese criterio.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="10" class="empty">No se encontraron perfiles con ese criterio.</td></tr>';
     return;
   }
   tbody.innerHTML=data.map(function(p){
@@ -252,9 +311,12 @@ function renderTabla(data){
         '<div class="action-menu" id="menu-'+pid+'">'+
           '<button class="action-menu-btn" onclick="irAPerfil(\''+pid+'\',\'ver\')">📥 Ver y descargar PDF</button>'+
           '<button class="action-menu-btn" onclick="irAPerfil(\''+pid+'\',\'editar\')">✏️ Editar perfil</button>'+
+          '<button class="action-menu-btn" onclick="nuevaEvaluacion(\''+pid+'\')">🆕 Nueva evaluación</button>'+
+          '<button class="action-menu-btn" onclick="verHistorico(\''+pid+'\')">📊 Ver histórico</button>'+
           '<button class="action-menu-btn danger" onclick="eliminar(\''+pid+'\')">🗑 Eliminar</button>'+
         '</div>'+
       '</td>'+
+      '<td><span style="background:#e8f0fe;color:var(--blue);font-size:15px;font-weight:800;padding:4px 12px;border-radius:14px;white-space:nowrap;">#'+numEvaluacion(p)+'</span></td>'+
       '<td>'+fmtDate(p.fecha_nacimiento)+'</td>'+
       '<td>'+escHtml(p.cft||'—')+'</td>'+
       '<td>'+escHtml(p.temperamento||'—')+'</td>'+
@@ -267,6 +329,108 @@ function renderTabla(data){
     '</tr>';
   }).join('');
 }
+
+// ── NÚMERO DE EVALUACIÓN ──────────────────────────────────────────────
+function evaluacionesDe(nombre){
+  return perfiles
+    .filter(function(p){return (p.nombre||'').trim().toLowerCase()===(nombre||'').trim().toLowerCase();})
+    .sort(function(a,b){
+      var da=a.fecha_aplicacion||a.created_at||'';
+      var db=b.fecha_aplicacion||b.created_at||'';
+      return da.localeCompare(db);
+    });
+}
+
+function numEvaluacion(p){
+  var evals=evaluacionesDe(p.nombre);
+  var idx=evals.findIndex(function(e){return e.id===p.id;});
+  return idx>=0?idx+1:1;
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────────────────────
+function verHistorico(id){
+  closeAllMenus();
+  var rec=perfiles.find(function(p){return p.id===id;});
+  if(!rec)return;
+  var evals=evaluacionesDe(rec.nombre);
+  document.getElementById('hist-name').textContent=rec.nombre||'Jugador';
+  document.getElementById('hist-count').textContent=
+    evals.length+' evaluación'+(evals.length!==1?'es':'')+' · '+(rec.cft||'—')+' · '+(rec.categoria||'—');
+  var body=document.getElementById('hist-body');
+  if(evals.length===0){
+    body.innerHTML='<div class="hist-empty">No hay evaluaciones para este jugador.</div>';
+  } else {
+    body.innerHTML=evals.map(function(e,i){
+      var esUltima=(i===evals.length-1);
+      return '<div class="hist-card">'+
+        '<div class="hist-card-top">'+
+          '<div>'+
+            '<span class="hist-num'+(esUltima?' latest':'')+'">Evaluación #'+(i+1)+(esUltima?' · Más reciente':'')+'</span>'+
+            '<div class="hist-date" style="margin-top:8px;">'+fmtDate(e.fecha_aplicacion)+'</div>'+
+            '<div class="hist-meta">'+(e.temperamento||'Sin temperamento')+' · CI '+(e.ci||'—')+' · Ansiedad E '+(e.ansiedad_estado||'—')+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="hist-scores">'+
+          histScore('Autoconf.',e.loehr_autoconfianza,30)+
+          histScore('C. Emocional',e.loehr_control_emocional,60)+
+          histScore('Concentración',e.loehr_concentracion,60)+
+          histScore('Motivación',e.loehr_motivacion,30)+
+        '</div>'+
+        '<div class="hist-actions">'+
+          '<button class="hist-btn primary" onclick="irAPerfil(\''+e.id+'\',\'ver\')">📥 Ver y descargar PDF</button>'+
+          '<button class="hist-btn" onclick="irAPerfil(\''+e.id+'\',\'editar\')">✏️ Editar</button>'+
+          '<button class="hist-btn" style="color:var(--red);border-color:#ffcdd2;" onclick="eliminarDesdeHist(\''+e.id+'\')">🗑 Eliminar</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+  document.getElementById('hist-modal').classList.add('open');
+}
+
+function histScore(lbl,val,max){
+  var color='#aaa';
+  if(val!=null){
+    var p=val/max;
+    color=p>=26/30?'#2e7d32':p>=20/30?'#e65100':'#b71c1c';
+  }
+  return '<div class="hist-score">'+
+    '<div class="hist-score-lbl">'+lbl+'</div>'+
+    '<div class="hist-score-val" style="color:'+color+'">'+(val!=null?val:'—')+
+    '<span style="font-size:14px;color:#aaa;font-weight:600;">/'+max+'</span></div>'+
+  '</div>';
+}
+
+function cerrarHistorico(){
+  document.getElementById('hist-modal').classList.remove('open');
+}
+
+async function eliminarDesdeHist(id){
+  var rec=perfiles.find(function(p){return p.id===id;});
+  var nombre=rec?rec.nombre:'este perfil';
+  var num=rec?numEvaluacion(rec):'';
+  if(!confirm('¿Eliminar la evaluación #'+num+' de '+nombre+'? Esta acción no se puede deshacer.'))return;
+  var res=await sb.from('perfiles').delete().eq('id',id);
+  if(res.error){toast('Error al eliminar','error');return;}
+  toast('Evaluación eliminada','success');
+  cerrarHistorico();
+  cargar();
+}
+
+// ── NUEVA EVALUACIÓN ──────────────────────────────────────────────────
+function nuevaEvaluacion(id){
+  closeAllMenus();
+  var rec=perfiles.find(function(p){return p.id===id;});
+  if(!rec)return;
+  // Find latest evaluation of this player
+  var evals=evaluacionesDe(rec.nombre);
+  var ultima=evals[evals.length-1];
+  window.location.href='/?nueva='+(ultima?ultima.id:id);
+}
+
+// Close modal on backdrop click
+document.addEventListener('click',function(e){
+  if(e.target&&e.target.id==='hist-modal')cerrarHistorico();
+});
 
 // MENUS
 function toggleMenu(e,id){
@@ -304,9 +468,48 @@ function toast(msg,type){
 }
 
 // INIT
-// If not authenticated, redirect to login
-if(sessionStorage.getItem('tds-auth')==='ok'||localStorage.getItem('tds-auth-persist')==='ok'){
-  sessionStorage.setItem('tds-auth','ok');
+// ── CONTROL DE SESIÓN (20 min inactividad) ──────────────────────────────
+var SESSION_KEY='tds-auth';
+var SESSION_TIME_KEY='tds-auth-time';
+var TIMEOUT_MIN=20;
+var inactivityTimer=null;
+
+function sesionValida(){
+  if(sessionStorage.getItem(SESSION_KEY)!=='ok')return false;
+  var last=parseInt(sessionStorage.getItem(SESSION_TIME_KEY)||'0');
+  if(!last)return false;
+  var mins=(Date.now()-last)/60000;
+  if(mins>TIMEOUT_MIN){
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_TIME_KEY);
+    return false;
+  }
+  return true;
+}
+
+function reiniciarInactividad(){
+  if(sessionStorage.getItem(SESSION_KEY)==='ok'){
+    sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
+  }
+  clearTimeout(inactivityTimer);
+  inactivityTimer=setTimeout(function(){
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_TIME_KEY);
+    alert('Sesión cerrada por inactividad. Ingresá la contraseña de nuevo.');
+    window.location.href='/';
+  },TIMEOUT_MIN*60000);
+}
+
+function iniciarControlInactividad(){
+  ['click','keydown','scroll','mousemove','touchstart'].forEach(function(evt){
+    document.addEventListener(evt,reiniciarInactividad,{passive:true});
+  });
+  reiniciarInactividad();
+}
+
+if(sesionValida()){
+  sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
+  iniciarControlInactividad();
   cargar();
 } else {
   window.location.href='/';
