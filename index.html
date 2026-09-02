@@ -110,6 +110,31 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
 .btn-reset:hover{border-color:var(--blue);color:var(--blue);}
 .btn-secondary{padding:12px 24px;font-size:18px;font-weight:700;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);color:var(--ink2);font-family:inherit;transition:all .2s;}
 .btn-secondary:hover{border-color:var(--blue);color:var(--blue);}
+/* HISTORY MODAL */
+#hist-modal{position:fixed;inset:0;background:rgba(15,20,35,.6);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;}
+#hist-modal.open{display:flex;}
+.hist-box{background:#fff;border-radius:18px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.3);}
+.hist-header{background:var(--blue);padding:22px 28px;border-radius:18px 18px 0 0;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:sticky;top:0;z-index:5;}
+.hist-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;}
+.hist-sub{font-size:16px;color:#bbdefb;font-weight:600;}
+.hist-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:38px;height:38px;border-radius:10px;font-size:22px;cursor:pointer;font-family:inherit;flex-shrink:0;line-height:1;}
+.hist-close:hover{background:rgba(255,255,255,.35);}
+.hist-body{padding:24px 28px 28px;}
+.hist-card{background:var(--input);border:1.5px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:14px;}
+.hist-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(21,101,192,.12);}
+.hist-num{display:inline-flex;align-items:center;background:var(--blue);color:#fff;font-size:15px;font-weight:900;padding:6px 14px;border-radius:20px;}
+.hist-num.latest{background:var(--green);}
+.hist-date{font-size:17px;font-weight:700;color:var(--ink);margin-top:8px;}
+.hist-meta{font-size:15px;color:var(--muted);font-weight:600;margin-top:2px;}
+.hist-scores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;}
+.hist-score{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.hist-score-lbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;}
+.hist-score-val{font-size:24px;font-weight:900;}
+.hist-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.hist-btn{padding:10px 18px;font-size:16px;font-weight:800;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:var(--ink2);font-family:inherit;}
+.hist-btn:hover{border-color:var(--blue);color:var(--blue);}
+.hist-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+
 /* TOAST */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:13px 24px;border-radius:10px;font-size:14px;font-weight:700;z-index:9999;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
@@ -243,6 +268,18 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="hist-modal">
+  <div class="hist-box">
+    <div class="hist-header">
+      <div>
+        <div class="hist-title" id="hist-name">Jugador</div>
+        <div class="hist-sub" id="hist-count">— evaluaciones</div>
+      </div>
+      <button class="hist-close" onclick="cerrarHistoricoIndex()">×</button>
+    </div>
+    <div class="hist-body" id="hist-body"></div>
+  </div>
+</div>
 <div id="success-modal"><div class="success-box"><div class="success-icon">✅</div><div class="success-title">¡Guardado con éxito!</div><div class="success-sub" id="success-sub">El perfil fue guardado correctamente.</div></div></div>
 <div class="autosave-bar" id="autosave-bar">💾 Borrador guardado automáticamente</div>
 
@@ -991,6 +1028,69 @@ async function guardarPerfil(){
   }
 }
 
+// ── HISTÓRICO (index) ─────────────────────────────────────────────────
+function verHistoricoIndex(id){
+  closeAllMenus();
+  var rec=perfilesBD.find(function(p){return p.id===id;});
+  if(!rec)return;
+  var evals=evaluacionesDe(rec.nombre);
+  document.getElementById('hist-name').textContent=rec.nombre||'Jugador';
+  document.getElementById('hist-count').textContent=
+    evals.length+' evaluación'+(evals.length!==1?'es':'')+' · '+(rec.cft||'—')+' · '+(rec.categoria||'—');
+  var body=document.getElementById('hist-body');
+  body.innerHTML=evals.map(function(e,i){
+    var esUltima=(i===evals.length-1);
+    return '<div class="hist-card">'+
+      '<span class="hist-num'+(esUltima?' latest':'')+'">Evaluación #'+(i+1)+(esUltima?' · Más reciente':'')+'</span>'+
+      '<div class="hist-date">'+fmtFecha(e.fecha_aplicacion)+'</div>'+
+      '<div class="hist-meta">'+(e.temperamento||'Sin temperamento')+' · CI '+(e.ci||'—')+' · Ansiedad E '+(e.ansiedad_estado||'—')+'</div>'+
+      '<div class="hist-scores">'+
+        histScoreIdx('Autoconf.',e.loehr_autoconfianza,30)+
+        histScoreIdx('C. Emocional',e.loehr_control_emocional,60)+
+        histScoreIdx('Concentración',e.loehr_concentracion,60)+
+        histScoreIdx('Motivación',e.loehr_motivacion,30)+
+      '</div>'+
+      '<div class="hist-actions">'+
+        '<button class="hist-btn primary" onclick="cerrarHistoricoIndex();descargarPerfilPDF(\''+e.id+'\')">📥 Ver y descargar PDF</button>'+
+        '<button class="hist-btn" onclick="cerrarHistoricoIndex();editarRegistro(\''+e.id+'\')">✏️ Editar</button>'+
+        '<button class="hist-btn" style="color:var(--red);border-color:#ffcdd2;" onclick="eliminarRegistro(\''+e.id+'\')">🗑 Eliminar</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  document.getElementById('hist-modal').classList.add('open');
+}
+
+function histScoreIdx(lbl,val,max){
+  var color='#aaa';
+  if(val!=null){
+    var p=val/max;
+    color=p>=26/30?'#2e7d32':p>=20/30?'#e65100':'#b71c1c';
+  }
+  return '<div class="hist-score"><div class="hist-score-lbl">'+lbl+'</div>'+
+    '<div class="hist-score-val" style="color:'+color+'">'+(val!=null?val:'—')+
+    '<span style="font-size:14px;color:#aaa;font-weight:600;">/'+max+'</span></div></div>';
+}
+
+function cerrarHistoricoIndex(){
+  document.getElementById('hist-modal').classList.remove('open');
+}
+
+function nuevaEvalDesdeTabla(id){
+  closeAllMenus();
+  var rec=perfilesBD.find(function(p){return p.id===id;});
+  if(!rec)return;
+  resetAll();
+  setTimeout(function(){
+    document.getElementById('inp-buscar-jugador').value=rec.nombre||'';
+    cargarDatosFijos(rec.nombre);
+    window.scrollTo({top:0,behavior:'smooth'});
+  },100);
+}
+
+document.addEventListener('click',function(e){
+  if(e.target&&e.target.id==='hist-modal')cerrarHistoricoIndex();
+});
+
 // NAME MENU
 function toggleMenu(e,id){
   e.stopPropagation();
@@ -1132,6 +1232,8 @@ function renderTabla(data, showMoreLink){
         '<div class="action-menu" id="menu-'+p.id+'">'+
           '<button class="action-menu-btn" onclick="descargarPerfilPDF(\''+p.id+'\')">📥 Descargar PDF</button>'+
           '<button class="action-menu-btn" onclick="editarRegistro(\''+p.id+'\')">✏️ Editar perfil</button>'+
+          '<button class="action-menu-btn" onclick="nuevaEvalDesdeTabla(\''+p.id+'\')">🆕 Nueva evaluación</button>'+
+          '<button class="action-menu-btn" onclick="verHistoricoIndex(\''+p.id+'\')">📊 Ver histórico</button>'+
           '<button class="action-menu-btn danger" onclick="eliminarRegistro(\''+p.id+'\')">🗑 Eliminar</button>'+
         '</div>'+
       '</td>'+
