@@ -261,7 +261,8 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
     <div class="auth-name">Lic. Melany Ordóñez</div>
     <div class="auth-cred">Máster en Psicología del Deporte</div>
     <div class="auth-sub" style="margin-top:6px;margin-bottom:22px;">Inventario Psicológico de Rendimiento Deportivo</div>
-    <input type="password" class="auth-input" id="auth-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')verificarPassword()">
+    <input type="email" class="auth-input" id="auth-email" placeholder="correo@ejemplo.com" autocomplete="username" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')verificarPassword()">
+    <input type="password" class="auth-input" id="auth-input" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')verificarPassword()">
     <button class="auth-btn" onclick="verificarPassword()">Ingresar</button>
     <div class="auth-error" id="auth-error">Contraseña incorrecta. Intentá de nuevo.</div>
   </div>
@@ -561,7 +562,9 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
 
 <script>
 const{createClient}=supabase;
-const sb=createClient('https://esbmtenfcjbrrocrnfep.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA');
+// La clave anon es pública por diseño: la protección real la dan Supabase Auth + las políticas RLS (ver supabase/seguridad.sql).
+// La sesión vive en sessionStorage, así se cierra al cerrar la pestaña.
+const sb=createClient('https://esbmtenfcjbrrocrnfep.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',{auth:{storage:window.sessionStorage}});
 
 const SCALES={
   AC:{label:"Autoconfianza",color:"#1565C0",items:[1,8,15,22,29,36]},
@@ -592,23 +595,30 @@ let editandoId=null;
 
 // AUTH
 async function verificarPassword(){
-  const inp=document.getElementById('auth-input').value.trim();
+  const email=document.getElementById('auth-email').value.trim();
+  const inp=document.getElementById('auth-input').value;
   const errEl=document.getElementById('auth-error');
   errEl.style.display='none';
+  if(!email||!inp){
+    errEl.textContent='Ingresá tu correo y contraseña.';
+    errEl.style.display='block';
+    return;
+  }
   try{
-    const{data,error}=await sb.from('configuracion').select('valor').eq('clave','password').single();
-    if(error) throw error;
-    if(inp===data.valor){
+    const{error}=await sb.auth.signInWithPassword({email:email,password:inp});
+    if(!error){
       marcarSesionActiva();
       document.getElementById('auth-overlay').style.display='none';
       hookAutosave();
       iniciarControlInactividad();
       restoreDraft();
       cargarPerfiles();
-    } else {
-      errEl.textContent='Contraseña incorrecta. Intentá de nuevo.';
+    } else if(error.status===400){
+      errEl.textContent='Correo o contraseña incorrectos. Intentá de nuevo.';
       errEl.style.display='block';
       document.getElementById('auth-input').value='';
+    } else {
+      throw error;
     }
   } catch(e){
     errEl.textContent='Error de conexión. Intentá de nuevo.';
@@ -623,6 +633,7 @@ function getLevel(score,max){
   if(p>=20/30)return{label:"MEJORAR Y PERFECCIONAR",bg:"#fff3e0",text:"#e65100",border:"#f57c00"};
   return{label:"ATENCIÓN ESPECIAL",bg:"#ffebee",text:"#b71c1c",border:"#c62828"};
 }
+var CI_INVALIDA='PRUEBA INVÁLIDA';
 function ciDiag(v){
   if(v>=130)return{label:"MUY SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
   if(v>=120)return{label:"SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
@@ -649,6 +660,11 @@ function calcAge(dob,app){
   if(m<0||(m===0&&base.getDate()<birth.getDate()))age--;
   if(age<0||age>100)return null;
   return age;
+}
+// Fecha de hoy en hora local (YYYY-MM-DD). toISOString() usa UTC y en Honduras (UTC-6) da el día siguiente después de las 6 p. m.
+function hoyLocal(){
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 function formatDate(val){
   if(!val)return'—';
@@ -729,12 +745,11 @@ function buscarJugadores(){
     return;
   }
   lista.innerHTML=matches.map(function(m){
-    var safeName=m.nombre.replace(/'/g,"\\'");
-    return '<div onclick="seleccionarJugador(\''+safeName+'\')" '+
+    return '<div data-nombre="'+escHtml(m.nombre)+'" onclick="seleccionarJugador(this.dataset.nombre)" '+
       'style="padding:14px 18px;cursor:pointer;border-bottom:1px solid #eef1f7;display:flex;justify-content:space-between;align-items:center;gap:12px;" '+
       'onmouseover="this.style.background=\'#f4f6fb\'" onmouseout="this.style.background=\'#fff\'">'+
-      '<div><div style="font-size:19px;font-weight:800;color:#1a2340;">'+m.nombre+'</div>'+
-      '<div style="font-size:15px;color:#6b7a99;font-weight:600;">'+(m.cft||'-')+' - '+(m.cat||'-')+'</div></div>'+
+      '<div><div style="font-size:19px;font-weight:800;color:#1a2340;">'+escHtml(m.nombre)+'</div>'+
+      '<div style="font-size:15px;color:#6b7a99;font-weight:600;">'+escHtml(m.cft||'-')+' - '+escHtml(m.cat||'-')+'</div></div>'+
       '<span style="background:#e8f0fe;color:#1565C0;font-size:14px;font-weight:800;padding:5px 12px;border-radius:14px;white-space:nowrap;">'+
       m.count+' eval'+(m.count!==1?'s':'')+'</span></div>';
   }).join('');
@@ -783,12 +798,13 @@ function cargarDatosFijos(nombreParam){
   if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
   if(rec.fecha_nacimiento)document.getElementById('inp-dob').value=rec.fecha_nacimiento;
   if(rec.edad)document.getElementById('edad-calc').value=rec.edad;
+  document.getElementById('ci-invalida').checked=rec.ci_diagnostico===CI_INVALIDA;
   if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
   if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
   if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
   if(rec.ansiedad_rasgo){document.getElementById('inp-ar').value=rec.ansiedad_rasgo;updateAnxBadge('ar');}
   // Set today's date for the new evaluation
-  document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('inp-date').value=hoyLocal();
   updateAge();
   var info=document.getElementById('reeval-info');
   if(info)info.innerHTML='<strong style="color:var(--blue);">Evaluacion #'+(evals.length+1)+'</strong> de '+rec.nombre+
@@ -832,20 +848,35 @@ Object.entries(SCALES).forEach(function(entry){
   d.innerHTML='<div class="sum-label">SUMA</div><input type="number" class="sum-value" id="sumval-'+key+'" min="0" max="30" placeholder="0" oninput="onSumInput()"><div class="sum-max">/30</div>';
   sumsEl.appendChild(d);
 });
-document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
+document.getElementById('inp-date').value=hoyLocal();
 
 function scaleScore(key){return parseInt(document.getElementById('sumval-'+key).value)||0;}
+// Cada escala tiene 6 ítems de 1 a 5, así que una suma válida va de 6 a 30.
+var SUMA_MIN=6,SUMA_MAX=30;
+function sumaValida(k){
+  var v=Number(document.getElementById('sumval-'+k).value);
+  return Number.isInteger(v)&&v>=SUMA_MIN&&v<=SUMA_MAX;
+}
 function allSumsManual(){
-  return Object.keys(SCALES).every(function(k){
-    var v=parseInt(document.getElementById('sumval-'+k).value);
-    return !isNaN(v)&&v>0;
-  });
+  return Object.keys(SCALES).every(sumaValida);
+}
+function itemsCompletos(){
+  return answers.slice(1).filter(function(v){return v>0;}).length;
+}
+// El perfil solo se puede generar con los 42 ítems completos, o sin ítems y con las 7 sumas ingresadas a mano.
+// Si hay ítems a medias, las sumas serían parciales.
+function loehrListo(){
+  var filled=itemsCompletos();
+  return filled===42||(filled===0&&allSumsManual());
 }
 function onSumInput(){updateCounter();}
 function updateSums(){
   Object.keys(SCALES).forEach(function(k){
+    var el=document.getElementById('sumval-'+k);
+    var usados=SCALES[k].items.filter(function(i){return answers[i]>0;}).length;
     var fromItems=SCALES[k].items.reduce(function(s,i){return s+(answers[i]||0);},0);
-    if(fromItems>0)document.getElementById('sumval-'+k).value=fromItems;
+    if(usados>0){el.value=fromItems;el.dataset.auto='1';}
+    else if(el.dataset.auto==='1'){el.value='';delete el.dataset.auto;}
   });
 }
 function onAnswer(item,val){
@@ -855,9 +886,9 @@ function onAnswer(item,val){
   updateSums();updateCounter();
 }
 function updateCounter(){
-  var filled=answers.slice(1).filter(function(v){return v>0;}).length;
-  var sumsOk=allSumsManual();
-  var ready=filled===42||sumsOk;
+  var filled=itemsCompletos();
+  var sumsOk=filled===0&&allSumsManual();
+  var ready=loehrListo();
   var counter=document.getElementById('counter'),btn=document.getElementById('btn-eval');
   if(filled===42){counter.textContent='42 / 42';counter.className='counter done';}
   else if(sumsOk){counter.textContent='✓ Sumas ingresadas';counter.className='counter done';}
@@ -867,7 +898,10 @@ function updateCounter(){
     btn.textContent=editandoId?'⚡ VER PERFIL':'⚡ VER PERFIL COMPLETO';
   } else {
     btn.disabled=true;btn.className='btn-eval';
-    btn.textContent=filled>0?'Faltan '+(42-filled)+' respuestas':'Completá los ítems o ingresá las sumas';
+    var algunaSuma=Object.keys(SCALES).some(function(k){return document.getElementById('sumval-'+k).value!=='';});
+    if(filled>0)btn.textContent='Faltan '+(42-filled)+' respuestas';
+    else if(algunaSuma)btn.textContent='Cada suma debe estar entre '+SUMA_MIN+' y '+SUMA_MAX;
+    else btn.textContent='Completá los ítems o ingresá las sumas';
   }
 }
 document.getElementById('btn-eval').addEventListener('click',showResults);
@@ -907,9 +941,9 @@ function showResults(){
   var ageActual=calcAge(dob,null)||edadFallback;
   document.getElementById('results-title').textContent='Perfil · '+name+' · '+cat;
   document.getElementById('pdf-header-info').innerHTML=
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Nombre</div><div class="pdf-chip-val">'+name+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Categoría</div><div class="pdf-chip-val">'+cat+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Centro de Formación</div><div class="pdf-chip-val">'+cft+'</div></div>'+
+    '<div class="pdf-chip"><div class="pdf-chip-lbl">Nombre</div><div class="pdf-chip-val">'+escHtml(name)+'</div></div>'+
+    '<div class="pdf-chip"><div class="pdf-chip-lbl">Categoría</div><div class="pdf-chip-val">'+escHtml(cat)+'</div></div>'+
+    '<div class="pdf-chip"><div class="pdf-chip-lbl">Centro de Formación</div><div class="pdf-chip-val">'+escHtml(cft)+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Aplicación</div><div class="pdf-chip-val">'+formatDate(date)+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Nacimiento</div><div class="pdf-chip-val">'+(dob?formatDate(dob):'—')+'</div></div>'+
     '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad al evaluar</div><div class="pdf-chip-val">'+(ageEval!==null?ageEval+' años':'—')+'</div></div>'+
@@ -975,6 +1009,7 @@ function showResults(){
 // GUARDAR
 async function guardarPerfil(){
   if(perfilGuardado)return;
+  if(!loehrListo()){toast('El Loehr está incompleto: completá los 42 ítems o las 7 sumas (6 a 30).','error');return;}
   // Refresh PDF view with current form values before saving
   showResults();
   var btn=document.getElementById('btn-save');
@@ -983,7 +1018,8 @@ async function guardarPerfil(){
   var cat=catSel==='__otro__'?(document.getElementById('inp-cat-other').value||'Otro'):catSel;
   var dob=document.getElementById('inp-dob').value;
   var date=document.getElementById('inp-date').value;
-  var ciVal=parseInt(document.getElementById('inp-ci').value);
+  var ciInvalida=document.getElementById('ci-invalida').checked;
+  var ciVal=ciInvalida?NaN:parseInt(document.getElementById('inp-ci').value);
   var aeVal=parseInt(document.getElementById('inp-ae').value);
   var arVal=parseInt(document.getElementById('inp-ar').value);
   var tempKey=document.getElementById('inp-temp').value;
@@ -993,8 +1029,8 @@ async function guardarPerfil(){
     nombre:document.getElementById('inp-name').value||'Sin nombre',
     categoria:cat,cft:document.getElementById('inp-cft').value,
     fecha_nacimiento:dob||null,fecha_aplicacion:date||null,
-    edad:calcAge(dob,null)||parseInt(document.getElementById('edad-calc').value)||null,
-    ci:isNaN(ciVal)?null:ciVal,ci_diagnostico:isNaN(ciVal)?null:ciDiag(ciVal).label,
+    edad:calcAge(dob,date)||parseInt(document.getElementById('edad-calc').value)||null, // edad al momento de la evaluación
+    ci:isNaN(ciVal)?null:ciVal,ci_diagnostico:ciInvalida?CI_INVALIDA:(isNaN(ciVal)?null:ciDiag(ciVal).label),
     temperamento:tempKey||null,
     temperamento_resumen:document.getElementById('inp-temp-desc').value.trim()||null,
     ansiedad_estado:isNaN(aeVal)?null:aeVal,
@@ -1124,21 +1160,25 @@ function verPerfil(id){
     document.getElementById('inp-cat-other').classList.add('visible');
   }
   if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
-  if(rec.fecha_nacimiento)document.getElementById('inp-dob').value=rec.fecha_nacimiento;
-  if(rec.fecha_aplicacion)document.getElementById('inp-date').value=rec.fecha_aplicacion;
-  if(rec.edad)document.getElementById('edad-calc').value=rec.edad;
-  if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
-  if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
-  if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
-  if(rec.ansiedad_estado){document.getElementById('inp-ae').value=rec.ansiedad_estado;updateAnxBadge('ae');}
-  if(rec.ansiedad_rasgo){document.getElementById('inp-ar').value=rec.ansiedad_rasgo;updateAnxBadge('ar');}
-  if(rec.ansiedad_interpretacion)document.getElementById('inp-anx-desc').value=rec.ansiedad_interpretacion;
-  if(rec.conclusion)document.getElementById('inp-conclusion').value=rec.conclusion;
-  if(rec.recomendaciones)document.getElementById('inp-recomendaciones').value=rec.recomendaciones;
+  // Se asigna todo (con '' si falta) para no arrastrar valores del perfil abierto antes.
+  function val(v){return v!=null?v:'';}
+  document.getElementById('inp-dob').value=val(rec.fecha_nacimiento);
+  document.getElementById('inp-date').value=val(rec.fecha_aplicacion);
+  document.getElementById('edad-calc').value=val(rec.edad);
+  document.getElementById('ci-invalida').checked=rec.ci_diagnostico===CI_INVALIDA;
+  document.getElementById('inp-ci').value=val(rec.ci);updateCiBadge();
+  document.getElementById('inp-temp').value=val(rec.temperamento);
+  document.getElementById('inp-temp-desc').value=val(rec.temperamento_resumen);
+  document.getElementById('inp-ae').value=val(rec.ansiedad_estado);updateAnxBadge('ae');
+  document.getElementById('inp-ar').value=val(rec.ansiedad_rasgo);updateAnxBadge('ar');
+  document.getElementById('inp-anx-desc').value=val(rec.ansiedad_interpretacion);
+  document.getElementById('inp-loehr-interp').value=val(rec.loehr_interpretacion);
+  document.getElementById('inp-conclusion').value=val(rec.conclusion);
+  document.getElementById('inp-recomendaciones').value=val(rec.recomendaciones);
   var loehrMap={AC:'loehr_ac',EN:'loehr_en',CAT:'loehr_cat',CVI:'loehr_cvi',NM:'loehr_nm',EP:'loehr_ep',ACT:'loehr_act'};
   Object.entries(loehrMap).forEach(function(e){
     var el=document.getElementById('sumval-'+e[0]);
-    if(el)el.value=rec[e[1]]||'';
+    if(el){el.value=rec[e[1]]||'';delete el.dataset.auto;}
   });
   updateAge();
   editandoId=null;
@@ -1247,7 +1287,7 @@ function renderTabla(data, showMoreLink){
     '</tr>';
   }).join('')+extra;
 }
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 function renderStats(data){
   document.getElementById('stat-total').textContent=data.length||0;
@@ -1297,8 +1337,12 @@ async function consultarIA(){
   };}));
   var prompt='Sos una psicóloga del deporte del programa TDS de Honduras. Tenés acceso a todos los perfiles psicológicos guardados. IMPORTANTE: Los datos están completos — si el usuario pregunta por jugadores de cierta categoría o año de nacimiento, buscalos en el campo anio_nacimiento o categoria. Nunca digas que no tenés datos si hay perfiles en la lista.\n\nPerfiles ('+perfilesBD.length+' jugadores):\n'+resumenDatos+'\n\nEscalas Loehr(/30): AC=Autoconfianza, EN=Energía Negativa, CAT=Control Atencional, CVI=Control Visualización, NM=Nivel Motivacional, EP=Energía Positiva, ACT=Control de Actitudes.\nCompuestos: Autoconfianza(/30), Control Emocional(/60=EP+EN), Concentración(/60=CAT+CVI), Motivación(/30).\nNiveles: ≥87%=Habilidad Excelente, 67-86%=Mejorar y Perfeccionar, <67%=Atención Especial.\nSexo: si la categoría contiene "Masculino" es masculino, si contiene "Femenino" es femenino.\n\nRespondé en español con los datos reales de los perfiles.\n\nPregunta: '+pregunta;
   try{
-    var response=await fetch('/api/consulta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+    var ses=await sb.auth.getSession();
+    var token=ses.data&&ses.data.session?ses.data.session.access_token:'';
+    var response=await fetch('/api/consulta',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({prompt:prompt})});
     var data=await response.json();
+    if(response.status===401)throw{userMsg:'Tu sesión venció. Recargá la página e ingresá de nuevo.'};
+    if(!response.ok)throw{userMsg:data.error||'Error al conectar con la IA.'};
     var texto=(data.content&&data.content[0]&&data.content[0].text)||'No se pudo obtener respuesta.';
     lastAIResponse=texto;
     respText.className='query-response-text';
@@ -1306,7 +1350,7 @@ async function consultarIA(){
     document.getElementById('btn-ai-report').classList.remove('hidden');
   } catch(err){
     respText.className='query-response-text';
-    respText.textContent='Error al conectar con la IA.';console.error(err);
+    respText.textContent=(err&&err.userMsg)||'Error al conectar con la IA.';console.error(err);
   }
   btn.disabled=false;btn.textContent='Consultar';
 }
@@ -1395,7 +1439,7 @@ function resetAll(){
   document.getElementById('inp-cft').value='Tegucigalpa';
   document.getElementById('inp-temp').value='';
   document.getElementById('inp-dob').value='';
-  document.getElementById('inp-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('inp-date').value=hoyLocal();
   document.getElementById('edad-calc').value='';
   var bj=document.getElementById('inp-buscar-jugador');if(bj)bj.value='';
   var lj=document.getElementById('lista-jugadores');if(lj)lj.style.display='none';
@@ -1561,7 +1605,7 @@ async function generarReporteIA(){
     });
     pdf.setTextColor(107,122,153);pdf.setFontSize(9);
     pdf.text('Lic. Melany Ordóñez · Máster en Psicología del Deporte · TDS Honduras',margin,pageH-10);
-    pdf.save('Analisis_TDS_'+today.toISOString().split('T')[0]+'.pdf');
+    pdf.save('Analisis_TDS_'+hoyLocal()+'.pdf');
   }catch(e){toast('Error al generar reporte','error');console.error(e);}
   if(btn){btn.disabled=false;btn.textContent='📄 Generar reporte PDF';}
 }
@@ -1578,18 +1622,21 @@ function marcarSesionActiva(){
   sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
 }
 
-function sesionValida(){
-  if(sessionStorage.getItem(SESSION_KEY)!=='ok')return false;
+async function sesionValida(){
+  var res=await sb.auth.getSession();
+  if(!res.data||!res.data.session)return false;
+  if(sessionStorage.getItem(SESSION_KEY)!=='ok'){await cerrarSesion();return false;}
   var last=parseInt(sessionStorage.getItem(SESSION_TIME_KEY)||'0');
-  if(!last)return false;
+  if(!last){await cerrarSesion();return false;}
   var mins=(Date.now()-last)/60000;
-  if(mins>TIMEOUT_MIN){cerrarSesion();return false;}
+  if(mins>TIMEOUT_MIN){await cerrarSesion();return false;}
   return true;
 }
 
-function cerrarSesion(){
+async function cerrarSesion(){
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_TIME_KEY);
+  try{await sb.auth.signOut();}catch(e){}
 }
 
 function reiniciarInactividad(){
@@ -1597,9 +1644,9 @@ function reiniciarInactividad(){
     sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
   }
   clearTimeout(inactivityTimer);
-  inactivityTimer=setTimeout(function(){
+  inactivityTimer=setTimeout(async function(){
     try{autoSaveForm();}catch(e){}
-    cerrarSesion();
+    await cerrarSesion();
     alert('Sesión cerrada por inactividad. Tu trabajo quedó guardado — al ingresar de nuevo lo vas a recuperar.');
     location.reload();
   },TIMEOUT_MIN*60000);
@@ -1616,7 +1663,8 @@ function iniciarControlInactividad(){
   reiniciarInactividad();
 }
 
-if(sesionValida()){
+sesionValida().then(function(ok){
+  if(!ok)return;
   marcarSesionActiva();
   document.getElementById('auth-overlay').style.display='none';
   hookAutosave();
@@ -1643,7 +1691,7 @@ if(sesionValida()){
       restoreDraft();
     }
   });
-}
+});
 </script>
 </body>
 </html>
