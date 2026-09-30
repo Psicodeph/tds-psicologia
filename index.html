@@ -261,7 +261,7 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
     <div class="auth-name">Lic. Melany Ordóñez</div>
     <div class="auth-cred">Máster en Psicología del Deporte</div>
     <div class="auth-sub" style="margin-top:6px;margin-bottom:22px;">Inventario Psicológico de Rendimiento Deportivo</div>
-    <input type="email" class="auth-input" id="auth-email" placeholder="correo@ejemplo.com" autocomplete="username" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')verificarPassword()">
+    <input type="text" class="auth-input" id="auth-email" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')verificarPassword()">
     <input type="password" class="auth-input" id="auth-input" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')verificarPassword()">
     <button class="auth-btn" onclick="verificarPassword()">Ingresar</button>
     <div class="auth-error" id="auth-error">Contraseña incorrecta. Intentá de nuevo.</div>
@@ -594,13 +594,22 @@ let perfilGuardado=false;
 let editandoId=null;
 
 // AUTH
+// Se entra con un usuario simple (ej. "practicante1"). Supabase pide un correo, así que el usuario
+// se convierte en "practicante1@tds.example.com". Esos correos no existen ni reciben nada: las cuentas
+// se crean a mano en Supabase con "Auto confirm". Si se escribe un correo completo, se usa tal cual.
+const DOMINIO_USUARIOS='tds.example.com';
+function usuarioAEmail(u){
+  u=(u||'').trim().toLowerCase();
+  if(!u)return '';
+  return u.indexOf('@')!==-1?u:u+'@'+DOMINIO_USUARIOS;
+}
 async function verificarPassword(){
-  const email=document.getElementById('auth-email').value.trim();
+  const email=usuarioAEmail(document.getElementById('auth-email').value);
   const inp=document.getElementById('auth-input').value;
   const errEl=document.getElementById('auth-error');
   errEl.style.display='none';
   if(!email||!inp){
-    errEl.textContent='Ingresá tu correo y contraseña.';
+    errEl.textContent='Ingresá tu usuario y contraseña.';
     errEl.style.display='block';
     return;
   }
@@ -614,7 +623,7 @@ async function verificarPassword(){
       restoreDraft();
       cargarPerfiles();
     } else if(error.status===400){
-      errEl.textContent='Correo o contraseña incorrectos. Intentá de nuevo.';
+      errEl.textContent='Usuario o contraseña incorrectos. Intentá de nuevo.';
       errEl.style.display='block';
       document.getElementById('auth-input').value='';
     } else {

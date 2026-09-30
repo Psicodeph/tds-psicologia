@@ -1,6 +1,9 @@
 -- Seguridad de la base de datos (Row Level Security).
--- Ejecutar en Supabase → SQL Editor, DESPUÉS de crear el usuario en Authentication → Users
--- y de publicar la versión de la app con login por correo.
+-- Ejecutar en Supabase → SQL Editor, DESPUÉS de crear los usuarios en Authentication → Users
+-- y de publicar la versión de la app con login por usuario.
+--
+-- Usuarios: en la app se escribe solo el usuario (ej. "practicante1"). En Supabase se crea como
+-- "practicante1@tds.example.com" con "Auto confirm user" marcado. No hace falta un correo real.
 --
 -- Con esto, la clave "anon" que está en el código ya no permite leer ni modificar nada:
 -- solo un usuario que inició sesión puede ver, crear, editar o borrar perfiles.
