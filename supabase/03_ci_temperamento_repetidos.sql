@@ -1,5 +1,5 @@
 -- ============================================================================
---  04 - CI y temperamento repetidos
+--  03 - CI y temperamento repetidos
 --
 --  La app vieja, al hacer una reevaluación, copiaba el CI y el temperamento
 --  al registro nuevo. Por eso algunas pruebas figuran aplicadas dos veces

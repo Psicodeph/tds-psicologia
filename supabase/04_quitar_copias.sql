@@ -1,7 +1,7 @@
 -- ============================================================================
---  05 - Quitar las copias de CI y temperamento
+--  04 - Quitar las copias de CI y temperamento
 --
---  Ejecutar DESPUÉS de revisar la lista de la consulta 04.
+--  Ejecutar DESPUÉS de revisar la lista de la consulta 03.
 --
 --  Borra únicamente las evaluaciones de CI y temperamento cuyo valor es
 --  idéntico al de la medición anterior del mismo atleta, es decir, las que
