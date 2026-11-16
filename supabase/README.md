@@ -12,6 +12,7 @@ del archivo, para encontrarlas después.
 | `04_quitar_copias.sql` | Borra solo las copias que la app vieja generó sola | Después de revisar la 03 |
 | `05_repetidas_mismo_dia.sql` | Muestra Loehr y ansiedad duplicados el mismo día. No borra nada | Después de la 04 |
 | `06_limpieza_final.sql` | Quita los duplicados exactos y marca los CI con valor 0 como prueba inválida | Después de revisar la 05 |
+| `07_decisiones_manuales.sql` | Resuelve los tres casos que necesitaban criterio clínico | Después de la 06 |
 
 Todas se pueden ejecutar más de una vez sin duplicar ni perder datos.
 La tabla `perfiles` no se toca nunca: queda como respaldo de lo original.
