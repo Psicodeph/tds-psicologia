@@ -217,7 +217,8 @@ tr:hover td{background:#f8f9fc;}
 const{createClient}=supabase;
 const sb=createClient(
   'https://esbmtenfcjbrrocrnfep.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  {auth:{storage:window.sessionStorage}}
 );
 
 var perfiles=[];
@@ -474,16 +475,20 @@ var SESSION_TIME_KEY='tds-auth-time';
 var TIMEOUT_MIN=20;
 var inactivityTimer=null;
 
-function sesionValida(){
-  if(sessionStorage.getItem(SESSION_KEY)!=='ok')return false;
+async function cerrarSesion(){
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_TIME_KEY);
+  try{await sb.auth.signOut();}catch(e){}
+}
+
+async function sesionValida(){
+  var res=await sb.auth.getSession();
+  if(!res.data||!res.data.session)return false;
+  if(sessionStorage.getItem(SESSION_KEY)!=='ok'){await cerrarSesion();return false;}
   var last=parseInt(sessionStorage.getItem(SESSION_TIME_KEY)||'0');
-  if(!last)return false;
+  if(!last){await cerrarSesion();return false;}
   var mins=(Date.now()-last)/60000;
-  if(mins>TIMEOUT_MIN){
-    sessionStorage.removeItem(SESSION_KEY);
-    sessionStorage.removeItem(SESSION_TIME_KEY);
-    return false;
-  }
+  if(mins>TIMEOUT_MIN){await cerrarSesion();return false;}
   return true;
 }
 
@@ -492,10 +497,9 @@ function reiniciarInactividad(){
     sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
   }
   clearTimeout(inactivityTimer);
-  inactivityTimer=setTimeout(function(){
-    sessionStorage.removeItem(SESSION_KEY);
-    sessionStorage.removeItem(SESSION_TIME_KEY);
-    alert('Sesión cerrada por inactividad. Ingresá la contraseña de nuevo.');
+  inactivityTimer=setTimeout(async function(){
+    await cerrarSesion();
+    alert('Sesión cerrada por inactividad. Ingresá de nuevo.');
     window.location.href='/';
   },TIMEOUT_MIN*60000);
 }
@@ -507,13 +511,12 @@ function iniciarControlInactividad(){
   reiniciarInactividad();
 }
 
-if(sesionValida()){
+sesionValida().then(function(ok){
+  if(!ok){window.location.href='/';return;}
   sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
   iniciarControlInactividad();
   cargar();
-} else {
-  window.location.href='/';
-}
+});
 </script>
 </body>
 </html>
