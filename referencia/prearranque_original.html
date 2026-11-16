@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estados de Prearranque - TDS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a1a;font-size:14px}
+header{background:#1a56a0;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:16px;font-weight:600}
+header p{font-size:12px;opacity:.75;margin-top:2px}
+.container{max-width:1040px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:14px}
+.card-title{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{padding:6px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;color:#666}
+.tab.active{background:#1a56a0;color:#fff;border-color:#1a56a0}
+.tab.new-tab{border-style:dashed;color:#1a56a0}
+.tab.del-tab{color:#a33;border-color:#fcc;background:#fff5f5;margin-left:auto}
+.section-tabs{display:flex;border-bottom:1px solid #ddd;margin-bottom:16px;flex-wrap:wrap}
+.section-tab{padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px}
+.section-tab.active{color:#1a56a0;border-bottom-color:#1a56a0}
+.row-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.row-form input{flex:1;min-width:130px;border:1px solid #ddd;border-radius:6px;padding:6px 10px;font-size:14px}
+.row-form input:focus{outline:2px solid #1a56a0;border-color:transparent}
+.btn{padding:6px 14px;border-radius:6px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px;font-weight:500}
+.btn-blue{background:#1a56a0;color:#fff;border-color:#1a56a0}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn:hover{opacity:.85}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{padding:8px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:#999;border-bottom:1px solid #eee;text-align:left}
+td{padding:8px 6px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.sbtns{display:flex;gap:4px}
+.sbtn{width:26px;height:26px;border-radius:50%;border:1px solid #ddd;background:transparent;cursor:pointer;font-size:12px;font-weight:500;color:#444}
+.sbtn.on{background:#1a56a0;color:#fff;border-color:#1a56a0}
+.dsel{border:1px solid #ddd;border-radius:6px;padding:4px 6px;font-size:12px}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.flag{display:inline-block;margin-left:5px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700;background:#fef0c7;color:#854d0e;border:1px solid #f0c000;white-space:nowrap}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:#f7f8fa;border-radius:8px;padding:12px}
+.metric-label{font-size:12px;color:#888;margin-bottom:4px}
+.metric-num{font-size:24px;font-weight:700;color:#1a56a0}
+.metric-sub{font-size:11px;color:#999;margin-top:2px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.scard{border-radius:8px;padding:10px 12px;border:1px solid transparent}
+.scard-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.scard-label{font-size:12px;font-weight:700}
+.scard-count{font-size:22px;font-weight:700}
+.scard-proto{font-size:11px;line-height:1.5;margin-bottom:6px}
+.scard-names{font-size:11px;font-style:italic;opacity:.85}
+.distbar{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid #eee;margin-bottom:6px}
+.distseg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;min-width:0}
+.distlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#666;margin-bottom:4px}
+.distlegend span{display:flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.grid5{border-collapse:collapse;margin-top:6px;width:auto}
+.grid5 td,.grid5 th{border:1px solid #eee;text-align:center;font-size:12px;padding:0}
+.grid5 .glabel{padding:4px 8px}
+.gcell{width:48px;height:40px;font-weight:600}
+.glabel{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.3px;padding:4px}
+.act-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f5f5f5}
+.act-item:last-child{border-bottom:none}
+.act-name{font-weight:600;min-width:120px}
+.act-proto{font-size:12px;color:#555;line-height:1.5}
+.top-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.top-bar input{border:1px solid #ddd;border-radius:6px;padding:5px 10px;font-size:13px;width:280px}
+.top-bar input:focus{outline:2px solid #1a56a0;border-color:transparent}
+.counter{font-size:12px;color:#888}
+.empty{text-align:center;padding:28px;color:#aaa;font-size:13px}
+.arrow-up{color:#1D9E75;font-weight:600}
+.arrow-down{color:#A32D2D;font-weight:600}
+.arrow-eq{color:#888}
+.ref details{font-size:13px}
+.ref summary{cursor:pointer;color:#1a56a0;font-weight:500;font-size:12px}
+.ref-scale{margin-top:10px}
+.ref-scale h4{font-size:12px;color:#444;margin-bottom:4px}
+.ref-scale ul{list-style:none;font-size:12px;color:#666;line-height:1.7}
+.ref-scale b{color:#1a56a0;display:inline-block;width:18px}
+.no-print{}.print-only{display:none}
+@media print{
+  .no-print{display:none!important}
+  .print-only{display:block}
+  header{background:#fff!important;color:#000!important;border-bottom:2px solid #1a56a0}
+  body{background:#fff}
+  .card{border:1px solid #ccc;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Estados de Prearranque</h1>
+    <p>TDS - Federacion de Futbol de Honduras</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center" class="no-print">
+    <button class="btn btn-sm" onclick="exportData()" style="background:#fff;color:#1a56a0">Exportar datos</button>
+    <button class="btn btn-sm" onclick="document.getElementById('import-input').click()" style="background:#fff;color:#1a56a0">Importar datos</button>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(this)" />
+    <button class="btn btn-sm" onclick="window.print()" style="background:#fff;color:#1a56a0">Imprimir / PDF</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card no-print">
+    <div class="card-title">Competencias</div>
+    <div class="tabs" id="comp-tabs"></div>
+    <div id="comp-form" style="display:none;margin-top:8px">
+      <div class="row-form">
+        <input id="comp-input" placeholder="Nombre de la competencia..." />
+        <button class="btn btn-blue btn-sm" onclick="saveComp()">Guardar</button>
+        <button class="btn btn-sm" onclick="cancelComp()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <div id="main"></div>
+</div>
+
+<script>
+var STATES = [
+  {
+    id:'combativa',
+    label:'Disposicion combativa',
+    bg:'#e1f5ee', color:'#0F6E56', bd:'#1D9E75',
+    desc:'Energia suficiente y con control. Listo para competir, es el estado ideal.',
+    proto:'No intervenir, proteger. Senal breve de rol y que mantenga su rutina.',
+    match:function(a,c){return a>=3 && c>=3}
+  },
+  {
+    id:'subcontrol',
+    label:'Subactivacion controlada',
+    bg:'#e6f1fb', color:'#185FA5', bd:'#378ADD',
+    desc:'Sereno y con control, pero le falta energia para la intensidad del partido.',
+    proto:'Activacion fisica breve. Que entre intenso desde la primera jugada. No tocar lo emocional.',
+    match:function(a,c){return a<=2 && c>=3}
+  },
+  {
+    id:'fiebre',
+    label:'Fiebre de arrancada',
+    bg:'#faeeda', color:'#854F0B', bd:'#EF9F27',
+    desc:'Con energia pero sin control suficiente. Riesgo de entrar acelerado o impulsivo.',
+    proto:'Respiracion con exhalacion larga, 4 o 5 veces. Reenfocar a su primera accion concreta.',
+    match:function(a,c){return a>=3 && c<=2}
+  },
+  {
+    id:'apatia',
+    label:'Apatia',
+    bg:'#fcebeb', color:'#A32D2D', bd:'#E24B4A',
+    desc:'Poca energia y poco control. Riesgo de desconexion o bloqueo temprano, es el de mayor cuidado.',
+    proto:'Activacion fisica y recordatorio de rol y de lo que se juega, llevar la H. Tarea simple al inicio y monitorear.',
+    match:function(a,c){return a<=2 && c<=2}
+  }
+];
+
+function getState(a,c){
+  if(!a||!c) return null;
+  for(var i=0;i<STATES.length;i++){
+    if(STATES[i].match(a,c)) return STATES[i];
+  }
+  return null;
+}
+
+function stObj(id){ for(var i=0;i<STATES.length;i++) if(STATES[i].id===id) return STATES[i]; return null; }
+
+function hasFlag(st,d){ return !!(st && st.id==='combativa' && d && d<=1); }
+var FLAG_PROTO = 'Optimismo infundado: se ve listo pero subestima al rival. Reencuadre breve de lo que propone el rival, el plan se juega igual.';
+
+var db = loadDb();
+
+function loadDb(){
+  var raw = localStorage.getItem('prea_v4');
+  if(raw){ try { return JSON.parse(raw); } catch(e){} }
+  var old = localStorage.getItem('prea_v3');
+  if(old){ try { var o = JSON.parse(old); if(o && o.comps){ localStorage.setItem('prea_v4', old); return o; } } catch(e){} }
+  return {comps:[],cur:null};
+}
+
+function save(){ localStorage.setItem('prea_v4',JSON.stringify(db)); }
+
+function curComp(){
+  for(var i=0;i<db.comps.length;i++) if(db.comps[i].id===db.cur) return db.comps[i];
+  return null;
+}
+
+var curSection = 'registro';
+
+function render(){ renderTabs(); renderMain(); }
+
+function renderTabs(){
+  var el = document.getElementById('comp-tabs');
+  var h = '';
+  for(var i=0;i<db.comps.length;i++){
+    var c = db.comps[i];
+    h += '<span class="tab '+(c.id===db.cur?'active':'')+'" onclick="selComp(\''+c.id+'\')">'+esc(c.name)+'</span>';
+  }
+  h += '<span class="tab new-tab no-print" onclick="showCompForm()">+ Nueva</span>';
+  if(curComp()) h += '<span class="tab del-tab no-print" onclick="delComp()">Eliminar esta</span>';
+  el.innerHTML = h;
+}
+
+function showCompForm(){ document.getElementById('comp-form').style.display='block'; document.getElementById('comp-input').focus(); }
+function cancelComp(){ document.getElementById('comp-form').style.display='none'; document.getElementById('comp-input').value=''; }
+function saveComp(){
+  var name = document.getElementById('comp-input').value.trim();
+  if(!name) return;
+  var id = 'c'+Date.now();
+  db.comps.push({id:id,name:name,players:[],sessions:[],curSess:null});
+  db.cur = id;
+  save(); cancelComp(); render();
+}
+function selComp(id){ db.cur=id; save(); render(); }
+function delComp(){
+  if(!confirm('Eliminar esta competencia y todos sus datos?')) return;
+  db.comps = db.comps.filter(function(c){return c.id!==db.cur;});
+  db.cur = db.comps.length ? db.comps[0].id : null;
+  save(); render();
+}
+
+function renderMain(){
+  var comp = curComp();
+  var el = document.getElementById('main');
+  if(!comp){
+    el.innerHTML = '<div class="card empty">Crea o selecciona una competencia para comenzar.</div>';
+    return;
+  }
+  var h = '<div class="section-tabs no-print">';
+  h += '<span class="section-tab '+(curSection==='registro'?'active':'')+'" onclick="setSection(\'registro\')">Registro</span>';
+  h += '<span class="section-tab '+(curSection==='resumen'?'active':'')+'" onclick="setSection(\'resumen\')">Analisis del estado</span>';
+  h += '<span class="section-tab '+(curSection==='cotejo'?'active':'')+'" onclick="setSection(\'cotejo\')">Cotejo entre aplicaciones</span>';
+  h += '</div>';
+  if(curSection==='registro') h += buildRegistro(comp);
+  else if(curSection==='resumen') h += buildResumen(comp);
+  else h += buildCotejo(comp);
+  el.innerHTML = h;
+}
+
+function setSection(s){ curSection=s; renderMain(); }
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function refBlock(){
+  var h = '<div class="card ref no-print"><details>';
+  h += '<summary>Ver que significa cada numero (lenguaje del jugador)</summary>';
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:4px">';
+  h += '<div class="ref-scale"><h4>Energia</h4><ul>'
+     + '<li><b>1</b> Sin fuerzas, el cuerpo pesado y con sueno</li>'
+     + '<li><b>2</b> Con poca energia, medio flojo todavia</li>'
+     + '<li><b>3</b> Normal, ni cansado ni acelerado</li>'
+     + '<li><b>4</b> Con buena energia, con ganas de entrar ya</li>'
+     + '<li><b>5</b> Lleno de energia, el cuerpo bien encendido</li></ul></div>';
+  h += '<div class="ref-scale"><h4>Control de nervios</h4><ul>'
+     + '<li><b>1</b> Muy nervioso, la cabeza se me va</li>'
+     + '<li><b>2</b> Algo nervioso, me cuesta pensar claro</li>'
+     + '<li><b>3</b> Mas o menos firme, puedo pensar lo que hago</li>'
+     + '<li><b>4</b> Firme y con la cabeza clara</li>'
+     + '<li><b>5</b> Controlo mis nervios aunque este encendido</li></ul></div>';
+  h += '<div class="ref-scale"><h4>Dificultad del partido</h4><ul>'
+     + '<li><b>1</b> Bien facil, les ganamos sin problema</li>'
+     + '<li><b>2</b> Facil, creo que ganamos</li>'
+     + '<li><b>3</b> Parejo, puede ser para cualquiera</li>'
+     + '<li><b>4</b> Dificil, nos va a costar</li>'
+     + '<li><b>5</b> Bien dificil, es un rival fuerte</li></ul></div>';
+  h += '</div></details></div>';
+  return h;
+}
+
+function buildRegistro(comp){
+  var h = refBlock();
+  h += '<div class="card">';
+  h += '<div class="card-title">Plantel</div>';
+  h += '<div class="row-form no-print">';
+  h += '<input id="pl-name" placeholder="Nombre..." onkeydown="if(event.key===\'Enter\')addPlayer()" />';
+  h += '<input id="pl-pos" placeholder="Posicion..." onkeydown="if(event.key===\'Enter\')addPlayer()" style="max-width:160px"/>';
+  h += '<button class="btn btn-blue btn-sm" onclick="addPlayer()">Agregar</button>';
+  h += '</div>';
+
+  if(comp.players.length===0){
+    h += '<div class="empty">Agrega jugadores al plantel primero.</div>';
+  } else {
+    var sess = curSessObj(comp);
+    h += '<div class="table-wrap"><table><thead><tr>';
+    h += '<th>#</th><th>Pos.</th><th>Nombre</th>';
+    h += '<th colspan="5" style="text-align:center">Energia</th>';
+    h += '<th style="width:6px"></th>';
+    h += '<th colspan="5" style="text-align:center">Control</th>';
+    h += '<th style="text-align:center">Dific.</th>';
+    h += '<th>Estado</th>';
+    h += '<th class="no-print"></th>';
+    h += '</tr></thead><tbody>';
+    for(var i=0;i<comp.players.length;i++){
+      var p = comp.players[i];
+      var sc = sess ? (sess.scores[p.id]||{a:0,c:0,d:0}) : {a:0,c:0,d:0};
+      var st = getState(sc.a,sc.c);
+      var badge = st ? '<span class="badge" style="background:'+st.bg+';color:'+st.color+';border:1px solid '+st.bd+'">'+st.label+'</span>' : '<span style="color:#ccc">-</span>';
+      if(hasFlag(st,sc.d)) badge += '<span class="flag">optimismo</span>';
+      var abtns = '';
+      for(var v=1;v<=5;v++) abtns += '<button class="sbtn '+(sc.a===v?'on':'')+'" onclick="setScore(\''+p.id+'\',\'a\','+v+')">'+v+'</button>';
+      var cbtns = '';
+      for(var v=1;v<=5;v++) cbtns += '<button class="sbtn '+(sc.c===v?'on':'')+'" onclick="setScore(\''+p.id+'\',\'c\','+v+')">'+v+'</button>';
+      var dsel = '<select class="dsel" onchange="setScore(\''+p.id+'\',\'d\',parseInt(this.value)||0)">';
+      dsel += '<option value="0"'+(!sc.d?' selected':'')+'>-</option>';
+      for(var v=1;v<=5;v++) dsel += '<option value="'+v+'"'+(sc.d===v?' selected':'')+'>'+v+'</option>';
+      dsel += '</select>';
+      h += '<tr>';
+      h += '<td style="color:#bbb;font-size:12px">'+(i+1)+'</td>';
+      h += '<td style="color:#999;font-size:12px">'+esc(p.pos)+'</td>';
+      h += '<td style="font-weight:500">'+esc(p.name)+'</td>';
+      h += '<td colspan="5"><div class="sbtns">'+abtns+'</div></td>';
+      h += '<td></td>';
+      h += '<td colspan="5"><div class="sbtns">'+cbtns+'</div></td>';
+      h += '<td style="text-align:center">'+dsel+'</td>';
+      h += '<td>'+badge+'</td>';
+      h += '<td class="no-print"><button class="btn btn-sm" style="color:#a33;border-color:#fcc" onclick="removePlayer(\''+p.id+'\')">x</button></td>';
+      h += '</tr>';
+    }
+    h += '</tbody></table></div>';
+  }
+  h += '</div>';
+
+  h += '<div class="card"><div class="card-title">Aplicaciones (sesiones de medicion)</div>';
+  h += '<div class="tabs">';
+  for(var i=0;i<comp.sessions.length;i++){
+    var s = comp.sessions[i];
+    h += '<span class="tab '+(s.id===comp.curSess?'active':'')+'" onclick="selSess(\''+s.id+'\')">'+esc(s.name)+'</span>';
+  }
+  h += '<span class="tab new-tab no-print" onclick="addSess()">+ Nueva aplicacion</span>';
+  h += '</div>';
+
+  var sess2 = curSessObj(comp);
+  if(sess2){
+    var filled = 0;
+    for(var i=0;i<comp.players.length;i++){
+      var sc2 = sess2.scores[comp.players[i].id]||{};
+      if(sc2.a && sc2.c) filled++;
+    }
+    h += '<div class="top-bar">';
+    h += '<input value="'+esc(sess2.name)+'" onchange="renameSess(this.value)" />';
+    h += '<span class="counter">'+filled+' / '+comp.players.length+' jugadores ingresados</span>';
+    h += '<button class="btn btn-sm no-print" style="color:#a33;border-color:#fcc;margin-left:auto" onclick="delSess()">Eliminar aplicacion</button>';
+    h += '</div>';
+  } else if(comp.sessions.length===0){
+    h += '<div class="empty" style="padding:14px">Crea una aplicacion para empezar a ingresar datos.</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function collectStates(comp,sess){
+  var groups = {}; var flags = [];
+  for(var i=0;i<STATES.length;i++) groups[STATES[i].id]=[];
+  for(var i=0;i<comp.players.length;i++){
+    var p = comp.players[i];
+    var sc = sess.scores[p.id]||{a:0,c:0,d:0};
+    if(!sc.a||!sc.c) continue;
+    var st = getState(sc.a,sc.c);
+    if(st){ groups[st.id].push(p.name); if(hasFlag(st,sc.d)) flags.push(p.name); }
+  }
+  return {groups:groups, flags:flags};
+}
+
+function buildResumen(comp){
+  var sess = curSessObj(comp);
+  if(!sess) return '<div class="card empty">Selecciona una aplicacion en la pestana Registro.</div>';
+  var data = collectStates(comp,sess);
+  var groups = data.groups;
+  var total = 0;
+  for(var i=0;i<STATES.length;i++) total += groups[STATES[i].id].length;
+  if(total===0) return '<div class="card empty">Aun no hay datos ingresados en esta aplicacion.</div>';
+
+  var nCombativa = groups['combativa'].length;
+  var nRiesgo = groups['fiebre'].length + groups['apatia'].length;
+  var idx = Math.round((nCombativa/total)*100);
+
+  var h = '<div class="card"><div class="card-title">Panel - '+esc(sess.name)+'</div>';
+  h += '<div class="metrics">';
+  h += '<div class="metric"><div class="metric-label">Indice de preparacion</div><div class="metric-num">'+idx+'%</div><div class="metric-sub">en disposicion combativa</div></div>';
+  h += '<div class="metric"><div class="metric-label">A intervenir</div><div class="metric-num">'+nRiesgo+'</div><div class="metric-sub">fiebre o apatia</div></div>';
+  h += '<div class="metric"><div class="metric-label">Alertas optimismo</div><div class="metric-num">'+data.flags.length+'</div><div class="metric-sub">subestiman el rival</div></div>';
+  h += '<div class="metric"><div class="metric-label">Medidos</div><div class="metric-num">'+total+'</div><div class="metric-sub">de '+comp.players.length+' del plantel</div></div>';
+  h += '</div>';
+
+  h += '<div class="distbar">';
+  for(var i=0;i<STATES.length;i++){
+    var s = STATES[i]; var n = groups[s.id].length;
+    if(n===0) continue;
+    var pct = (n/total)*100;
+    h += '<div class="distseg" style="width:'+pct+'%;background:'+s.bg+';color:'+s.color+'" title="'+esc(s.label)+'">'+n+'</div>';
+  }
+  h += '</div><div class="distlegend">';
+  for(var i=0;i<STATES.length;i++){ var s=STATES[i]; h += '<span><span class="dot" style="background:'+s.bd+'"></span>'+esc(s.label)+'</span>'; }
+  h += '</div></div>';
+
+  var active = STATES.filter(function(s){return groups[s.id].length>0;});
+  h += '<div class="card"><div class="card-title">Detalle por estado</div><div class="summary-grid">';
+  for(var i=0;i<active.length;i++){
+    var s = active[i];
+    h += '<div class="scard" style="background:'+s.bg+';border-color:'+s.bd+'">';
+    h += '<div class="scard-head"><span class="scard-label" style="color:'+s.color+'">'+s.label+'</span><span class="scard-count" style="color:'+s.color+'">'+groups[s.id].length+'</span></div>';
+    h += '<div class="scard-proto" style="color:'+s.color+'">'+esc(s.proto)+'</div>';
+    h += '<div class="scard-names" style="color:'+s.color+'">'+esc(groups[s.id].join(', '))+'</div>';
+    h += '</div>';
+  }
+  h += '</div></div>';
+
+  h += buildActionList(comp,sess);
+  h += buildGrid(comp,sess);
+  return h;
+}
+
+function buildActionList(comp,sess){
+  var items = [];
+  for(var i=0;i<comp.players.length;i++){
+    var p = comp.players[i];
+    var sc = sess.scores[p.id]||{a:0,c:0,d:0};
+    if(!sc.a||!sc.c) continue;
+    var st = getState(sc.a,sc.c);
+    if(!st) continue;
+    if(st.id==='fiebre'||st.id==='apatia'){ items.push({name:p.name,label:st.label,color:st.color,bd:st.bd,bg:st.bg,proto:st.proto,pri:st.id==='apatia'?0:1}); }
+    else if(hasFlag(st,sc.d)){ items.push({name:p.name,label:'Optimismo infundado',color:'#854d0e',bd:'#f0c000',bg:'#fef0c7',proto:FLAG_PROTO,pri:2}); }
+  }
+  if(items.length===0) return '<div class="card"><div class="card-title">A intervenir antes del partido</div><div class="empty" style="padding:14px">Nadie requiere intervencion. Proteger el estado del grupo.</div></div>';
+  items.sort(function(a,b){return a.pri-b.pri;});
+  var h = '<div class="card"><div class="card-title">A intervenir antes del partido</div>';
+  for(var i=0;i<items.length;i++){
+    var it = items[i];
+    h += '<div class="act-item">';
+    h += '<div class="act-name">'+esc(it.name)+'<br><span class="badge" style="background:'+it.bg+';color:'+it.color+';border:1px solid '+it.bd+';margin-top:4px">'+esc(it.label)+'</span></div>';
+    h += '<div class="act-proto">'+esc(it.proto)+'</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function buildGrid(comp,sess){
+  var counts = {};
+  for(var i=0;i<comp.players.length;i++){
+    var p = comp.players[i];
+    var sc = sess.scores[p.id]||{a:0,c:0};
+    if(!sc.a||!sc.c) continue;
+    var k = sc.a+'_'+sc.c;
+    counts[k] = (counts[k]||0)+1;
+  }
+  var h = '<div class="card"><div class="card-title">Mapa de la rejilla (energia x control)</div>';
+  h += '<div class="table-wrap"><table class="grid5"><tbody>';
+  for(var c=5;c>=1;c--){
+    h += '<tr>';
+    if(c===5) h += '<td rowspan="5" class="glabel" style="writing-mode:vertical-rl;transform:rotate(180deg)">Control</td>';
+    h += '<td class="glabel">'+c+'</td>';
+    for(var a=1;a<=5;a++){
+      var st = getState(a,c);
+      var n = counts[a+'_'+c]||0;
+      var bg = st? st.bg : '#fafafa';
+      var col = st? st.color : '#ccc';
+      h += '<td class="gcell" style="background:'+bg+';color:'+col+'">'+(n||'')+'</td>';
+    }
+    h += '</tr>';
+  }
+  h += '<tr><td></td><td></td>';
+  for(var a=1;a<=5;a++) h += '<td class="glabel">'+a+'</td>';
+  h += '</tr>';
+  h += '<tr><td></td><td></td><td colspan="5" class="glabel">Energia</td></tr>';
+  h += '</tbody></table></div>';
+  h += '<div style="font-size:11px;color:#999;margin-top:8px">Cada celda muestra cuantos jugadores cayeron en esa combinacion. El color indica el estado al que pertenece.</div>';
+  h += '</div>';
+  return h;
+}
+
+function buildCotejo(comp){
+  if(comp.sessions.length < 2) return '<div class="card empty">Necesitas al menos dos aplicaciones para comparar.</div>';
+
+  var h = '<div class="card"><div class="card-title">Comparar aplicaciones</div>';
+  h += '<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
+  h += '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Aplicacion base</label>';
+  h += '<select id="cmpA" class="dsel" style="padding:5px 10px;font-size:13px" onchange="renderMain()">';
+  for(var i=0;i<comp.sessions.length;i++) h += '<option value="'+comp.sessions[i].id+'">'+esc(comp.sessions[i].name)+'</option>';
+  h += '</select></div>';
+  h += '<div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Aplicacion cotejo</label>';
+  h += '<select id="cmpB" class="dsel" style="padding:5px 10px;font-size:13px" onchange="renderMain()">';
+  for(var i=0;i<comp.sessions.length;i++) h += '<option value="'+comp.sessions[i].id+'"'+(i===1?' selected':'')+'>'+esc(comp.sessions[i].name)+'</option>';
+  h += '</select></div></div>';
+
+  var elA = document.getElementById('cmpA');
+  var elB = document.getElementById('cmpB');
+  var idA = elA ? elA.value : comp.sessions[0].id;
+  var idB = elB ? elB.value : (comp.sessions[1]||comp.sessions[0]).id;
+  var sA = null, sB = null;
+  for(var i=0;i<comp.sessions.length;i++){
+    if(comp.sessions[i].id===idA) sA=comp.sessions[i];
+    if(comp.sessions[i].id===idB) sB=comp.sessions[i];
+  }
+  if(!sA||!sB){ h+='</div>'; return h; }
+
+  var sumA=aggr(comp,sA), sumB=aggr(comp,sB);
+  h += '<div class="metrics">';
+  h += '<div class="metric"><div class="metric-label">Energia media</div><div class="metric-num">'+sumB.ea+'</div><div class="metric-sub">base '+sumA.ea+' '+delta(sumA.ea,sumB.ea)+'</div></div>';
+  h += '<div class="metric"><div class="metric-label">Control medio</div><div class="metric-num">'+sumB.ca+'</div><div class="metric-sub">base '+sumA.ca+' '+delta(sumA.ca,sumB.ca)+'</div></div>';
+  h += '<div class="metric"><div class="metric-label">En combativa</div><div class="metric-num">'+sumB.comb+'</div><div class="metric-sub">base '+sumA.comb+' '+delta(sumA.comb,sumB.comb)+'</div></div>';
+  h += '<div class="metric"><div class="metric-label">A intervenir</div><div class="metric-num">'+sumB.risk+'</div><div class="metric-sub">base '+sumA.risk+' '+delta(sumB.risk,sumA.risk)+'</div></div>';
+  h += '</div>';
+
+  h += '<div class="table-wrap"><table><thead><tr>';
+  h += '<th>Nombre</th><th>Pos.</th>';
+  h += '<th>'+esc(sA.name)+' (E/C)</th>';
+  h += '<th>'+esc(sB.name)+' (E/C)</th>';
+  h += '<th>Cambio</th>';
+  h += '<th>Estado ('+esc(sB.name)+')</th>';
+  h += '</tr></thead><tbody>';
+
+  for(var i=0;i<comp.players.length;i++){
+    var p = comp.players[i];
+    var scA = sA.scores[p.id]||{a:0,c:0};
+    var scB = sB.scores[p.id]||{a:0,c:0,d:0};
+    var stB = getState(scB.a,scB.c);
+    var vA = (scA.a&&scA.c) ? scA.a+' / '+scA.c : '-';
+    var vB = (scB.a&&scB.c) ? scB.a+' / '+scB.c : '-';
+    var change = '<span class="arrow-eq">-</span>';
+    if(scA.a&&scA.c&&scB.a&&scB.c){
+      var dA=scB.a-scA.a, dC=scB.c-scA.c;
+      var str = 'E:'+(dA>0?'+':'')+dA+' C:'+(dC>0?'+':'')+dC;
+      if(dA===0&&dC===0) change='<span class="arrow-eq">Sin cambio</span>';
+      else if((dA+dC)>0) change='<span class="arrow-up">&#9650; '+str+'</span>';
+      else if((dA+dC)<0) change='<span class="arrow-down">&#9660; '+str+'</span>';
+      else change='<span class="arrow-eq">'+str+'</span>';
+    }
+    var badge = stB ? '<span class="badge" style="background:'+stB.bg+';color:'+stB.color+';border:1px solid '+stB.bd+'">'+stB.label+'</span>' : '-';
+    if(hasFlag(stB,scB.d)) badge += '<span class="flag">optimismo</span>';
+    h += '<tr>';
+    h += '<td style="font-weight:500">'+esc(p.name)+'</td>';
+    h += '<td style="color:#999;font-size:12px">'+esc(p.pos)+'</td>';
+    h += '<td>'+vA+'</td>';
+    h += '<td>'+vB+'</td>';
+    h += '<td>'+change+'</td>';
+    h += '<td>'+badge+'</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div></div>';
+  return h;
+}
+
+function aggr(comp,sess){
+  var se=0,sc=0,n=0,comb=0,risk=0;
+  for(var i=0;i<comp.players.length;i++){
+    var p=comp.players[i];
+    var s=sess.scores[p.id]||{a:0,c:0};
+    if(!s.a||!s.c) continue;
+    se+=s.a; sc+=s.c; n++;
+    var st=getState(s.a,s.c);
+    if(st&&st.id==='combativa') comb++;
+    if(st&&(st.id==='fiebre'||st.id==='apatia')) risk++;
+  }
+  return {ea:n?(se/n).toFixed(1):'0.0', ca:n?(sc/n).toFixed(1):'0.0', comb:comb, risk:risk};
+}
+
+function delta(base,now){
+  var b=parseFloat(base), n=parseFloat(now);
+  if(isNaN(b)||isNaN(n)||b===n) return '';
+  var d=(n-b);
+  var r = (Math.abs(d)%1===0)? Math.abs(d) : Math.abs(d).toFixed(1);
+  return d>0 ? '<span class="arrow-up">&#9650;'+r+'</span>' : '<span class="arrow-down">&#9660;'+r+'</span>';
+}
+
+function curSessObj(comp){
+  if(!comp||!comp.curSess) return null;
+  for(var i=0;i<comp.sessions.length;i++) if(comp.sessions[i].id===comp.curSess) return comp.sessions[i];
+  return null;
+}
+
+function addPlayer(){
+  var name = document.getElementById('pl-name').value.trim();
+  var pos = document.getElementById('pl-pos').value.trim();
+  if(!name) return;
+  var comp = curComp();
+  comp.players.push({id:'p'+Date.now(),name:name,pos:pos});
+  save(); renderMain();
+  document.getElementById('pl-name').value='';
+  document.getElementById('pl-pos').value='';
+  document.getElementById('pl-name').focus();
+}
+
+function removePlayer(pid){
+  var comp = curComp();
+  comp.players = comp.players.filter(function(p){return p.id!==pid;});
+  for(var i=0;i<comp.sessions.length;i++) delete comp.sessions[i].scores[pid];
+  save(); renderMain();
+}
+
+function addSess(){
+  var comp = curComp();
+  var id = 's'+Date.now();
+  comp.sessions.push({id:id,name:'Aplicacion '+(comp.sessions.length+1),scores:{}});
+  comp.curSess = id;
+  save(); renderMain();
+}
+
+function delSess(){
+  if(!confirm('Eliminar esta aplicacion y sus datos?')) return;
+  var comp = curComp();
+  comp.sessions = comp.sessions.filter(function(s){return s.id!==comp.curSess;});
+  comp.curSess = comp.sessions.length ? comp.sessions[comp.sessions.length-1].id : null;
+  save(); renderMain();
+}
+
+function selSess(id){
+  var comp = curComp();
+  comp.curSess = id;
+  save(); renderMain();
+}
+
+function renameSess(val){
+  var sess = curSessObj(curComp());
+  if(sess){ sess.name=val; save(); }
+}
+
+function setScore(pid,dim,val){
+  var comp = curComp();
+  var sess = curSessObj(comp);
+  if(!sess){ alert('Crea o selecciona una aplicacion primero.'); return; }
+  if(!sess.scores[pid]) sess.scores[pid]={a:0,c:0,d:0};
+  if(dim!=='d' && sess.scores[pid][dim]===val) sess.scores[pid][dim]=0;
+  else sess.scores[pid][dim]=val;
+  save(); renderMain();
+}
+
+function exportData(){
+  var date = new Date();
+  var stamp = date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+  var filename = 'prearranque_'+stamp+'.json';
+  var json = JSON.stringify(db, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importData(input){
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if(!parsed.comps) throw new Error('Formato invalido');
+      if(!confirm('Esto reemplazara todos los datos actuales. Continuar?')){ input.value=''; return; }
+      db = parsed;
+      save();
+      render();
+      alert('Datos importados correctamente.');
+    } catch(err) {
+      alert('Error al importar: el archivo no es valido.');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+render();
+</script>
+</body>
+</html>
