@@ -83,6 +83,8 @@ h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:upper
 .chip-atleta{display:flex;align-items:center;gap:10px;background:var(--marca-suave);border:1px solid var(--marca);border-radius:10px;padding:11px 14px;margin-bottom:14px;flex-wrap:wrap}
 .chip-atleta-nom{font-size:16px;font-weight:800}
 .chip-atleta-sub{font-size:13px;color:var(--ink2);font-weight:600}
+.chip-atleta-ya{font-size:13px;color:var(--marca-fuerte);font-weight:700;margin-top:3px;width:100%}
+.chip-atleta-ya a{color:inherit}
 .btn-chico{background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
 .btn-chico:hover{background:var(--plano);border-color:var(--marca)}
 
@@ -187,6 +189,7 @@ h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:upper
         <div class="chip-atleta-nom" id="chip-nom"></div>
         <div class="chip-atleta-sub" id="chip-sub"></div>
       </div>
+      <div class="chip-atleta-ya" id="chip-ya" style="display:none"></div>
       <button class="btn-chico" style="margin-left:auto" onclick="soltarAtleta()">Cambiar de atleta</button>
     </div>
 
@@ -461,9 +464,42 @@ function elegirAtleta(a){
   calcularEdad();
   avisar('Atleta cargado: ' + a.nombre);
   autoguardar();
+  mostrarLoQueYaTiene(a);
+}
+
+// Un atleta puede venir del prearranque sin tener perfil, o tener pruebas de
+// antes. Conviene verlo antes de volver a aplicar.
+const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCortaC(iso){
+  if (!iso) return '';
+  const p = String(iso).substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES_C[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+const NOMBRES_PRUEBA = { ci:'CI', temperamento:'temperamento', ansiedad:'ansiedad',
+                         loehr:'Loehr', prearranque:'prearranque' };
+async function mostrarLoQueYaTiene(a){
+  const caja = g('chip-ya');
+  caja.textContent = '';
+  caja.style.display = 'none';
+  const r = await sb.from('evaluaciones').select('tipo,fecha').eq('atleta_id', a.id);
+  if (r.error || !r.data || !r.data.length || !ATLETA || ATLETA.id !== a.id) return;
+  const porTipo = {};
+  r.data.forEach(e => {
+    if (!porTipo[e.tipo]) porTipo[e.tipo] = { n:0, ultima:'' };
+    porTipo[e.tipo].n++;
+    if ((e.fecha || '') > porTipo[e.tipo].ultima) porTipo[e.tipo].ultima = e.fecha || '';
+  });
+  const partes = Object.keys(porTipo).sort().map(k => {
+    const d = porTipo[k], nom = NOMBRES_PRUEBA[k] || k;
+    return (d.n > 1 ? d.n + ' de ' + nom : nom) + ' (' + fechaCortaC(d.ultima) + ')';
+  });
+  caja.appendChild(document.createTextNode('Ya tiene cargado: ' + partes.join(', ') + '. '));
+  caja.appendChild(el('a',{href:'/atletas?atleta=' + a.id, target:'_blank', txt:'Ver su ficha'}));
+  caja.style.display = 'block';
 }
 function soltarAtleta(){
   ATLETA = null;
+  g('chip-ya').style.display = 'none';
   g('chip-atleta').style.display = 'none';
   g('caja-buscador').style.display = 'block';
   g('buscar-atleta').value = '';
