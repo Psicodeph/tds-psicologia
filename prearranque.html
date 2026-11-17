@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prearranque — Melany Ordóñez</title>
+<link rel="icon" href="/assets/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  color-scheme: light;
+  --marca:#1aa8e0; --marca-fuerte:#0b7fae; --marca-suave:#e8f6fd;
+  --plano:#f9f9f7; --superficie:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --ink3:#898781;
+  --linea:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  --critico:#b3261e; --radio:12px;
+  /* Los cuatro estados, con los colores del instrumento */
+  --comb-f:#e1f5ee; --comb-t:#0F6E56; --comb-b:#1D9E75;
+  --sub-f:#e6f1fb;  --sub-t:#185FA5;  --sub-b:#378ADD;
+  --fie-f:#faeeda;  --fie-t:#854F0B;  --fie-b:#EF9F27;
+  --apa-f:#fcebeb;  --apa-t:#A32D2D;  --apa-b:#E24B4A;
+  --alerta-f:#fef0c7; --alerta-t:#854d0e; --alerta-b:#f0c000;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+    --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+    --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d; --critico:#e05a52;
+    --comb-f:#0e2b22; --comb-t:#49c79b;
+    --sub-f:#102234;  --sub-t:#6fb2f0;
+    --fie-f:#2e2008;  --fie-t:#f0ad4d;
+    --apa-f:#2e1312;  --apa-t:#f08279;
+    --alerta-f:#2e2408; --alerta-t:#f0cc5a;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+  --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d; --critico:#e05a52;
+  --comb-f:#0e2b22; --comb-t:#49c79b;
+  --sub-f:#102234;  --sub-t:#6fb2f0;
+  --fie-f:#2e2008;  --fie-t:#f0ad4d;
+  --apa-f:#2e1312;  --apa-t:#f08279;
+  --alerta-f:#2e2408; --alerta-t:#f0cc5a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plano);color:var(--ink);font-family:'Nunito','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+#acceso{position:fixed;inset:0;background:var(--marca);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.acceso-caja{background:var(--superficie);border-radius:20px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.acceso-caja img{width:110px;margin-bottom:14px}
+.acceso-sub{font-size:14px;color:var(--ink2);margin-bottom:22px}
+.campo{width:100%;background:var(--plano);border:1.5px solid var(--eje);border-radius:10px;padding:12px 14px;font-size:16px;font-weight:600;color:var(--ink);font-family:inherit;outline:none;margin-bottom:10px;color-scheme:inherit}
+.campo:focus{border-color:var(--marca)}
+.boton{width:100%;background:var(--marca);color:#fff;border:none;border-radius:10px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.error{color:var(--critico);font-size:14px;font-weight:700;margin-top:10px;display:none}
+
+header{background:var(--superficie);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:100}
+.header-in{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px;margin-right:auto}
+.marca img{width:30px}
+.marca-nombre{font-size:17px;font-weight:900;line-height:1.15}
+.marca-rol{font-size:12px;color:var(--ink2);font-weight:600}
+nav{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
+nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+nav a.activo{background:var(--marca);color:#fff}
+.btn-tema{background:none;border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+
+.envoltura{max-width:1180px;margin:0 auto;padding:20px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:18px;margin-bottom:16px}
+.tarjeta-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:uppercase;letter-spacing:.8px}
+.ayuda{font-size:13.5px;color:var(--ink2);margin-bottom:14px}
+
+.fichas{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.ficha{background:var(--plano);border:1.5px solid var(--borde);border-radius:20px;padding:8px 15px;font-family:inherit;font-size:14.5px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.ficha:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+.ficha.on{background:var(--marca);border-color:var(--marca);color:#fff}
+.ficha.nueva{border-style:dashed;color:var(--marca-fuerte)}
+.btn-chico{background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-chico:hover{background:var(--plano);border-color:var(--marca);color:var(--marca-fuerte)}
+.btn-chico.peligro{color:var(--critico);border-color:rgba(208,59,59,.4)}
+.btn-chico.peligro:hover{background:rgba(208,59,59,.08)}
+.sub-barra{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--linea)}
+.sub-barra input[type=text],.sub-barra input[type=date]{background:var(--plano);border:1.5px solid var(--borde);border-radius:9px;padding:9px 12px;font-family:inherit;font-size:14.5px;color:var(--ink);outline:none;color-scheme:inherit}
+.sub-barra input:focus{border-color:var(--marca)}
+.contador{font-size:13.5px;color:var(--ink2);font-weight:700;margin-left:auto}
+
+/* Carga */
+.tabla-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.carga{width:100%;border-collapse:collapse;min-width:620px}
+table.carga th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);font-weight:800;padding:7px 6px;border-bottom:1px solid var(--linea);text-align:left}
+table.carga td{padding:7px 6px;border-bottom:1px solid var(--linea);vertical-align:middle}
+table.carga tr:last-child td{border-bottom:none}
+.nom-atleta{font-weight:700;font-size:14.5px}
+.pos-atleta{font-size:12px;color:var(--ink3);font-weight:600}
+.botones{display:flex;gap:4px}
+.bt{width:31px;height:31px;border-radius:50%;border:1.5px solid var(--borde);background:var(--plano);cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:800;color:var(--ink2);padding:0}
+.bt:hover{border-color:var(--marca);color:var(--marca-fuerte)}
+.bt.on{background:var(--marca);border-color:var(--marca);color:#fff}
+.sel-dif{background:var(--plano);border:1.5px solid var(--borde);border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;color-scheme:inherit}
+.chapa{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.alerta{display:inline-block;margin-left:5px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:800;background:var(--alerta-f);color:var(--alerta-t);border:1px solid var(--alerta-b);white-space:nowrap}
+
+/* Panel */
+.metricas{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.metrica{background:var(--plano);border:1px solid var(--borde);border-radius:10px;padding:13px}
+.metrica-lbl{font-size:12px;color:var(--ink2);font-weight:700}
+.metrica-num{font-size:29px;font-weight:800;line-height:1.15}
+.metrica-pie{font-size:11.5px;color:var(--ink3);font-weight:600}
+.distribucion{display:flex;height:30px;border-radius:8px;overflow:hidden;gap:2px;margin-bottom:9px}
+.seg{display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;min-width:0}
+.leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--ink2);font-weight:600}
+.leyenda span{display:flex;align-items:center;gap:6px}
+.punto{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.estados{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.estado{border-radius:10px;padding:13px 15px;border:1px solid}
+.estado-cab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+.estado-lbl{font-size:13.5px;font-weight:800}
+.estado-num{font-size:23px;font-weight:800}
+.estado-proto{font-size:12.5px;line-height:1.55;margin-bottom:7px}
+.estado-nombres{font-size:12px;font-style:italic;opacity:.9}
+.accion{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--linea)}
+.accion:last-child{border-bottom:none}
+.accion-quien{min-width:150px}
+.accion-proto{font-size:13.5px;color:var(--ink2);line-height:1.55}
+table.rejilla{border-collapse:separate;border-spacing:2px;margin-top:8px}
+table.rejilla td{text-align:center;font-size:13px}
+.celda-r{width:46px;height:40px;border-radius:7px;font-weight:800}
+.eje-lbl{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;font-weight:800;padding:4px}
+.vacio{color:var(--ink3);text-align:center;padding:26px 14px;font-size:14.5px}
+details.ref{margin-bottom:16px}
+details.ref summary{cursor:pointer;color:var(--marca-fuerte);font-weight:700;font-size:14px}
+.ref-grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:12px}
+.ref-grilla h4{font-size:13px;margin-bottom:5px}
+.ref-grilla ul{list-style:none;font-size:13px;color:var(--ink2);line-height:1.75}
+.ref-grilla b{color:var(--marca-fuerte);display:inline-block;width:16px}
+
+#aviso{position:fixed;left:50%;transform:translateX(-50%);top:14px;background:var(--superficie);border:1px solid var(--borde);border-radius:10px;padding:11px 18px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-size:14.5px;font-weight:700;z-index:999;opacity:0;pointer-events:none;transition:opacity .15s}
+#aviso.ver{opacity:1}
+#aviso.mal{border-color:var(--critico);color:var(--critico)}
+@media print{
+  header,.no-imprimir{display:none!important}
+  .tarjeta{break-inside:avoid;border:1px solid #ccc}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<div id="acceso">
+  <div class="acceso-caja">
+    <img src="/assets/logo.png" alt="Logo de Melany Ordóñez">
+    <div class="acceso-sub">Psicología del Deporte</div>
+    <input type="text" class="campo" id="usuario" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')entrar()">
+    <input type="password" class="campo" id="clave" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="boton" onclick="entrar()">Ingresar</button>
+    <div class="error" id="acceso-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-in">
+    <div class="marca">
+      <img src="/assets/icono.png" alt="">
+      <div>
+        <div class="marca-nombre">Melany Ordóñez</div>
+        <div class="marca-rol">Psicología del Deporte</div>
+      </div>
+    </div>
+    <nav>
+      <a href="/">Evaluar</a>
+      <a href="/atletas">Atletas</a>
+      <a href="/prearranque" class="activo">Prearranque</a>
+      <a href="/consultas">Consultas</a>
+      <button class="btn-tema" id="btn-tema" onclick="rotarTema()" title="Cambiar entre claro y oscuro"></button>
+    </nav>
+  </div>
+</header>
+
+<div class="envoltura">
+  <div class="tarjeta no-imprimir">
+    <div class="tarjeta-cab"><h2>Competencia</h2></div>
+    <div class="fichas" id="competencias"></div>
+    <div class="sub-barra" id="form-competencia" style="display:none">
+      <input type="text" id="nueva-competencia" placeholder="Nombre de la competencia…" onkeydown="if(event.key==='Enter')crearCompetencia()">
+      <button class="btn-chico" onclick="crearCompetencia()">Guardar</button>
+      <button class="btn-chico" onclick="document.getElementById('form-competencia').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="contenido"></div>
+</div>
+
+<div id="aviso"></div>
+
+<script>
+const TEMAS = [{ v:'auto', lbl:'Automático' }, { v:'light', lbl:'Claro' }, { v:'dark', lbl:'Oscuro' }];
+function temaGuardado(){ try { return localStorage.getItem('tds-tema') || 'auto'; } catch(e) { return 'auto'; } }
+function aplicarTema(v){
+  if (v === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+  try { localStorage.setItem('tds-tema', v); } catch(e) {}
+  const b = document.getElementById('btn-tema');
+  if (b) b.textContent = (v === 'dark' ? '🌙 ' : v === 'light' ? '☀️ ' : '🖥️ ') + TEMAS.find(x => x.v === v).lbl;
+}
+function rotarTema(){
+  const i = TEMAS.findIndex(x => x.v === temaGuardado());
+  aplicarTema(TEMAS[(i + 1) % TEMAS.length].v);
+}
+aplicarTema(temaGuardado());
+
+const { createClient } = supabase;
+const sb = createClient(
+  'https://esbmtenfcjbrrocrnfep.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  { auth: { storage: window.sessionStorage } }
+);
+const DOMINIO = 'tds.example.com';
+
+// ── El modelo de los cuatro estados ───────────────────────────────────────
+// Energía y control de nervios, cada uno de 1 a 5. El cruce define el estado.
+const ESTADOS = [
+  { id:'combativa', lbl:'Disposición combativa', f:'var(--comb-f)', t:'var(--comb-t)', b:'var(--comb-b)',
+    desc:'Energía suficiente y con control. Listo para competir, es el estado ideal.',
+    proto:'No intervenir, proteger. Señal breve de rol y que mantenga su rutina.',
+    cumple:(e,c) => e >= 3 && c >= 3 },
+  { id:'subcontrol', lbl:'Subactivación controlada', f:'var(--sub-f)', t:'var(--sub-t)', b:'var(--sub-b)',
+    desc:'Sereno y con control, pero le falta energía para la intensidad del partido.',
+    proto:'Activación física breve. Que entre intenso desde la primera jugada. No tocar lo emocional.',
+    cumple:(e,c) => e <= 2 && c >= 3 },
+  { id:'fiebre', lbl:'Fiebre de arrancada', f:'var(--fie-f)', t:'var(--fie-t)', b:'var(--fie-b)',
+    desc:'Con energía pero sin control suficiente. Riesgo de entrar acelerado o impulsivo.',
+    proto:'Respiración con exhalación larga, 4 o 5 veces. Reenfocar a su primera acción concreta.',
+    cumple:(e,c) => e >= 3 && c <= 2 },
+  { id:'apatia', lbl:'Apatía', f:'var(--apa-f)', t:'var(--apa-t)', b:'var(--apa-b)',
+    desc:'Poca energía y poco control. Riesgo de desconexión o bloqueo temprano, es el de mayor cuidado.',
+    proto:'Activación física y recordatorio de rol y de lo que se juega, llevar la H. Tarea simple al inicio y monitorear.',
+    cumple:(e,c) => e <= 2 && c <= 2 }
+];
+const PROTO_ALERTA = 'Optimismo infundado: se ve listo pero subestima al rival. Reencuadre breve de lo que propone el rival, el plan se juega igual.';
+function estadoDe(e, c){
+  if (!e || !c) return null;
+  return ESTADOS.find(s => s.cumple(e, c)) || null;
+}
+// Se ve listo, pero ve el partido como muy fácil: la preparación se apoya en
+// una lectura errónea del rival.
+function tieneAlerta(estado, dificultad){
+  return !!(estado && estado.id === 'combativa' && dificultad && dificultad <= 1);
+}
+const REFERENCIA = [
+  { titulo:'Energía', items:[
+    'Sin fuerzas, el cuerpo pesado y con sueño',
+    'Con poca energía, medio flojo todavía',
+    'Normal, ni cansado ni acelerado',
+    'Con buena energía, con ganas de entrar ya',
+    'Lleno de energía, el cuerpo bien encendido' ] },
+  { titulo:'Control de nervios', items:[
+    'Muy nervioso, la cabeza se me va',
+    'Algo nervioso, me cuesta pensar claro',
+    'Más o menos firme, puedo pensar lo que hago',
+    'Firme y con la cabeza clara',
+    'Controlo mis nervios aunque esté encendido' ] },
+  { titulo:'Dificultad del partido', items:[
+    'Bien fácil, les ganamos sin problema',
+    'Fácil, creo que ganamos',
+    'Parejo, puede ser para cualquiera',
+    'Difícil, nos va a costar',
+    'Bien difícil, es un rival fuerte' ] }
+];
+
+let ATLETAS = [], COMPETENCIAS = [], APLICACIONES = [], MEDICIONES = [];
+let COMP = null, APL = null, SECCION = 'carga';
+
+function g(id){ return document.getElementById(id); }
+function el(tag, props, hijos){
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'txt') n.textContent = props[k];
+    else if (k === 'style') n.setAttribute('style', props[k]);
+    else if (k.startsWith('on')) n.addEventListener(k.substring(2), props[k]);
+    else n.setAttribute(k, props[k]);
+  }
+  (hijos || []).forEach(h => h && n.appendChild(h));
+  return n;
+}
+function hoyLocal(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso){
+  if (!iso) return '—';
+  const p = iso.substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+function avisar(texto, mal){
+  const a = g('aviso');
+  a.textContent = texto;
+  a.className = 'ver' + (mal ? ' mal' : '');
+  clearTimeout(avisar.t);
+  avisar.t = setTimeout(() => { a.className = ''; }, mal ? 5000 : 2000);
+}
+
+async function entrar(){
+  const u = (g('usuario').value || '').trim().toLowerCase();
+  const c = g('clave').value;
+  const err = g('acceso-error');
+  err.style.display = 'none';
+  if (!u || !c) { err.textContent = 'Ingresá tu usuario y contraseña.'; err.style.display = 'block'; return; }
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: u.includes('@') ? u : u + '@' + DOMINIO, password: c });
+    if (!error) { sessionStorage.setItem('tds-auth','ok'); sessionStorage.setItem('tds-auth-time', Date.now()); arrancar(); return; }
+    if (error.status === 400) { err.textContent = 'Usuario o contraseña incorrectos.'; g('clave').value = ''; }
+    else throw error;
+  } catch(e) { err.textContent = 'Error de conexión. Intentá de nuevo.'; }
+  err.style.display = 'block';
+}
+
+async function arrancar(){
+  g('acceso').style.display = 'none';
+  const [ra, rc] = await Promise.all([
+    sb.from('atletas').select('*').order('nombre'),
+    sb.from('competencias').select('*').order('created_at', { ascending: false })
+  ]);
+  ATLETAS = (ra && ra.data) || [];
+  COMPETENCIAS = (rc && rc.data) || [];
+  if (COMPETENCIAS.length && !COMP) COMP = COMPETENCIAS[0];
+  pintarCompetencias();
+  if (COMP) await cargarCompetencia();
+  else pintarContenido();
+}
+
+// ── Competencias ──────────────────────────────────────────────────────────
+function pintarCompetencias(){
+  const cont = g('competencias');
+  cont.textContent = '';
+  COMPETENCIAS.forEach(c => cont.appendChild(el('button',{
+    class:'ficha' + (COMP && c.id === COMP.id ? ' on' : ''), txt:c.nombre,
+    onclick:() => { COMP = c; APL = null; pintarCompetencias(); cargarCompetencia(); }
+  })));
+  cont.appendChild(el('button',{class:'ficha nueva',txt:'+ Nueva competencia',
+    onclick:() => { g('form-competencia').style.display = 'flex'; g('nueva-competencia').focus(); }}));
+  if (COMP) cont.appendChild(el('button',{class:'btn-chico peligro',style:'margin-left:auto',
+    txt:'Eliminar competencia', onclick:eliminarCompetencia}));
+}
+
+async function crearCompetencia(){
+  const nombre = g('nueva-competencia').value.trim();
+  if (!nombre) return;
+  const r = await sb.from('competencias').insert([{ nombre, fecha_inicio: hoyLocal() }]).select().single();
+  if (r.error) { avisar('No se pudo crear la competencia.', true); console.error(r.error); return; }
+  COMPETENCIAS.unshift(r.data);
+  COMP = r.data; APL = null;
+  g('nueva-competencia').value = '';
+  g('form-competencia').style.display = 'none';
+  pintarCompetencias();
+  await cargarCompetencia();
+  avisar('Competencia creada');
+}
+
+async function eliminarCompetencia(){
+  if (!confirm('¿Eliminar "' + COMP.nombre + '" con todas sus mediciones? No se puede deshacer.')) return;
+  const r = await sb.from('competencias').delete().eq('id', COMP.id);
+  if (r.error) { avisar('No se pudo eliminar.', true); return; }
+  COMPETENCIAS = COMPETENCIAS.filter(c => c.id !== COMP.id);
+  COMP = COMPETENCIAS[0] || null; APL = null;
+  pintarCompetencias();
+  if (COMP) await cargarCompetencia(); else pintarContenido();
+  avisar('Competencia eliminada');
+}
+
+async function cargarCompetencia(){
+  const ra = await sb.from('aplicaciones').select('*').eq('competencia_id', COMP.id).order('created_at');
+  APLICACIONES = (ra && ra.data) || [];
+  if (APLICACIONES.length && !APL) APL = APLICACIONES[APLICACIONES.length - 1];
+  await cargarMediciones();
+  pintarContenido();
+}
+
+async function cargarMediciones(){
+  const ids = APLICACIONES.map(a => a.id);
+  if (!ids.length) { MEDICIONES = []; return; }
+  const r = await sb.from('evaluaciones').select('*').eq('tipo','prearranque').in('aplicacion_id', ids);
+  MEDICIONES = (r && r.data) || [];
+}
+
+function plantel(){
+  const ids = (COMP && COMP.plantel) || [];
+  return ids.map(id => ATLETAS.find(a => a.id === id)).filter(Boolean);
+}
+function medicionDe(atletaId, aplicacionId){
+  return MEDICIONES.find(m => m.atleta_id === atletaId && m.aplicacion_id === aplicacionId);
+}
+function valoresDe(atletaId, aplicacionId){
+  const m = medicionDe(atletaId, aplicacionId);
+  const d = (m && m.datos) || {};
+  return { e: Number(d.energia) || 0, c: Number(d.control) || 0, dif: Number(d.dificultad) || 0 };
+}
+
+// ── Estructura de la página ───────────────────────────────────────────────
+function pintarContenido(){
+  const cont = g('contenido');
+  cont.textContent = '';
+  if (!COMP) {
+    cont.appendChild(el('div',{class:'tarjeta'},[ el('div',{class:'vacio',
+      txt:'Creá una competencia para empezar a medir el estado de prearranque.'}) ]));
+    return;
+  }
+
+  cont.appendChild(tarjetaPlantel());
+  cont.appendChild(tarjetaAplicaciones());
+  if (!APL) return;
+
+  const pestanas = el('div',{class:'fichas no-imprimir',style:'margin-bottom:16px'});
+  [['carga','Cargar'],['analisis','Análisis del estado'],['cotejo','Comparar mediciones']].forEach(([v,lbl]) => {
+    pestanas.appendChild(el('button',{class:'ficha' + (SECCION === v ? ' on' : ''), txt:lbl,
+      onclick:() => { SECCION = v; pintarContenido(); }}));
+  });
+  cont.appendChild(pestanas);
+
+  if (SECCION === 'carga') cont.appendChild(tarjetaCarga());
+  else if (SECCION === 'analisis') tarjetasAnalisis().forEach(t => cont.appendChild(t));
+  else cont.appendChild(tarjetaCotejo());
+}
+
+// ── Plantel ───────────────────────────────────────────────────────────────
+function tarjetaPlantel(){
+  const t = el('div',{class:'tarjeta no-imprimir'});
+  const equipo = plantel();
+  t.appendChild(el('div',{class:'tarjeta-cab'},[
+    el('h2',{txt:'Plantel'}),
+    el('div',{class:'contador',txt: equipo.length + (equipo.length === 1 ? ' atleta' : ' atletas')})
+  ]));
+  t.appendChild(el('div',{class:'ayuda',
+    txt:'Elegí los atletas de esta competencia. Quedan guardados, así no hay que volver a elegirlos en cada medición.'}));
+
+  const barra = el('div',{class:'sub-barra',style:'border-top:none;padding-top:0;margin-top:0'});
+  const buscar = el('input',{type:'text',id:'buscar-atleta',placeholder:'Buscar atleta para agregar…',autocomplete:'off'});
+  const lista = el('div',{class:'fichas',style:'margin-top:10px'});
+  function sugerir(){
+    const q = buscar.value.trim().toLowerCase();
+    lista.textContent = '';
+    if (q.length < 2) return;
+    const ids = (COMP.plantel || []);
+    ATLETAS.filter(a => !ids.includes(a.id) && (a.nombre || '').toLowerCase().includes(q))
+      .slice(0, 8)
+      .forEach(a => lista.appendChild(el('button',{class:'ficha',txt:a.nombre + (a.categoria ? ' · ' + a.categoria : ''),
+        onclick:() => agregarAlPlantel(a.id)})));
+    if (!lista.children.length) lista.appendChild(el('span',{class:'ayuda',style:'margin:0',txt:'Sin resultados.'}));
+  }
+  buscar.addEventListener('input', sugerir);
+  barra.appendChild(buscar);
+  if (ATLETAS.length && !equipo.length) {
+    const cats = [...new Set(ATLETAS.map(a => a.categoria).filter(Boolean))].sort();
+    cats.slice(0, 6).forEach(cat => barra.appendChild(el('button',{class:'btn-chico',
+      txt:'Agregar ' + cat + ' (' + ATLETAS.filter(a => a.categoria === cat).length + ')',
+      onclick:() => agregarGrupo(ATLETAS.filter(a => a.categoria === cat).map(a => a.id))})));
+  }
+  t.appendChild(barra);
+  t.appendChild(lista);
+
+  if (equipo.length) {
+    const actuales = el('div',{class:'fichas',style:'margin-top:12px'});
+    equipo.forEach(a => actuales.appendChild(el('button',{class:'ficha',
+      title:'Quitar del plantel', txt:a.nombre + '  ✕',
+      onclick:() => quitarDelPlantel(a.id)})));
+    t.appendChild(actuales);
+  }
+  return t;
+}
+
+async function guardarPlantel(ids){
+  const r = await sb.from('competencias').update({ plantel: ids }).eq('id', COMP.id);
+  if (r.error) { avisar('No se pudo guardar el plantel.', true); console.error(r.error); return false; }
+  COMP.plantel = ids;
+  const i = COMPETENCIAS.findIndex(c => c.id === COMP.id);
+  if (i >= 0) COMPETENCIAS[i] = COMP;
+  return true;
+}
+async function agregarAlPlantel(id){
+  const ids = (COMP.plantel || []).concat([id]);
+  if (await guardarPlantel(ids)) { pintarContenido(); avisar('Agregado al plantel'); }
+}
+async function agregarGrupo(nuevos){
+  const ids = [...new Set((COMP.plantel || []).concat(nuevos))];
+  if (await guardarPlantel(ids)) { pintarContenido(); avisar(nuevos.length + ' atletas agregados'); }
+}
+async function quitarDelPlantel(id){
+  const tiene = MEDICIONES.some(m => m.atleta_id === id);
+  if (tiene && !confirm('Ese atleta ya tiene mediciones en esta competencia. Si lo quitás del plantel, las mediciones quedan guardadas pero no se ven acá. ¿Seguir?')) return;
+  if (await guardarPlantel((COMP.plantel || []).filter(x => x !== id))) { pintarContenido(); }
+}
+
+// ── Aplicaciones ──────────────────────────────────────────────────────────
+function tarjetaAplicaciones(){
+  const t = el('div',{class:'tarjeta no-imprimir'});
+  t.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'Mediciones de esta competencia'}) ]));
+  const fichas = el('div',{class:'fichas'});
+  APLICACIONES.forEach(a => fichas.appendChild(el('button',{
+    class:'ficha' + (APL && a.id === APL.id ? ' on' : ''),
+    txt:a.nombre + (a.fecha ? ' · ' + fechaCorta(a.fecha) : ''),
+    onclick:() => { APL = a; pintarContenido(); }})));
+  fichas.appendChild(el('button',{class:'ficha nueva',txt:'+ Nueva medición',onclick:crearAplicacion}));
+  if (APL) fichas.appendChild(el('button',{class:'btn-chico peligro',style:'margin-left:auto',
+    txt:'Eliminar medición',onclick:eliminarAplicacion}));
+  t.appendChild(fichas);
+
+  if (APL) {
+    const barra = el('div',{class:'sub-barra'});
+    const nom = el('input',{type:'text',value:APL.nombre,'aria-label':'Nombre de la medición'});
+    nom.addEventListener('change', () => renombrarAplicacion(nom.value));
+    const fec = el('input',{type:'date',value:(APL.fecha || '').substring(0,10),'aria-label':'Fecha'});
+    fec.addEventListener('change', () => cambiarFecha(fec.value));
+    const riv = el('input',{type:'text',value:APL.rival || '',placeholder:'Rival (opcional)','aria-label':'Rival'});
+    riv.addEventListener('change', () => cambiarRival(riv.value));
+    barra.appendChild(nom); barra.appendChild(fec); barra.appendChild(riv);
+    const equipo = plantel();
+    const listos = equipo.filter(a => { const v = valoresDe(a.id, APL.id); return v.e && v.c; }).length;
+    barra.appendChild(el('div',{class:'contador',txt: listos + ' de ' + equipo.length + ' cargados'}));
+    t.appendChild(barra);
+  }
+  return t;
+}
+
+async function crearAplicacion(){
+  const n = APLICACIONES.length + 1;
+  const r = await sb.from('aplicaciones').insert([{
+    competencia_id: COMP.id, nombre: 'Medición ' + n, fecha: hoyLocal()
+  }]).select().single();
+  if (r.error) { avisar('No se pudo crear la medición.', true); console.error(r.error); return; }
+  APLICACIONES.push(r.data);
+  APL = r.data;
+  SECCION = 'carga';
+  pintarContenido();
+}
+async function renombrarAplicacion(v){
+  const nombre = (v || '').trim();
+  if (!nombre) return;
+  const r = await sb.from('aplicaciones').update({ nombre }).eq('id', APL.id);
+  if (r.error) { avisar('No se pudo renombrar.', true); return; }
+  APL.nombre = nombre;
+  pintarContenido();
+}
+async function cambiarFecha(v){
+  const r = await sb.from('aplicaciones').update({ fecha: v || null }).eq('id', APL.id);
+  if (r.error) { avisar('No se pudo guardar la fecha.', true); return; }
+  APL.fecha = v;
+  // Las mediciones de esta aplicación llevan la misma fecha.
+  if (v) await sb.from('evaluaciones').update({ fecha: v }).eq('aplicacion_id', APL.id);
+  MEDICIONES.forEach(m => { if (m.aplicacion_id === APL.id) m.fecha = v; });
+  pintarContenido();
+}
+async function cambiarRival(v){
+  const r = await sb.from('aplicaciones').update({ rival: v || null }).eq('id', APL.id);
+  if (!r.error) APL.rival = v;
+}
+async function eliminarAplicacion(){
+  if (!confirm('¿Eliminar "' + APL.nombre + '" y sus mediciones? No se puede deshacer.')) return;
+  const r = await sb.from('aplicaciones').delete().eq('id', APL.id);
+  if (r.error) { avisar('No se pudo eliminar.', true); return; }
+  APLICACIONES = APLICACIONES.filter(a => a.id !== APL.id);
+  MEDICIONES = MEDICIONES.filter(m => m.aplicacion_id !== APL.id);
+  APL = APLICACIONES[APLICACIONES.length - 1] || null;
+  pintarContenido();
+}
+
+// ── Carga ─────────────────────────────────────────────────────────────────
+function tarjetaCarga(){
+  const t = el('div',{class:'tarjeta'});
+  t.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'Cargar ' + APL.nombre}) ]));
+
+  const ref = el('details',{class:'ref no-imprimir'});
+  ref.appendChild(el('summary',{txt:'Ver qué significa cada número, en el lenguaje del jugador'}));
+  const grilla = el('div',{class:'ref-grilla'});
+  REFERENCIA.forEach(r => {
+    const ul = el('ul');
+    r.items.forEach((txt, i) => ul.appendChild(el('li',null,[ el('b',{txt:String(i+1)}), document.createTextNode(txt) ])));
+    grilla.appendChild(el('div',null,[ el('h4',{txt:r.titulo}), ul ]));
+  });
+  ref.appendChild(grilla);
+  t.appendChild(ref);
+
+  const equipo = plantel();
+  if (!equipo.length) { t.appendChild(el('div',{class:'vacio',txt:'Agregá atletas al plantel para poder cargar.'})); return t; }
+
+  const cuerpo = el('tbody');
+  equipo.forEach((a, i) => {
+    const v = valoresDe(a.id, APL.id);
+    const est = estadoDe(v.e, v.c);
+    const fila = el('tr');
+    fila.appendChild(el('td',{style:'color:var(--ink3);font-size:12px',txt:String(i+1)}));
+    fila.appendChild(el('td',null,[
+      el('div',{class:'nom-atleta',txt:a.nombre}),
+      a.posicion ? el('div',{class:'pos-atleta',txt:a.posicion}) : null
+    ]));
+    fila.appendChild(el('td',null,[ botonera(a.id, 'energia', v.e) ]));
+    fila.appendChild(el('td',null,[ botonera(a.id, 'control', v.c) ]));
+    fila.appendChild(el('td',null,[ selectorDificultad(a.id, v.dif) ]));
+    const celda = el('td');
+    if (est) {
+      celda.appendChild(el('span',{class:'chapa',
+        style:'background:'+est.f+';color:'+est.t+';border:1px solid '+est.b, txt:est.lbl}));
+      if (tieneAlerta(est, v.dif)) celda.appendChild(el('span',{class:'alerta',txt:'optimismo'}));
+    } else celda.appendChild(el('span',{style:'color:var(--ink3)',txt:'—'}));
+    fila.appendChild(celda);
+    cuerpo.appendChild(fila);
+  });
+
+  t.appendChild(el('div',{class:'tabla-scroll'},[
+    el('table',{class:'carga'},[
+      el('thead',null,[ el('tr',null,[
+        el('th',{txt:'#'}), el('th',{txt:'Atleta'}),
+        el('th',{txt:'Energía'}), el('th',{txt:'Control'}),
+        el('th',{txt:'Dific.'}), el('th',{txt:'Estado'})
+      ]) ]),
+      cuerpo
+    ])
+  ]));
+  return t;
+}
+
+function botonera(atletaId, campo, valor){
+  const caja = el('div',{class:'botones'});
+  for (let v = 1; v <= 5; v++) {
+    const n = v;
+    caja.appendChild(el('button',{
+      class:'bt' + (valor === n ? ' on' : ''), txt:String(n),
+      'aria-label': campo + ' ' + n,
+      onclick:() => guardarValor(atletaId, campo, valor === n ? 0 : n)
+    }));
+  }
+  return caja;
+}
+function selectorDificultad(atletaId, valor){
+  const sel = el('select',{class:'sel-dif','aria-label':'Dificultad percibida'});
+  sel.appendChild(el('option',{value:'0',txt:'—'}));
+  for (let v = 1; v <= 5; v++) sel.appendChild(el('option',{value:String(v),txt:String(v)}));
+  sel.value = String(valor || 0);
+  sel.addEventListener('change', () => guardarValor(atletaId, 'dificultad', Number(sel.value)));
+  return sel;
+}
+
+// Se guarda al toque, pero en cola por atleta: dos clics rápidos sobre el
+// mismo jugador crearían dos registros si salieran en paralelo.
+const colas = {};
+function guardarValor(atletaId, campo, valor){
+  const m = medicionDe(atletaId, APL.id);
+  const datos = Object.assign({}, (m && m.datos) || {});
+  if (valor) datos[campo] = valor; else delete datos[campo];
+  if (m) m.datos = datos;
+  else MEDICIONES.push({ id:null, atleta_id:atletaId, aplicacion_id:APL.id, tipo:'prearranque',
+                         fecha:APL.fecha || hoyLocal(), datos });
+  pintarContenido();
+
+  const clave = atletaId + '|' + APL.id;
+  colas[clave] = (colas[clave] || Promise.resolve()).then(() => persistir(atletaId, APL.id));
+}
+async function persistir(atletaId, aplicacionId){
+  const local = MEDICIONES.find(x => x.atleta_id === atletaId && x.aplicacion_id === aplicacionId);
+  if (!local) return;
+  const vacio = !Object.keys(local.datos || {}).length;
+  try {
+    if (local.id && vacio) {
+      await sb.from('evaluaciones').delete().eq('id', local.id);
+      MEDICIONES = MEDICIONES.filter(x => x !== local);
+    } else if (local.id) {
+      const r = await sb.from('evaluaciones').update({ datos: local.datos }).eq('id', local.id);
+      if (r.error) throw r.error;
+    } else if (!vacio) {
+      const r = await sb.from('evaluaciones').insert([{
+        atleta_id: atletaId, tipo:'prearranque', fecha: local.fecha,
+        aplicacion_id: aplicacionId, contexto: COMP.nombre, datos: local.datos
+      }]).select('id').single();
+      if (r.error) throw r.error;
+      local.id = r.data.id;
+    }
+  } catch(e) { avisar('No se pudo guardar. Revisá la conexión.', true); console.error(e); }
+}
+
+// ── Análisis ──────────────────────────────────────────────────────────────
+function agrupar(aplicacionId){
+  const grupos = {}; const alertas = [];
+  ESTADOS.forEach(s => { grupos[s.id] = []; });
+  plantel().forEach(a => {
+    const v = valoresDe(a.id, aplicacionId);
+    const est = estadoDe(v.e, v.c);
+    if (!est) return;
+    grupos[est.id].push(a.nombre);
+    if (tieneAlerta(est, v.dif)) alertas.push(a.nombre);
+  });
+  const medidos = ESTADOS.reduce((s, e) => s + grupos[e.id].length, 0);
+  return { grupos, alertas, medidos };
+}
+
+function tarjetasAnalisis(){
+  const { grupos, alertas, medidos } = agrupar(APL.id);
+  const equipo = plantel();
+  if (!medidos) return [ el('div',{class:'tarjeta'},[ el('div',{class:'vacio',
+    txt:'Todavía no hay mediciones cargadas en ' + APL.nombre + '.'}) ]) ];
+
+  const salida = [];
+  const combativa = grupos['combativa'].length;
+  const riesgo = grupos['fiebre'].length + grupos['apatia'].length;
+
+  const panel = el('div',{class:'tarjeta'});
+  panel.appendChild(el('div',{class:'tarjeta-cab'},[
+    el('h2',{txt:COMP.nombre + ' · ' + APL.nombre + (APL.rival ? ' · vs ' + APL.rival : '')}),
+    el('button',{class:'btn-chico no-imprimir',txt:'Imprimir',onclick:() => window.print()})
+  ]));
+  const metricas = el('div',{class:'metricas'});
+  [['Índice de preparación', Math.round(combativa / medidos * 100) + '%', 'en disposición combativa'],
+   ['A intervenir', riesgo, 'fiebre de arrancada o apatía'],
+   ['Alertas de optimismo', alertas.length, 'subestiman al rival'],
+   ['Medidos', medidos, 'de ' + equipo.length + ' del plantel']
+  ].forEach(([lbl, num, pie]) => metricas.appendChild(el('div',{class:'metrica'},[
+    el('div',{class:'metrica-lbl',txt:lbl}),
+    el('div',{class:'metrica-num',txt:String(num)}),
+    el('div',{class:'metrica-pie',txt:pie})
+  ])));
+  panel.appendChild(metricas);
+
+  const dist = el('div',{class:'distribucion'});
+  ESTADOS.forEach(s => {
+    const n = grupos[s.id].length;
+    if (!n) return;
+    dist.appendChild(el('div',{class:'seg',
+      style:'width:'+(n/medidos*100)+'%;background:'+s.f+';color:'+s.t, title:s.lbl, txt:String(n)}));
+  });
+  panel.appendChild(dist);
+  const leyenda = el('div',{class:'leyenda'});
+  ESTADOS.forEach(s => leyenda.appendChild(el('span',null,[
+    el('span',{class:'punto',style:'background:'+s.b}), document.createTextNode(s.lbl)
+  ])));
+  panel.appendChild(leyenda);
+  salida.push(panel);
+
+  const detalle = el('div',{class:'tarjeta'});
+  detalle.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'Detalle por estado'}) ]));
+  const caja = el('div',{class:'estados'});
+  ESTADOS.filter(s => grupos[s.id].length).forEach(s => {
+    caja.appendChild(el('div',{class:'estado',style:'background:'+s.f+';border-color:'+s.b},[
+      el('div',{class:'estado-cab'},[
+        el('span',{class:'estado-lbl',style:'color:'+s.t,txt:s.lbl}),
+        el('span',{class:'estado-num',style:'color:'+s.t,txt:String(grupos[s.id].length)})
+      ]),
+      el('div',{class:'estado-proto',style:'color:'+s.t,txt:s.proto}),
+      el('div',{class:'estado-nombres',style:'color:'+s.t,txt:grupos[s.id].join(', ')})
+    ]));
+  });
+  detalle.appendChild(caja);
+  salida.push(detalle);
+
+  salida.push(tarjetaIntervenir());
+  salida.push(tarjetaRejilla());
+  return salida;
+}
+
+function tarjetaIntervenir(){
+  const t = el('div',{class:'tarjeta'});
+  t.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'A intervenir antes del partido'}) ]));
+  // Primero la apatía, que es el de mayor cuidado; después la fiebre; al
+  // final las alertas de optimismo, que no son un estado de riesgo.
+  const items = [];
+  plantel().forEach(a => {
+    const v = valoresDe(a.id, APL.id);
+    const est = estadoDe(v.e, v.c);
+    if (!est) return;
+    if (est.id === 'apatia' || est.id === 'fiebre')
+      items.push({ nombre:a.nombre, lbl:est.lbl, f:est.f, t:est.t, b:est.b, proto:est.proto,
+                   orden: est.id === 'apatia' ? 0 : 1 });
+    else if (tieneAlerta(est, v.dif))
+      items.push({ nombre:a.nombre, lbl:'Optimismo infundado', f:'var(--alerta-f)', t:'var(--alerta-t)',
+                   b:'var(--alerta-b)', proto:PROTO_ALERTA, orden:2 });
+  });
+  if (!items.length) {
+    t.appendChild(el('div',{class:'vacio',txt:'Nadie requiere intervención. Proteger el estado del grupo.'}));
+    return t;
+  }
+  items.sort((a,b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre,'es'));
+  items.forEach(it => t.appendChild(el('div',{class:'accion'},[
+    el('div',{class:'accion-quien'},[
+      el('div',{class:'nom-atleta',txt:it.nombre}),
+      el('span',{class:'chapa',style:'background:'+it.f+';color:'+it.t+';border:1px solid '+it.b+';margin-top:4px',txt:it.lbl})
+    ]),
+    el('div',{class:'accion-proto',txt:it.proto})
+  ])));
+  return t;
+}
+
+function tarjetaRejilla(){
+  const t = el('div',{class:'tarjeta'});
+  t.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'Mapa de energía y control'}) ]));
+  t.appendChild(el('div',{class:'ayuda',
+    txt:'Cada celda cuenta cuántos atletas cayeron en esa combinación. El color indica a qué estado pertenece.'}));
+  const cuentas = {};
+  plantel().forEach(a => {
+    const v = valoresDe(a.id, APL.id);
+    if (!v.e || !v.c) return;
+    const k = v.e + '_' + v.c;
+    cuentas[k] = (cuentas[k] || 0) + 1;
+  });
+  const cuerpo = el('tbody');
+  for (let c = 5; c >= 1; c--) {
+    const fila = el('tr');
+    if (c === 5) fila.appendChild(el('td',{rowspan:'5',class:'eje-lbl',
+      style:'writing-mode:vertical-rl;transform:rotate(180deg)',txt:'Control'}));
+    fila.appendChild(el('td',{class:'eje-lbl',txt:String(c)}));
+    for (let e = 1; e <= 5; e++) {
+      const est = estadoDe(e, c);
+      const n = cuentas[e + '_' + c] || 0;
+      fila.appendChild(el('td',{class:'celda-r',
+        style:'background:'+(est ? est.f : 'var(--plano)')+';color:'+(est ? est.t : 'var(--ink3)'),
+        title:(est ? est.lbl : '') + ' · energía ' + e + ', control ' + c,
+        txt: n ? String(n) : ''}));
+    }
+    cuerpo.appendChild(fila);
+  }
+  const pie = el('tr');
+  pie.appendChild(el('td')); pie.appendChild(el('td'));
+  for (let e = 1; e <= 5; e++) pie.appendChild(el('td',{class:'eje-lbl',txt:String(e)}));
+  cuerpo.appendChild(pie);
+  const pie2 = el('tr');
+  pie2.appendChild(el('td')); pie2.appendChild(el('td'));
+  pie2.appendChild(el('td',{colspan:'5',class:'eje-lbl',txt:'Energía'}));
+  cuerpo.appendChild(pie2);
+  t.appendChild(el('div',{class:'tabla-scroll'},[ el('table',{class:'rejilla'},[ cuerpo ]) ]));
+  return t;
+}
+
+// ── Cotejo ────────────────────────────────────────────────────────────────
+function tarjetaCotejo(){
+  const t = el('div',{class:'tarjeta'});
+  t.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'Comparar mediciones'}) ]));
+  if (APLICACIONES.length < 2) {
+    t.appendChild(el('div',{class:'vacio',txt:'Hacen falta al menos dos mediciones para comparar.'}));
+    return t;
+  }
+  const barra = el('div',{class:'sub-barra',style:'border-top:none;padding-top:0;margin-top:0'});
+  const selA = el('select',{class:'sel-dif',id:'cmp-a'});
+  const selB = el('select',{class:'sel-dif',id:'cmp-b'});
+  APLICACIONES.forEach((a,i) => {
+    selA.appendChild(el('option',{value:a.id,txt:a.nombre}));
+    selB.appendChild(el('option',{value:a.id,txt:a.nombre}));
+  });
+  selA.value = (tarjetaCotejo.a || APLICACIONES[0].id);
+  selB.value = (tarjetaCotejo.b || APLICACIONES[APLICACIONES.length-1].id);
+  selA.addEventListener('change', () => { tarjetaCotejo.a = selA.value; pintarContenido(); });
+  selB.addEventListener('change', () => { tarjetaCotejo.b = selB.value; pintarContenido(); });
+  barra.appendChild(el('span',{class:'ayuda',style:'margin:0',txt:'Comparar'}));
+  barra.appendChild(selA);
+  barra.appendChild(el('span',{class:'ayuda',style:'margin:0',txt:'con'}));
+  barra.appendChild(selB);
+  t.appendChild(barra);
+
+  const idA = selA.value, idB = selB.value;
+  const resA = agrupar(idA), resB = agrupar(idB);
+  const prom = (id, campo) => {
+    const vs = plantel().map(a => valoresDe(a.id, id)[campo]).filter(v => v > 0);
+    return vs.length ? (vs.reduce((x,y) => x+y, 0) / vs.length) : 0;
+  };
+  const metricas = el('div',{class:'metricas',style:'margin-top:16px'});
+  [['Energía media', prom(idB,'e').toFixed(1), prom(idA,'e').toFixed(1), true],
+   ['Control medio', prom(idB,'c').toFixed(1), prom(idA,'c').toFixed(1), true],
+   ['En combativa', resB.grupos['combativa'].length, resA.grupos['combativa'].length, true],
+   ['A intervenir', resB.grupos['fiebre'].length + resB.grupos['apatia'].length,
+                    resA.grupos['fiebre'].length + resA.grupos['apatia'].length, false]
+  ].forEach(([lbl, ahora, antes, subirEsBueno]) => {
+    const d = Number(ahora) - Number(antes);
+    const bueno = subirEsBueno ? d > 0 : d < 0;
+    const color = d === 0 ? 'var(--ink3)' : (bueno ? 'var(--comb-t)' : 'var(--apa-t)');
+    metricas.appendChild(el('div',{class:'metrica'},[
+      el('div',{class:'metrica-lbl',txt:lbl}),
+      el('div',{class:'metrica-num',txt:String(ahora)}),
+      el('div',{class:'metrica-pie',style:'color:'+color,
+        txt:(d === 0 ? 'sin cambio' : (d > 0 ? '▲ +' : '▼ ') + (d > 0 ? d.toFixed(Number.isInteger(d) ? 0 : 1) : Math.abs(d).toFixed(Number.isInteger(d) ? 0 : 1))) + ' · antes ' + antes})
+    ]));
+  });
+  t.appendChild(metricas);
+
+  const cuerpo = el('tbody');
+  plantel().forEach(a => {
+    const va = valoresDe(a.id, idA), vb = valoresDe(a.id, idB);
+    const eb = estadoDe(vb.e, vb.c);
+    const fila = el('tr');
+    fila.appendChild(el('td',null,[ el('div',{class:'nom-atleta',txt:a.nombre}) ]));
+    fila.appendChild(el('td',{txt: va.e && va.c ? va.e + ' / ' + va.c : '—'}));
+    fila.appendChild(el('td',{txt: vb.e && vb.c ? vb.e + ' / ' + vb.c : '—'}));
+    let cambio = '—', color = 'var(--ink3)';
+    if (va.e && va.c && vb.e && vb.c) {
+      const de = vb.e - va.e, dc = vb.c - va.c;
+      // Energía y control pueden moverse en sentidos distintos, así que no
+      // se resume en una sola flecha: se muestra el cambio de cada uno.
+      if (de === 0 && dc === 0) cambio = 'sin cambio';
+      else {
+        cambio = 'E ' + (de > 0 ? '+' : '') + de + '  ·  C ' + (dc > 0 ? '+' : '') + dc;
+        const suma = de + dc;
+        color = suma > 0 ? 'var(--comb-t)' : suma < 0 ? 'var(--apa-t)' : 'var(--ink2)';
+      }
+    }
+    fila.appendChild(el('td',{style:'color:'+color+';font-weight:700;font-size:13px',txt:cambio}));
+    const celda = el('td');
+    if (eb) {
+      celda.appendChild(el('span',{class:'chapa',style:'background:'+eb.f+';color:'+eb.t+';border:1px solid '+eb.b,txt:eb.lbl}));
+      if (tieneAlerta(eb, vb.dif)) celda.appendChild(el('span',{class:'alerta',txt:'optimismo'}));
+    } else celda.appendChild(el('span',{style:'color:var(--ink3)',txt:'—'}));
+    fila.appendChild(celda);
+    cuerpo.appendChild(fila);
+  });
+  t.appendChild(el('div',{class:'tabla-scroll',style:'margin-top:8px'},[
+    el('table',{class:'carga'},[
+      el('thead',null,[ el('tr',null,[
+        el('th',{txt:'Atleta'}),
+        el('th',{txt:(APLICACIONES.find(x => x.id === idA) || {}).nombre + ' (E/C)'}),
+        el('th',{txt:(APLICACIONES.find(x => x.id === idB) || {}).nombre + ' (E/C)'}),
+        el('th',{txt:'Cambio'}), el('th',{txt:'Estado'})
+      ]) ]),
+      cuerpo
+    ])
+  ]));
+  return t;
+}
+
+(async function(){
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && sessionStorage.getItem('tds-auth') === 'ok') arrancar();
+})();
+</script>
+</body>
+</html>
