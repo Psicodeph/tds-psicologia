@@ -66,6 +66,8 @@ nav{display:flex;gap:4px}
 nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
 nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
 nav a.activo{background:var(--marca);color:#fff}
+.btn-tema{background:none;border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-tema:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
 
 .envoltura{max-width:1240px;margin:0 auto;padding:20px}
 .columnas{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
@@ -261,8 +263,9 @@ nav a.activo{background:var(--marca);color:#fff}
       </div>
     </div>
     <nav>
-      <a href="/">Evaluar</a>
+      <a href="/evaluar">Evaluar</a>
       <a href="/atletas" class="activo">Atletas</a>
+      <button class="btn-tema" id="btn-tema" onclick="rotarTema()" title="Cambiar entre claro y oscuro"></button>
     </nav>
   </div>
 </header>
@@ -287,6 +290,32 @@ nav a.activo{background:var(--marca);color:#fff}
 <div id="tip" role="status" aria-live="polite"></div>
 
 <script>
+// El tema se guarda en el navegador y vale para todas las páginas.
+// "auto" sigue lo que tenga configurado el sistema.
+const TEMAS = [
+  { v:'auto',   lbl:'Automático' },
+  { v:'light',  lbl:'Claro' },
+  { v:'dark',   lbl:'Oscuro' }
+];
+function temaGuardado(){
+  try { return localStorage.getItem('tds-tema') || 'auto'; } catch(e) { return 'auto'; }
+}
+function aplicarTema(v){
+  if (v === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+  try { localStorage.setItem('tds-tema', v); } catch(e) {}
+  const b = document.getElementById('btn-tema');
+  if (b) {
+    const t = TEMAS.find(x => x.v === v);
+    b.textContent = (v === 'dark' ? '🌙 ' : v === 'light' ? '☀️ ' : '🖥️ ') + t.lbl;
+  }
+}
+function rotarTema(){
+  const i = TEMAS.findIndex(x => x.v === temaGuardado());
+  aplicarTema(TEMAS[(i + 1) % TEMAS.length].v);
+}
+aplicarTema(temaGuardado());
+
 const { createClient } = supabase;
 const sb = createClient(
   'https://esbmtenfcjbrrocrnfep.supabase.co',
@@ -411,6 +440,12 @@ async function arrancar(){
   ((rs && rs.data) || []).forEach(se => { (SESIONES[se.atleta_id] = SESIONES[se.atleta_id] || []).push(se); });
   document.getElementById('contador').textContent = '(' + ATLETAS.length + ')';
   pintarLista();
+  // Al volver de guardar una evaluación se abre directo la ficha del atleta.
+  const pedido = new URLSearchParams(location.search).get('atleta');
+  if (pedido && ATLETAS.some(a => a.id === pedido)) {
+    abrirFicha(pedido);
+    history.replaceState(null, '', '/atletas');
+  }
 }
 
 function enRango(f){

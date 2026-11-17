@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluar — Melany Ordóñez</title>
+<link rel="icon" href="/assets/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  color-scheme: light;
+  --marca:#1aa8e0; --marca-fuerte:#0b7fae; --marca-suave:#e8f6fd;
+  --plano:#f9f9f7; --superficie:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --ink3:#898781;
+  --linea:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  --bien:#0a7d0a; --aviso:#fab219; --serio:#c2622f; --critico:#b3261e;
+  --radio:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+    --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+    --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+    --bien:#0ca30c; --serio:#ec835a; --critico:#e05a52;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+  --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+  --bien:#0ca30c; --serio:#ec835a; --critico:#e05a52;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plano);color:var(--ink);font-family:'Nunito','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+#acceso{position:fixed;inset:0;background:var(--marca);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.acceso-caja{background:var(--superficie);border-radius:20px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.acceso-caja img{width:110px;margin-bottom:14px}
+.acceso-sub{font-size:14px;color:var(--ink2);margin-bottom:22px}
+.campo{width:100%;background:var(--plano);border:1.5px solid var(--eje);border-radius:10px;padding:12px 14px;font-size:16px;font-weight:600;color:var(--ink);font-family:inherit;outline:none;margin-bottom:10px;color-scheme:inherit}
+.campo:focus{border-color:var(--marca)}
+.boton{width:100%;background:var(--marca);color:#fff;border:none;border-radius:10px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.boton:hover{background:var(--marca-fuerte)}
+.error{color:var(--critico);font-size:14px;font-weight:700;margin-top:10px;display:none}
+
+header{background:var(--superficie);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:100}
+.header-in{max-width:1080px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px;margin-right:auto}
+.marca img{width:30px}
+.marca-nombre{font-size:17px;font-weight:900;line-height:1.15}
+.marca-rol{font-size:12px;color:var(--ink2);font-weight:600}
+nav{display:flex;gap:4px;align-items:center}
+nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
+nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+nav a.activo{background:var(--marca);color:#fff}
+.btn-tema{background:none;border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-tema:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+
+.envoltura{max-width:1080px;margin:0 auto;padding:20px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:20px;margin-bottom:16px}
+.tarjeta-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:uppercase;letter-spacing:.8px}
+.ayuda{font-size:13.5px;color:var(--ink2);margin-bottom:16px}
+.grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.campo-caja label{display:block;font-size:11.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.campo-caja input,.campo-caja select,.campo-caja textarea{width:100%;background:var(--plano);border:1.5px solid var(--borde);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:15.5px;color:var(--ink);outline:none;color-scheme:inherit}
+.campo-caja input:focus,.campo-caja select:focus,.campo-caja textarea:focus{border-color:var(--marca)}
+.campo-caja textarea{min-height:100px;resize:vertical;line-height:1.55}
+.ancho-total{grid-column:1/-1}
+.insignia{display:inline-block;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:20px;margin-top:5px}
+
+/* Buscador de atleta */
+.buscador{position:relative}
+#sugerencias{display:none;position:absolute;top:100%;left:0;right:0;background:var(--superficie);border:1.5px solid var(--borde);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);max-height:280px;overflow-y:auto;z-index:300;margin-top:4px}
+.sug{display:block;width:100%;text-align:left;background:none;border:none;padding:11px 14px;cursor:pointer;font-family:inherit;color:var(--ink);border-bottom:1px solid var(--linea)}
+.sug:last-child{border-bottom:none}
+.sug:hover,.sug.marcada{background:var(--marca-suave)}
+.sug-nom{font-size:15.5px;font-weight:700}
+.sug-sub{font-size:12.5px;color:var(--ink2);font-weight:600}
+.chip-atleta{display:flex;align-items:center;gap:10px;background:var(--marca-suave);border:1px solid var(--marca);border-radius:10px;padding:11px 14px;margin-bottom:14px;flex-wrap:wrap}
+.chip-atleta-nom{font-size:16px;font-weight:800}
+.chip-atleta-sub{font-size:13px;color:var(--ink2);font-weight:600}
+.btn-chico{background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-chico:hover{background:var(--plano);border-color:var(--marca)}
+
+/* Qué pruebas se cargan */
+.pruebas{display:flex;flex-wrap:wrap;gap:9px}
+.prueba-chip{display:inline-flex;align-items:center;gap:8px;background:var(--plano);border:1.5px solid var(--borde);border-radius:22px;padding:9px 15px;font-size:14.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.prueba-chip input{width:17px;height:17px;accent-color:var(--marca);cursor:pointer}
+.prueba-chip.on{background:var(--marca-suave);border-color:var(--marca);color:var(--marca-fuerte)}
+.invalida{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--critico);cursor:pointer;margin-top:12px}
+.invalida input{width:17px;height:17px;accent-color:var(--critico);cursor:pointer}
+
+/* Loehr */
+.loehr-cab{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:7px}
+.loehr-col{font-size:10.5px;font-weight:800;text-align:center;color:var(--ink2);line-height:1.25;text-transform:uppercase;letter-spacing:.3px}
+.loehr-fila{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:7px}
+.celda{position:relative;background:var(--plano);border:1.5px solid var(--borde);border-radius:8px;padding:4px}
+.celda.ok{border-color:var(--marca);background:var(--marca-suave)}
+.celda .num{position:absolute;top:2px;left:5px;font-size:9.5px;font-weight:800;color:var(--ink3)}
+.celda input{width:100%;background:none;border:none;text-align:center;font-family:inherit;font-size:17px;font-weight:800;color:var(--ink);outline:none;padding:9px 0 3px}
+.sumas{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)}
+.suma{text-align:center}
+.suma label{display:block;font-size:10px;font-weight:800;color:var(--ink3);text-transform:uppercase;margin-bottom:3px}
+.suma input{width:100%;background:var(--plano);border:1.5px solid var(--borde);border-radius:8px;padding:8px 2px;text-align:center;font-family:inherit;font-size:17px;font-weight:800;color:var(--ink);outline:none}
+.suma input:focus{border-color:var(--marca)}
+.suma small{font-size:10.5px;color:var(--ink3);font-weight:700}
+@media(max-width:700px){
+  .loehr-cab{display:none}
+  .loehr-fila,.sumas{grid-template-columns:repeat(2,1fr)}
+  .celda .num{font-size:11px}
+}
+.contador{font-size:13px;font-weight:800;padding:4px 12px;border-radius:20px;background:var(--plano);color:var(--ink2)}
+.contador.listo{background:rgba(12,163,12,.15);color:var(--bien)}
+
+.barra-final{position:sticky;bottom:0;background:var(--superficie);border-top:1px solid var(--borde);padding:14px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:90}
+.barra-final .aviso-guardar{font-size:13.5px;color:var(--ink2);margin-right:auto}
+.btn-guardar{background:var(--marca);color:#fff;border:none;border-radius:10px;padding:13px 24px;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer}
+.btn-guardar:hover{background:var(--marca-fuerte)}
+.btn-guardar:disabled{opacity:.55;cursor:default}
+
+.borrador{display:none;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(250,178,25,.13);border:1.5px solid rgba(250,178,25,.55);border-radius:var(--radio);padding:14px 18px;margin-bottom:16px}
+.borrador.ver{display:flex}
+.borrador-txt{flex:1;min-width:220px;font-size:14.5px;color:var(--ink2)}
+.borrador-txt strong{display:block;font-size:15.5px;color:var(--ink);font-weight:900}
+
+#aviso{position:fixed;left:50%;transform:translateX(-50%);top:14px;background:var(--superficie);border:1px solid var(--borde);border-radius:10px;padding:11px 18px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-size:14.5px;font-weight:700;z-index:999;opacity:0;pointer-events:none;transition:opacity .15s}
+#aviso.ver{opacity:1}
+#aviso.mal{border-color:var(--critico);color:var(--critico)}
+</style>
+</head>
+<body>
+
+<div id="acceso">
+  <div class="acceso-caja">
+    <img src="/assets/logo.png" alt="Logo de Melany Ordóñez">
+    <div class="acceso-sub">Psicología del Deporte</div>
+    <input type="text" class="campo" id="usuario" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')entrar()">
+    <input type="password" class="campo" id="clave" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="boton" onclick="entrar()">Ingresar</button>
+    <div class="error" id="acceso-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-in">
+    <div class="marca">
+      <img src="/assets/icono.png" alt="">
+      <div>
+        <div class="marca-nombre">Melany Ordóñez</div>
+        <div class="marca-rol">Psicología del Deporte</div>
+      </div>
+    </div>
+    <nav>
+      <a href="/evaluar" class="activo">Evaluar</a>
+      <a href="/atletas">Atletas</a>
+      <button class="btn-tema" id="btn-tema" onclick="rotarTema()" title="Cambiar entre claro y oscuro"></button>
+    </nav>
+  </div>
+</header>
+
+<div class="envoltura">
+
+  <div class="borrador" id="borrador">
+    <div class="borrador-txt">
+      <strong>Tenés una evaluación sin guardar</strong>
+      <span id="borrador-info"></span>
+    </div>
+    <button class="btn-chico" style="background:var(--aviso);border-color:var(--aviso);color:#3d2d00" onclick="aplicarBorrador()">Continuar con ella</button>
+    <button class="btn-chico" onclick="descartarBorrador()">Empezar en blanco</button>
+  </div>
+
+  <!-- ATLETA -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Atleta</h2></div>
+    <div class="ayuda" id="ayuda-atleta">Escribí el nombre. Si ya está en el sistema aparece en la lista y se cargan sus datos; si no, se crea uno nuevo.</div>
+
+    <div class="chip-atleta" id="chip-atleta" style="display:none">
+      <div>
+        <div class="chip-atleta-nom" id="chip-nom"></div>
+        <div class="chip-atleta-sub" id="chip-sub"></div>
+      </div>
+      <button class="btn-chico" style="margin-left:auto" onclick="soltarAtleta()">Cambiar de atleta</button>
+    </div>
+
+    <div class="campo-caja buscador" id="caja-buscador">
+      <label for="buscar-atleta">Nombre completo</label>
+      <input type="text" id="buscar-atleta" autocomplete="off" placeholder="Ej. Jonathan Reyes" oninput="buscarAtletas()" onkeydown="teclaBusqueda(event)">
+      <div id="sugerencias"></div>
+    </div>
+
+    <div class="grilla" id="datos-atleta" style="margin-top:12px">
+      <div class="campo-caja"><label for="a-sexo">Sexo</label>
+        <select id="a-sexo"><option value="">—</option><option>Masculino</option><option>Femenino</option></select></div>
+      <div class="campo-caja"><label for="a-nacimiento">Fecha de nacimiento</label>
+        <input type="date" id="a-nacimiento" oninput="calcularEdad()"></div>
+      <div class="campo-caja"><label for="a-edad">Edad al evaluar</label>
+        <input type="number" id="a-edad" min="1" max="99" placeholder="—"></div>
+      <div class="campo-caja"><label for="a-deporte">Deporte</label>
+        <input type="text" id="a-deporte" list="lista-deportes" placeholder="Ej. Fútbol"><datalist id="lista-deportes"></datalist></div>
+      <div class="campo-caja"><label for="a-organizacion">Organización</label>
+        <input type="text" id="a-organizacion" list="lista-organizaciones" placeholder="Ej. TDS - FFH"><datalist id="lista-organizaciones"></datalist></div>
+      <div class="campo-caja"><label for="a-categoria">Categoría</label>
+        <input type="text" id="a-categoria" list="lista-categorias" placeholder="Ej. Sub-15"><datalist id="lista-categorias"></datalist></div>
+      <div class="campo-caja"><label for="a-centro">Centro de formación</label>
+        <input type="text" id="a-centro" list="lista-centros" placeholder="Ej. Tegucigalpa"><datalist id="lista-centros"></datalist></div>
+      <div class="campo-caja"><label for="a-posicion">Posición</label>
+        <input type="text" id="a-posicion" placeholder="Ej. Mediocampista"></div>
+    </div>
+  </div>
+
+  <!-- SESIÓN -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Esta evaluación</h2></div>
+    <div class="grilla">
+      <div class="campo-caja"><label for="s-fecha">Fecha de aplicación</label>
+        <input type="date" id="s-fecha" oninput="calcularEdad()"></div>
+      <div class="campo-caja"><label for="s-contexto">Contexto</label>
+        <input type="text" id="s-contexto" list="lista-contextos" placeholder="Ej. Evaluación inicial"><datalist id="lista-contextos">
+          <option>Evaluación inicial</option><option>Seguimiento</option><option>Reevaluación</option><option>Previo a competencia</option></datalist></div>
+      <div class="campo-caja"><label for="s-aplicada">Aplicada por</label>
+        <input type="text" id="s-aplicada" placeholder="Ej. Melany Ordóñez"></div>
+      <div class="campo-caja"><label for="s-interpretada">Interpretada por</label>
+        <input type="text" id="s-interpretada" placeholder="Ej. Melany Ordóñez"></div>
+    </div>
+  </div>
+
+  <!-- QUÉ PRUEBAS -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Qué pruebas estoy cargando</h2></div>
+    <div class="ayuda">Marcá solo las que aplicaste hoy. Las que no marques quedan como estaban: podés repetir el Loehr sin volver a cargar el CI.</div>
+    <div class="pruebas" id="selector-pruebas"></div>
+  </div>
+
+  <div id="secciones-pruebas"></div>
+
+  <!-- CIERRE -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Conclusión y recomendaciones</h2></div>
+    <div class="ayuda">Todo perfil debería llevar las dos. Si las dejás vacías, el atleta queda marcado como pendiente de completar.</div>
+    <div class="grilla">
+      <div class="campo-caja ancho-total"><label for="c-conclusion">Conclusión</label>
+        <textarea id="c-conclusion" placeholder="Perfil psicológico general, fortalezas y áreas de atención prioritaria…"></textarea></div>
+      <div class="campo-caja ancho-total"><label for="c-recomendaciones">Recomendaciones</label>
+        <textarea id="c-recomendaciones" placeholder="Recomendaciones para el atleta y el cuerpo técnico…"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<div class="barra-final">
+  <div class="aviso-guardar" id="aviso-guardar"></div>
+  <button class="btn-chico" onclick="limpiarTodo()">Limpiar</button>
+  <button class="btn-guardar" id="btn-guardar" onclick="guardar()">Guardar evaluación</button>
+</div>
+
+<div id="aviso"></div>
+
+<script>
+const TEMAS = [
+  { v:'auto',  lbl:'Automático' },
+  { v:'light', lbl:'Claro' },
+  { v:'dark',  lbl:'Oscuro' }
+];
+function temaGuardado(){
+  try { return localStorage.getItem('tds-tema') || 'auto'; } catch(e) { return 'auto'; }
+}
+function aplicarTema(v){
+  if (v === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+  try { localStorage.setItem('tds-tema', v); } catch(e) {}
+  const b = document.getElementById('btn-tema');
+  if (b) {
+    const t = TEMAS.find(x => x.v === v);
+    b.textContent = (v === 'dark' ? '🌙 ' : v === 'light' ? '☀️ ' : '🖥️ ') + t.lbl;
+  }
+}
+function rotarTema(){
+  const i = TEMAS.findIndex(x => x.v === temaGuardado());
+  aplicarTema(TEMAS[(i + 1) % TEMAS.length].v);
+}
+aplicarTema(temaGuardado());
+
+const { createClient } = supabase;
+const sb = createClient(
+  'https://esbmtenfcjbrrocrnfep.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  { auth: { storage: window.sessionStorage } }
+);
+const DOMINIO = 'tds.example.com';
+
+const ESCALAS = [
+  ['AC','Autoconfianza',          [1,8,15,22,29,36]],
+  ['EN','Energía Negativa',       [2,9,16,23,30,37]],
+  ['CAT','Control Atencional',    [3,10,17,24,31,38]],
+  ['CVI','Control Visualización', [4,11,18,25,32,39]],
+  ['NM','Nivel Motivacional',     [5,12,19,26,33,40]],
+  ['EP','Energía Positiva',       [6,13,20,27,34,41]],
+  ['ACT','Control de Actitudes',  [7,14,21,28,35,42]]
+];
+const TEMPERAMENTOS = {
+  'Sanguíneo':'Sistema nervioso rápido y equilibrado. Extrovertido, adaptable y comunicativo. Eleva el espíritu del equipo de forma natural. Responde bien al refuerzo positivo y a objetivos de corto plazo.',
+  'Colérico':'Líder apasionado con alta competitividad y determinación. Toma decisiones rápidas. Puede reaccionar impulsivamente bajo presión. Se beneficia del trabajo en regulación emocional.',
+  'Flemático':'Constante, fiable y calmado bajo presión. Mantiene rendimiento estable en situaciones de alta demanda. Puede requerir estímulo externo para tomar iniciativa.',
+  'Melancólico':'Perfeccionista y analítico. Procesa el error con profundidad. Se beneficia de trabajo en gestión del error y construcción progresiva de la autoconfianza.'
+};
+const PRUEBAS = [
+  { k:'ci',           lbl:'Coeficiente intelectual' },
+  { k:'temperamento', lbl:'Temperamento' },
+  { k:'ansiedad',     lbl:'Ansiedad' },
+  { k:'loehr',        lbl:'Inventario Loehr' }
+];
+
+let ATLETAS = [], ATLETA = null, ACTIVAS = { ci:false, temperamento:false, ansiedad:false, loehr:false };
+let marcada = -1, sugeridos = [];
+
+// ── Utilidades ───────────────────────────────────────────────────────────
+function g(id){ return document.getElementById(id); }
+function val(id){ const n = g(id); if (!n) return null; const v = n.value.trim(); return v === '' ? null : v; }
+function num(id){ const v = val(id); if (v == null) return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
+function el(tag, props, hijos){
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'txt') n.textContent = props[k];
+    else if (k === 'style') n.setAttribute('style', props[k]);
+    else if (k.startsWith('on')) n.addEventListener(k.substring(2), props[k]);
+    else n.setAttribute(k, props[k]);
+  }
+  (hijos || []).forEach(h => h && n.appendChild(h));
+  return n;
+}
+// La fecha de hoy en hora local: con UTC, después de las 6 de la tarde en
+// Honduras la aplicación quedaría fechada al día siguiente.
+function hoyLocal(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso){
+  if (!iso) return '—';
+  const p = iso.substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+function edadEntre(nacimiento, hasta){
+  if (!nacimiento) return null;
+  const n = nacimiento.substring(0,10).split('-').map(Number);
+  const h = (hasta || hoyLocal()).substring(0,10).split('-').map(Number);
+  let e = h[0] - n[0];
+  if (h[1] < n[1] || (h[1] === n[1] && h[2] < n[2])) e--;
+  return (e >= 0 && e <= 100) ? e : null;
+}
+function avisar(texto, mal){
+  const a = g('aviso');
+  a.textContent = texto;
+  a.className = 'ver' + (mal ? ' mal' : '');
+  clearTimeout(avisar.t);
+  avisar.t = setTimeout(() => { a.className = ''; }, mal ? 5000 : 2500);
+}
+function nivelCI(v){
+  if (v >= 130) return 'MUY SUPERIOR'; if (v >= 120) return 'SUPERIOR';
+  if (v >= 110) return 'ALTO';         if (v >= 90)  return 'NORMAL';
+  if (v >= 80)  return 'NORMAL BAJO';  return 'BAJO';
+}
+function nivelAnsiedad(v){ return v <= 29 ? 'BAJO' : v <= 44 ? 'MEDIO' : 'ALTO'; }
+
+// ── Acceso ───────────────────────────────────────────────────────────────
+async function entrar(){
+  const u = (g('usuario').value || '').trim().toLowerCase();
+  const c = g('clave').value;
+  const err = g('acceso-error');
+  err.style.display = 'none';
+  if (!u || !c) { err.textContent = 'Ingresá tu usuario y contraseña.'; err.style.display = 'block'; return; }
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: u.includes('@') ? u : u + '@' + DOMINIO, password: c });
+    if (!error) { sessionStorage.setItem('tds-auth','ok'); sessionStorage.setItem('tds-auth-time', Date.now()); arrancar(); return; }
+    if (error.status === 400) { err.textContent = 'Usuario o contraseña incorrectos.'; g('clave').value = ''; }
+    else throw error;
+  } catch(e) { err.textContent = 'Error de conexión. Intentá de nuevo.'; }
+  err.style.display = 'block';
+}
+
+// ── Arranque ─────────────────────────────────────────────────────────────
+async function arrancar(){
+  g('acceso').style.display = 'none';
+  g('s-fecha').value = hoyLocal();
+  pintarSelector();
+  const r = await sb.from('atletas').select('*').order('nombre');
+  ATLETAS = (r && r.data) || [];
+  llenarSugerencias();
+  engancharAutoguardado();
+  ofrecerBorrador();
+}
+
+function llenarSugerencias(){
+  const campos = { 'lista-deportes':'deporte', 'lista-organizaciones':'organizacion',
+                   'lista-categorias':'categoria', 'lista-centros':'centro' };
+  Object.keys(campos).forEach(idLista => {
+    const dl = g(idLista);
+    dl.textContent = '';
+    [...new Set(ATLETAS.map(a => a[campos[idLista]]).filter(Boolean))].sort()
+      .forEach(v => dl.appendChild(el('option',{value:v})));
+  });
+}
+
+// ── Buscador de atleta ───────────────────────────────────────────────────
+function buscarAtletas(){
+  const q = g('buscar-atleta').value.trim().toLowerCase();
+  const caja = g('sugerencias');
+  marcada = -1;
+  if (q.length < 2) { caja.style.display = 'none'; return; }
+  sugeridos = ATLETAS.filter(a => (a.nombre || '').toLowerCase().includes(q)).slice(0, 8);
+  caja.textContent = '';
+  if (!sugeridos.length) { caja.style.display = 'none'; return; }
+  sugeridos.forEach((a, i) => {
+    caja.appendChild(el('button',{class:'sug',type:'button',onclick:() => elegirAtleta(a)},[
+      el('div',{class:'sug-nom',txt:a.nombre}),
+      el('div',{class:'sug-sub',txt:[a.categoria, a.centro, a.organizacion].filter(Boolean).join(' · ') || 'sin datos'})
+    ]));
+  });
+  caja.style.display = 'block';
+}
+function teclaBusqueda(e){
+  const caja = g('sugerencias');
+  if (caja.style.display !== 'block') return;
+  const botones = caja.querySelectorAll('.sug');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    marcada += (e.key === 'ArrowDown' ? 1 : -1);
+    if (marcada < 0) marcada = botones.length - 1;
+    if (marcada >= botones.length) marcada = 0;
+    botones.forEach((b,i) => b.classList.toggle('marcada', i === marcada));
+  } else if (e.key === 'Enter' && marcada >= 0) {
+    e.preventDefault();
+    elegirAtleta(sugeridos[marcada]);
+  } else if (e.key === 'Escape') caja.style.display = 'none';
+}
+document.addEventListener('click', e => {
+  const caja = g('sugerencias');
+  if (caja && !caja.contains(e.target) && e.target !== g('buscar-atleta')) caja.style.display = 'none';
+});
+
+function elegirAtleta(a){
+  ATLETA = a;
+  g('sugerencias').style.display = 'none';
+  g('caja-buscador').style.display = 'none';
+  g('chip-atleta').style.display = 'flex';
+  g('chip-nom').textContent = a.nombre;
+  g('chip-sub').textContent = [a.categoria, a.centro, a.organizacion].filter(Boolean).join(' · ') || 'sin datos cargados';
+  g('ayuda-atleta').textContent = 'Los datos del atleta se pueden corregir acá; se guardan en su ficha.';
+  ['sexo','nacimiento','deporte','organizacion','categoria','centro','posicion'].forEach(k => {
+    const campo = { sexo:'sexo', nacimiento:'fecha_nacimiento', deporte:'deporte',
+                    organizacion:'organizacion', categoria:'categoria', centro:'centro', posicion:'posicion' }[k];
+    g('a-' + k).value = a[campo] == null ? '' : a[campo];
+  });
+  calcularEdad();
+  avisar('Atleta cargado: ' + a.nombre);
+  autoguardar();
+}
+function soltarAtleta(){
+  ATLETA = null;
+  g('chip-atleta').style.display = 'none';
+  g('caja-buscador').style.display = 'block';
+  g('buscar-atleta').value = '';
+  g('ayuda-atleta').textContent = 'Escribí el nombre. Si ya está en el sistema aparece en la lista y se cargan sus datos; si no, se crea uno nuevo.';
+  ['sexo','nacimiento','edad','deporte','organizacion','categoria','centro','posicion'].forEach(k => { g('a-' + k).value = ''; });
+  g('buscar-atleta').focus();
+}
+function calcularEdad(){
+  const e = edadEntre(val('a-nacimiento'), val('s-fecha'));
+  if (e != null) g('a-edad').value = e;
+}
+
+// ── Selector de pruebas ──────────────────────────────────────────────────
+function pintarSelector(){
+  const cont = g('selector-pruebas');
+  cont.textContent = '';
+  PRUEBAS.forEach(p => {
+    const c = el('input',{type:'checkbox'});
+    c.checked = !!ACTIVAS[p.k];
+    const chip = el('label',{class:'prueba-chip' + (c.checked ? ' on' : '')},[ c, document.createTextNode(p.lbl) ]);
+    c.addEventListener('change', () => {
+      ACTIVAS[p.k] = c.checked;
+      chip.classList.toggle('on', c.checked);
+      pintarSecciones();
+      autoguardar();
+    });
+    cont.appendChild(chip);
+  });
+  pintarSecciones();
+}
+
+function tarjetaPrueba(k, titulo, ayuda, cuerpo){
+  const inv = el('input',{type:'checkbox',id:'inv-' + k, onchange:() => { refrescarContador(); autoguardar(); }});
+  return el('div',{class:'tarjeta',id:'tarjeta-' + k},[
+    el('div',{class:'tarjeta-cab'},[ el('h2',{txt:titulo}), k === 'loehr' ? el('div',{class:'contador',id:'contador'}) : null ]),
+    ayuda ? el('div',{class:'ayuda',txt:ayuda}) : null,
+    cuerpo,
+    el('label',{class:'invalida'},[ inv, document.createTextNode('Prueba inválida (no se guardan los puntajes)') ]),
+    el('div',{class:'campo-caja',style:'margin-top:14px'},[
+      el('label',{for:'interp-' + k, txt: k === 'temperamento' ? 'Descripción' : 'Interpretación'}),
+      el('textarea',{id:'interp-' + k, placeholder: k === 'temperamento'
+        ? 'Cómo se expresa su temperamento en el rendimiento deportivo…'
+        : 'Interpretación de los resultados…'})
+    ])
+  ]);
+}
+
+function pintarSecciones(){
+  const guardado = recogerPruebas();        // no perder lo escrito al marcar otra
+  const cont = g('secciones-pruebas');
+  cont.textContent = '';
+
+  if (ACTIVAS.ci) cont.appendChild(tarjetaPrueba('ci','Coeficiente intelectual', null,
+    el('div',{class:'grilla'},[
+      el('div',{class:'campo-caja'},[ el('label',{for:'ci-valor',txt:'Puntuación'}),
+        el('input',{type:'number',id:'ci-valor',min:'0',max:'200',placeholder:'Ej. 90'}) ])
+    ])));
+
+  if (ACTIVAS.temperamento) {
+    const sel = el('select',{id:'temp-valor', onchange:() => {
+      const t = sel.value, ta = g('interp-temperamento');
+      if (t && ta && (!ta.value.trim() || Object.values(TEMPERAMENTOS).includes(ta.value.trim())))
+        ta.value = TEMPERAMENTOS[t] || '';
+      autoguardar();
+    }});
+    sel.appendChild(el('option',{value:'',txt:'— Seleccionar —'}));
+    Object.keys(TEMPERAMENTOS).forEach(t => sel.appendChild(el('option',{value:t,txt:t})));
+    cont.appendChild(tarjetaPrueba('temperamento','Temperamento · Eysenck', null,
+      el('div',{class:'grilla'},[ el('div',{class:'campo-caja'},[ el('label',{for:'temp-valor',txt:'Tipo'}), sel ]) ])));
+  }
+
+  if (ACTIVAS.ansiedad) cont.appendChild(tarjetaPrueba('ansiedad','Ansiedad · Spielberger',
+    'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.',
+    el('div',{class:'grilla'},[
+      el('div',{class:'campo-caja'},[ el('label',{for:'anx-estado',txt:'Ansiedad estado'}),
+        el('input',{type:'number',id:'anx-estado',min:'20',max:'80',placeholder:'20 – 80'}) ]),
+      el('div',{class:'campo-caja'},[ el('label',{for:'anx-rasgo',txt:'Ansiedad rasgo'}),
+        el('input',{type:'number',id:'anx-rasgo',min:'20',max:'80',placeholder:'20 – 80'}) ])
+    ])));
+
+  if (ACTIVAS.loehr) cont.appendChild(tarjetaPrueba('loehr','Inventario Loehr',
+    'Cargá los 42 ítems y las sumas se calculan solas, o escribí directamente las siete sumas.',
+    cuerpoLoehr()));
+
+  if (guardado) restaurarPruebas(guardado);
+  refrescarContador();
+}
+
+function cuerpoLoehr(){
+  const caja = el('div');
+  const cab = el('div',{class:'loehr-cab'});
+  ESCALAS.forEach(([k,nombre]) => cab.appendChild(el('div',{class:'loehr-col',txt:nombre})));
+  caja.appendChild(cab);
+  for (let fila = 0; fila < 6; fila++) {
+    const f = el('div',{class:'loehr-fila'});
+    ESCALAS.forEach(([k,nombre,items]) => {
+      const item = items[fila];
+      const inp = el('input',{type:'number',min:'1',max:'5',id:'item-' + item,
+        inputmode:'numeric','aria-label':nombre + ', ítem ' + item});
+      const celda = el('div',{class:'celda',id:'celda-' + item},[ el('span',{class:'num',txt:String(item)}), inp ]);
+      inp.addEventListener('input', () => { sumarEscalas(); refrescarContador(); autoguardar(); });
+      f.appendChild(celda);
+    });
+    caja.appendChild(f);
+  }
+  const sumas = el('div',{class:'sumas'});
+  ESCALAS.forEach(([k,nombre]) => {
+    const inp = el('input',{type:'number',min:'6',max:'30',id:'suma-' + k,placeholder:'0','aria-label':'Suma de ' + nombre});
+    inp.addEventListener('input', () => { refrescarContador(); autoguardar(); });
+    sumas.appendChild(el('div',{class:'suma'},[ el('label',{txt:k}), inp, el('small',{txt:'/ 30'}) ]));
+  });
+  caja.appendChild(sumas);
+  return caja;
+}
+
+function sumarEscalas(){
+  ESCALAS.forEach(([k,nombre,items]) => {
+    const usados = items.filter(i => Number(g('item-' + i).value) > 0);
+    const suma = items.reduce((s,i) => s + (Number(g('item-' + i).value) || 0), 0);
+    const campo = g('suma-' + k);
+    if (usados.length) { campo.value = suma; campo.dataset.auto = '1'; }
+    else if (campo.dataset.auto === '1') { campo.value = ''; delete campo.dataset.auto; }
+    items.forEach(i => {
+      const v = Number(g('item-' + i).value);
+      g('celda-' + i).classList.toggle('ok', v >= 1 && v <= 5);
+    });
+  });
+}
+function itemsCargados(){
+  if (!ACTIVAS.loehr) return 0;
+  let n = 0;
+  ESCALAS.forEach(([k,nombre,items]) => items.forEach(i => {
+    const v = Number(g('item-' + i).value); if (v >= 1 && v <= 5) n++;
+  }));
+  return n;
+}
+function sumasCompletas(){
+  return ESCALAS.every(([k]) => { const v = Number(g('suma-' + k).value); return Number.isInteger(v) && v >= 6 && v <= 30; });
+}
+function loehrListo(){
+  if (!ACTIVAS.loehr) return true;
+  if (g('inv-loehr') && g('inv-loehr').checked) return true;
+  const n = itemsCargados();
+  return n === 42 || (n === 0 && sumasCompletas());
+}
+function refrescarContador(){
+  const c = g('contador');
+  if (!c) return;
+  if (g('inv-loehr') && g('inv-loehr').checked) { c.textContent = 'Prueba inválida'; c.className = 'contador listo'; return; }
+  const n = itemsCargados();
+  if (n === 42) { c.textContent = '42 / 42'; c.className = 'contador listo'; }
+  else if (n === 0 && sumasCompletas()) { c.textContent = '✓ Sumas cargadas'; c.className = 'contador listo'; }
+  else { c.textContent = n + ' / 42'; c.className = 'contador'; }
+}
+
+// ── Recoger y restaurar lo cargado ───────────────────────────────────────
+function recogerPruebas(){
+  const d = { ci:{}, temperamento:{}, ansiedad:{}, loehr:{ items:{}, sumas:{} } };
+  let algo = false;
+  PRUEBAS.forEach(p => {
+    const inv = g('inv-' + p.k), interp = g('interp-' + p.k);
+    if (inv) { d[p.k].invalida = inv.checked; algo = true; }
+    if (interp) { d[p.k].interpretacion = interp.value; algo = true; }
+  });
+  if (g('ci-valor')) d.ci.valor = g('ci-valor').value;
+  if (g('temp-valor')) d.temperamento.valor = g('temp-valor').value;
+  if (g('anx-estado')) { d.ansiedad.estado = g('anx-estado').value; d.ansiedad.rasgo = g('anx-rasgo').value; }
+  if (g('suma-AC')) {
+    ESCALAS.forEach(([k,n,items]) => {
+      d.loehr.sumas[k] = g('suma-' + k).value;
+      items.forEach(i => { d.loehr.items[i] = g('item-' + i).value; });
+    });
+  }
+  return algo ? d : null;
+}
+function restaurarPruebas(d){
+  PRUEBAS.forEach(p => {
+    const inv = g('inv-' + p.k), interp = g('interp-' + p.k);
+    if (inv && d[p.k]) inv.checked = !!d[p.k].invalida;
+    if (interp && d[p.k] && d[p.k].interpretacion) interp.value = d[p.k].interpretacion;
+  });
+  if (g('ci-valor') && d.ci && d.ci.valor) g('ci-valor').value = d.ci.valor;
+  if (g('temp-valor') && d.temperamento && d.temperamento.valor) g('temp-valor').value = d.temperamento.valor;
+  if (g('anx-estado') && d.ansiedad) { g('anx-estado').value = d.ansiedad.estado || ''; g('anx-rasgo').value = d.ansiedad.rasgo || ''; }
+  if (g('suma-AC') && d.loehr) {
+    ESCALAS.forEach(([k,n,items]) => {
+      if (d.loehr.sumas && d.loehr.sumas[k]) g('suma-' + k).value = d.loehr.sumas[k];
+      items.forEach(i => { if (d.loehr.items && d.loehr.items[i]) g('item-' + i).value = d.loehr.items[i]; });
+    });
+    sumarEscalas();
+  }
+}
+
+// ── Guardar ──────────────────────────────────────────────────────────────
+function datosAtleta(){
+  return {
+    nombre: ATLETA ? ATLETA.nombre : val('buscar-atleta'),
+    sexo: val('a-sexo'), fecha_nacimiento: val('a-nacimiento'),
+    deporte: val('a-deporte'), organizacion: val('a-organizacion'),
+    categoria: val('a-categoria'), centro: val('a-centro'), posicion: val('a-posicion')
+  };
+}
+
+function revisar(){
+  const problemas = [];
+  const a = datosAtleta();
+  if (!a.nombre) problemas.push('Falta el nombre del atleta.');
+  if (!val('s-fecha')) problemas.push('Falta la fecha de aplicación.');
+  if (!PRUEBAS.some(p => ACTIVAS[p.k])) problemas.push('No marcaste ninguna prueba para cargar.');
+  if (ACTIVAS.loehr && !loehrListo())
+    problemas.push('El Loehr está incompleto: cargá los 42 ítems, o las siete sumas entre 6 y 30, o marcalo como inválido.');
+  if (ACTIVAS.ci && !(g('inv-ci').checked) && num('ci-valor') == null)
+    problemas.push('Falta la puntuación de CI (o marcalo como prueba inválida).');
+  if (ACTIVAS.temperamento && !(g('inv-temperamento').checked) && !val('temp-valor'))
+    problemas.push('Falta elegir el temperamento (o marcalo como prueba inválida).');
+  if (ACTIVAS.ansiedad && !(g('inv-ansiedad').checked) && num('anx-estado') == null && num('anx-rasgo') == null)
+    problemas.push('Falta al menos un puntaje de ansiedad (o marcala como prueba inválida).');
+  return problemas;
+}
+
+async function guardar(){
+  const problemas = revisar();
+  if (problemas.length) { avisar(problemas[0], true); return; }
+
+  const btn = g('btn-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const a = datosAtleta();
+    const fecha = val('s-fecha');
+
+    // 1. El atleta: se actualiza el existente o se crea uno nuevo.
+    let atletaId;
+    if (ATLETA) {
+      const r = await sb.from('atletas').update(a).eq('id', ATLETA.id);
+      if (r.error) throw r.error;
+      atletaId = ATLETA.id;
+    } else {
+      const r = await sb.from('atletas').insert([a]).select('id').single();
+      if (r.error) throw r.error;
+      atletaId = r.data.id;
+    }
+
+    // 2. La sesión, que es lo que agrupa las pruebas de este día.
+    const rs = await sb.from('sesiones').insert([{
+      atleta_id: atletaId, fecha,
+      contexto: val('s-contexto'),
+      aplicada_por: val('s-aplicada'),
+      interpretada_por: val('s-interpretada'),
+      conclusion: val('c-conclusion'),
+      recomendaciones: val('c-recomendaciones')
+    }]).select('id').single();
+    if (rs.error) throw rs.error;
+    const sesionId = rs.data.id;
+
+    // 3. Una evaluación por prueba cargada. Una prueba inválida igual se
+    //    registra: se aplicó, aunque no haya dejado puntaje.
+    const filas = [];
+    PRUEBAS.forEach(p => {
+      if (!ACTIVAS[p.k]) return;
+      const invalida = g('inv-' + p.k).checked;
+      let datos = {};
+      if (!invalida) {
+        if (p.k === 'ci') { const v = num('ci-valor'); if (v != null) datos = { ci:v, diagnostico: nivelCI(v) }; }
+        else if (p.k === 'temperamento') { const t = val('temp-valor'); if (t) datos = { temperamento:t }; }
+        else if (p.k === 'ansiedad') {
+          const e = num('anx-estado'), r = num('anx-rasgo');
+          if (e != null) { datos.estado = e; datos.estado_nivel = nivelAnsiedad(e); }
+          if (r != null) { datos.rasgo = r;  datos.rasgo_nivel  = nivelAnsiedad(r); }
+        }
+        else if (p.k === 'loehr') {
+          const esc = {};
+          ESCALAS.forEach(([k]) => { esc[k] = Number(g('suma-' + k).value) || 0; });
+          datos = { escalas: esc };
+        }
+      } else if (p.k === 'ci') datos = { diagnostico: 'PRUEBA INVÁLIDA' };
+
+      filas.push({
+        atleta_id: atletaId, tipo: p.k, fecha, sesion_id: sesionId,
+        contexto: val('s-contexto'),
+        aplicada_por: val('s-aplicada'), interpretada_por: val('s-interpretada'),
+        datos, invalida,
+        motivo_invalidez: invalida ? 'Marcada como inválida al cargarla' : null,
+        interpretacion: val('interp-' + p.k)
+      });
+    });
+    const re = await sb.from('evaluaciones').insert(filas);
+    if (re.error) throw re.error;
+
+    borrarBorrador();
+    avisar('Evaluación guardada. Abriendo la ficha…');
+    setTimeout(() => { window.location.href = '/atletas?atleta=' + atletaId; }, 900);
+    return;
+  } catch(e) {
+    console.error(e);
+    avisar('No se pudo guardar: ' + ((e && e.message) || 'revisá tu conexión'), true);
+  }
+  btn.disabled = false; btn.textContent = 'Guardar evaluación';
+}
+
+function limpiarTodo(){
+  if (!confirm('¿Vaciar el formulario? Se pierde lo que no hayas guardado.')) return;
+  soltarAtleta();
+  ['s-contexto','s-aplicada','s-interpretada','c-conclusion','c-recomendaciones'].forEach(id => { g(id).value = ''; });
+  g('s-fecha').value = hoyLocal();
+  PRUEBAS.forEach(p => { ACTIVAS[p.k] = false; });
+  pintarSelector();
+  borrarBorrador();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── Borrador ─────────────────────────────────────────────────────────────
+const CLAVE_BORRADOR = 'tds_evaluacion_v1';
+let temporizador = null;
+
+function autoguardar(){
+  clearTimeout(temporizador);
+  temporizador = setTimeout(() => {
+    const d = {
+      atletaId: ATLETA ? ATLETA.id : null,
+      nombre: ATLETA ? ATLETA.nombre : (g('buscar-atleta') ? g('buscar-atleta').value : ''),
+      atleta: datosAtleta(),
+      sesion: { fecha: val('s-fecha'), contexto: val('s-contexto'),
+                aplicada: val('s-aplicada'), interpretada: val('s-interpretada') },
+      cierre: { conclusion: val('c-conclusion'), recomendaciones: val('c-recomendaciones') },
+      activas: Object.assign({}, ACTIVAS),
+      pruebas: recogerPruebas()
+    };
+    if (!d.nombre && !PRUEBAS.some(p => ACTIVAS[p.k])) return;
+    try { localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(d));
+      g('aviso-guardar').textContent = 'Borrador guardado en este navegador'; } catch(e) {}
+  }, 700);
+}
+function borrarBorrador(){
+  try { localStorage.removeItem(CLAVE_BORRADOR); } catch(e) {}
+  g('borrador').classList.remove('ver');
+  g('aviso-guardar').textContent = '';
+}
+// El borrador se ofrece, no se vuelca solo: ver el formulario ya lleno al
+// entrar hace creer que la evaluación quedó guardada, y es al revés.
+function ofrecerBorrador(){
+  let d;
+  try { d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null'); } catch(e) { return; }
+  if (!d || (!d.nombre && !Object.values(d.activas || {}).some(Boolean))) return;
+  const partes = [];
+  if (d.nombre) partes.push(d.nombre);
+  if (d.sesion && d.sesion.fecha) partes.push('evaluación del ' + fechaCorta(d.sesion.fecha));
+  g('borrador-info').textContent = (partes.join(' · ') || 'Sin nombre') + '. No está guardada en la base de datos.';
+  g('borrador').classList.add('ver');
+}
+function descartarBorrador(){ borrarBorrador(); avisar('Borrador descartado'); }
+function aplicarBorrador(){
+  let d;
+  try { d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null'); } catch(e) { return; }
+  if (!d) return;
+  g('borrador').classList.remove('ver');
+  if (d.atletaId) {
+    const a = ATLETAS.find(x => x.id === d.atletaId);
+    if (a) elegirAtleta(a);
+  } else if (d.nombre) g('buscar-atleta').value = d.nombre;
+  if (d.atleta) {
+    const m = { sexo:'sexo', nacimiento:'fecha_nacimiento', deporte:'deporte', organizacion:'organizacion',
+                categoria:'categoria', centro:'centro', posicion:'posicion' };
+    Object.keys(m).forEach(k => { if (d.atleta[m[k]]) g('a-' + k).value = d.atleta[m[k]]; });
+  }
+  if (d.sesion) {
+    g('s-fecha').value = d.sesion.fecha || hoyLocal();
+    g('s-contexto').value = d.sesion.contexto || '';
+    g('s-aplicada').value = d.sesion.aplicada || '';
+    g('s-interpretada').value = d.sesion.interpretada || '';
+  }
+  if (d.cierre) {
+    g('c-conclusion').value = d.cierre.conclusion || '';
+    g('c-recomendaciones').value = d.cierre.recomendaciones || '';
+  }
+  ACTIVAS = Object.assign({ ci:false, temperamento:false, ansiedad:false, loehr:false }, d.activas || {});
+  pintarSelector();
+  if (d.pruebas) restaurarPruebas(d.pruebas);
+  calcularEdad();
+  refrescarContador();
+  avisar('Borrador restaurado');
+}
+function engancharAutoguardado(){
+  document.addEventListener('input', e => {
+    if (e.target && e.target.closest('.envoltura')) autoguardar();
+  });
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(temporizador);
+    try {
+      const d = { atletaId: ATLETA ? ATLETA.id : null,
+                  nombre: ATLETA ? ATLETA.nombre : g('buscar-atleta').value,
+                  atleta: datosAtleta(),
+                  sesion: { fecha: val('s-fecha'), contexto: val('s-contexto'),
+                            aplicada: val('s-aplicada'), interpretada: val('s-interpretada') },
+                  cierre: { conclusion: val('c-conclusion'), recomendaciones: val('c-recomendaciones') },
+                  activas: Object.assign({}, ACTIVAS), pruebas: recogerPruebas() };
+      if (d.nombre || Object.values(ACTIVAS).some(Boolean)) localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(d));
+    } catch(e) {}
+  });
+}
+
+// ── Sesión ───────────────────────────────────────────────────────────────
+(async function(){
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && sessionStorage.getItem('tds-auth') === 'ok') arrancar();
+})();
+</script>
+</body>
+</html>
