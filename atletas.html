@@ -81,6 +81,12 @@ nav a.activo{background:var(--marca);color:#fff}
 .item[aria-current="true"] .item-sub{color:rgba(255,255,255,.85)}
 .item-nombre{font-size:15px;font-weight:700;line-height:1.3}
 .item-sub{font-size:12.5px;color:var(--ink2);font-weight:600}
+.solo-incompletos{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer;padding:4px 2px 10px}
+.solo-incompletos input{width:16px;height:16px;accent-color:var(--marca);cursor:pointer}
+.item-fila{display:flex;align-items:baseline;gap:8px}
+.chapa-falta{margin-left:auto;background:rgba(250,178,25,.18);color:#8a6100;border:1px solid rgba(250,178,25,.5);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:800;white-space:nowrap}
+.item[aria-current="true"] .chapa-falta{background:rgba(255,255,255,.22);color:#fff;border-color:rgba(255,255,255,.4)}
+.aviso-falta{background:rgba(250,178,25,.12);border:1px solid rgba(250,178,25,.45);border-radius:var(--radio);padding:12px 15px;margin-bottom:16px;font-size:14.5px;color:var(--ink2)}
 .vacio{color:var(--ink3);font-size:14px;padding:20px 12px;text-align:center}
 
 /* ── Ficha ────────────────────────────────────────────────── */
@@ -238,6 +244,10 @@ nav a.activo{background:var(--marca);color:#fff}
     <div class="panel">
       <div class="panel-titulo">Atletas <span id="contador"></span></div>
       <input type="search" class="campo" id="buscar" placeholder="Buscar por nombre…" oninput="pintarLista()" style="margin-bottom:8px;font-size:15px;padding:10px 12px">
+      <label class="solo-incompletos">
+        <input type="checkbox" id="solo-incompletos" onchange="pintarLista()">
+        Solo los que faltan completar <span id="cuenta-incompletos"></span>
+      </label>
       <div id="lista"><div class="vacio">Cargando…</div></div>
     </div>
     <div id="ficha"><div class="aviso">Elegí un atleta de la lista para ver su ficha y su historial.</div></div>
@@ -386,6 +396,27 @@ function evaluacionesDe(id, tipo){
     .filter(e => (!tipo || e.tipo === tipo) && enRango(e.fecha))
     .sort((a,b) => (a.fecha || '').localeCompare(b.fecha || ''));
 }
+// Todo perfil necesita interpretación de temperamento, ansiedad y Loehr, más
+// conclusión y recomendaciones. Esto dice qué falta, para poder repasarlos.
+function faltantesDe(id){
+  const faltan = [];
+  [['loehr','Interpretación del Loehr'],
+   ['ansiedad','Interpretación de la ansiedad'],
+   ['temperamento','Descripción del temperamento']].forEach(([tipo, lbl]) => {
+    const evs = evaluacionesValidas(id, tipo);
+    if (!evs.length) return;                     // prueba no aplicada: no se exige
+    const ult = evs[evs.length-1];
+    if (!ult.interpretacion || !String(ult.interpretacion).trim()) faltan.push(lbl);
+  });
+  const ses = sesionesDe(id);
+  if (ses.length) {
+    const ult = ses[0];                          // la más reciente
+    if (!ult.conclusion || !String(ult.conclusion).trim()) faltan.push('Conclusión');
+    if (!ult.recomendaciones || !String(ult.recomendaciones).trim()) faltan.push('Recomendaciones');
+  }
+  return faltan;
+}
+
 function evaluacionesValidas(id, tipo){
   return evaluacionesDe(id, tipo).filter(e => !e.invalida);
 }
@@ -441,19 +472,44 @@ function esPreset(dias){
 // ── Lista ────────────────────────────────────────────────────────────────
 function pintarLista(){
   const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const soloInc = document.getElementById('solo-incompletos').checked;
   const lista = document.getElementById('lista');
   lista.textContent = '';
-  const filtrados = ATLETAS.filter(a => !q || (a.nombre || '').toLowerCase().includes(q));
-  if (!filtrados.length) { lista.appendChild(el('div',{class:'vacio',txt:'Sin resultados.'})); return; }
+
+  // El conteo de faltantes se hace sin el filtro de período: lo que falta
+  // redactar, falta siempre, no solo en la ventana que se esté mirando.
+  const guardado = FILTRO;
+  FILTRO = { desde:'', hasta:'' };
+  const faltantes = {};
+  ATLETAS.forEach(a => { faltantes[a.id] = faltantesDe(a.id); });
+  FILTRO = guardado;
+
+  const conFaltas = ATLETAS.filter(a => faltantes[a.id].length).length;
+  const cuenta = document.getElementById('cuenta-incompletos');
+  if (cuenta) cuenta.textContent = conFaltas ? '(' + conFaltas + ')' : '';
+
+  const filtrados = ATLETAS.filter(a =>
+    (!q || (a.nombre || '').toLowerCase().includes(q)) &&
+    (!soloInc || faltantes[a.id].length));
+  if (!filtrados.length) {
+    lista.appendChild(el('div',{class:'vacio',
+      txt: soloInc ? 'No falta completar ninguno.' : 'Sin resultados.'}));
+    return;
+  }
   filtrados.forEach(a => {
     const evs = PORATLETA[a.id] || [];
     const ultima = evs.map(e => e.fecha).sort().pop();
     const partes = [a.categoria, evs.length + (evs.length === 1 ? ' evaluación' : ' evaluaciones')].filter(Boolean);
+    const falta = faltantes[a.id].length;
     lista.appendChild(el('button', {
       class:'item', 'aria-current': String(a.id === SELECCIONADO),
       onclick: () => abrirFicha(a.id)
     }, [
-      el('div',{class:'item-nombre',txt:a.nombre}),
+      el('div',{class:'item-fila'},[
+        el('div',{class:'item-nombre',txt:a.nombre}),
+        falta ? el('span',{class:'chapa-falta',title:faltantes[a.id].join(', '),
+          txt:'faltan ' + falta}) : null
+      ]),
       el('div',{class:'item-sub',txt: partes.join(' · ') + (ultima ? ' · ' + fechaMini(ultima) : '')})
     ]));
   });
@@ -490,6 +546,11 @@ function abrirFicha(id){
   ]));
 
   if ((PORATLETA[id] || []).length) cont.appendChild(filaFiltro(id));
+  const faltan = faltantesDe(id);
+  if (faltan.length) cont.appendChild(el('div',{class:'aviso-falta'},[
+    el('strong',{txt:'Falta completar: '}),
+    document.createTextNode(faltan.join(' · '))
+  ]));
   if (!evs.length) {
     cont.appendChild(el('div',{class:'aviso',txt:
       (PORATLETA[id] || []).length ? 'No hay evaluaciones en el período elegido.'
@@ -611,8 +672,9 @@ function seccionLoehrActual(ev, cuantas, hayInv){
     const v = Number(escalas[k]) || 0, n = nivelDe(v/30);
     sec.appendChild(el('div',{class:'barra-fila'},[
       el('div',{class:'barra-nombre',txt:nombre}),
-      el('div',{class:'barra-pista'},[ el('div',{class:'barra-valor',style:'width:'+(v/30*100)+'%'}) ]),
-      el('div',{class:'barra-num',txt:String(v)}),
+      el('div',{class:'barra-pista'},[
+        el('div',{class:'barra-valor',style:'width:'+(v/30*100)+'%;background:'+n.color}) ]),
+      el('div',{class:'barra-num',style:'color:'+n.color,txt:String(v)}),
       el('div',{class:'barra-nivel',style:'color:'+n.color},[
         el('span',{'aria-hidden':'true',txt:n.icono+' '}), document.createTextNode(n.lbl)
       ])
@@ -636,7 +698,7 @@ function seccionAnsiedad(evs, hayInv){
     evs.length >= 2 ? el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)}) : null
   ]));
   sec.appendChild(el('div',{class:'seccion-sub',txt:'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.'}));
-  if (series.length > 1) sec.appendChild(leyenda(series));
+  if (series.length > 1 && evs.length >= 2) sec.appendChild(leyenda(series));
   if (evs.length >= 2) sec.appendChild(graficoLineas(series, evs.map(e => e.fecha), {
     min:20, max:80,
     bandas:[
@@ -1047,8 +1109,9 @@ function hojaLoehr(loehr){
     const v = Number(escalas[k]) || 0, n = nivelDe(v/30);
     const fila = el('div',{class:'hoja-fila'},[
       el('div',{style:'font-weight:700',txt:nombre}),
-      el('div',{class:'hoja-pista'},[ el('div',{class:'hoja-llena',style:'width:'+(v/30*100)+'%'}) ]),
-      el('div',{style:'font-weight:800;text-align:right',txt:String(v)}),
+      el('div',{class:'hoja-pista'},[
+        el('div',{class:'hoja-llena',style:'width:'+(v/30*100)+'%;background:'+colorPlano(n.color)}) ]),
+      el('div',{style:'font-weight:800;text-align:right;color:'+colorPlano(n.color),txt:String(v)}),
       el('div',{style:'font-weight:800;font-size:11.5px;color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
     ]);
     det.appendChild(fila);
