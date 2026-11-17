@@ -3,1828 +3,868 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evaluar — Melany Ordóñez</title>
 <link rel="icon" href="/assets/icono.png">
-<title>Perfil Psicológico Deportivo — TDS Honduras</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--blue:#1565C0;--ink:#1a2340;--ink2:#3d4f6b;--muted:#6b7a99;--border:#d4dbe8;--bg:#eef1f7;--card:#fff;--input:#f4f6fb;--green:#2e7d32;--red:#b71c1c;}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);font-family:'Nunito','Segoe UI',Arial,sans-serif;font-size:22px;color:var(--ink);padding-bottom:60px;}
-
-/* SUCCESS MODAL */
-#success-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998;display:none;align-items:center;justify-content:center;}
-#success-modal.show{display:flex;}
-.success-box{background:#fff;border-radius:20px;padding:44px 48px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:popIn .3s ease;}
-@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
-.success-icon{font-size:56px;margin-bottom:14px;}
-.success-title{font-size:24px;font-weight:900;color:var(--green);margin-bottom:8px;}
-.success-sub{font-size:15px;color:var(--muted);font-weight:500;}
-/* AUTOSAVE INDICATOR */
-.autosave-bar{position:fixed;bottom:0;left:0;right:0;background:#1a2340;color:#90caf9;font-size:12px;font-weight:700;padding:6px 20px;text-align:center;z-index:500;letter-spacing:1px;transition:opacity .3s;opacity:0;}
-.autosave-bar.show{opacity:1;}
-.draft-bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;background:#fff8e1;border:1.5px solid #f0c000;border-radius:12px;padding:14px 18px;margin-bottom:16px;}
-.draft-bar.show{display:flex;}
-.draft-txt{flex:1;min-width:220px;font-size:15px;color:#6b5200;line-height:1.45;}
-.draft-txt strong{display:block;font-size:16px;color:#5a4500;font-weight:900;}
-.draft-btn{background:#fff;border:1.5px solid #d9c483;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:15px;font-weight:800;color:#6b5200;cursor:pointer;white-space:nowrap;}
-.draft-btn:hover{background:#fffdf5;}
-.draft-btn-si{background:#f0a500;border-color:#f0a500;color:#fff;}
-.draft-btn-si:hover{background:#d99300;}
-/* PDF PAGE BREAKS */
-#pdf-capture .pdf-section{page-break-before:auto;}
-#pdf-capture .pdf-box-grid,#pdf-capture .anx-layout,#pdf-capture .pdf-composites,#pdf-capture .pdf-detail-card,#pdf-capture .pdf-narrative{page-break-inside:avoid;}
-/* AI REPORT BUTTON */
-.btn-ai-report{padding:10px 20px;font-size:13px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#6a1b9a,#ab47bc);color:#fff;font-family:inherit;margin-top:12px;}
-.btn-ai-report:hover{opacity:.88;}
-/* INVALIDA BADGE */
-.invalida-check{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:16px;color:var(--red);font-weight:700;cursor:pointer;}
-.invalida-check input{width:16px;height:16px;cursor:pointer;accent-color:var(--red);}
-
-/* AUTH */
-#auth-overlay{position:fixed;inset:0;background:var(--blue);z-index:9999;display:flex;align-items:center;justify-content:center;}
-.auth-box{background:#fff;border-radius:20px;padding:44px 40px;max-width:420px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);}
-.auth-logo{font-size:13px;font-weight:800;letter-spacing:3px;color:var(--blue);text-transform:uppercase;margin-bottom:6px;}
-.auth-title{font-size:24px;font-weight:900;color:var(--ink);margin-bottom:6px;}
-.auth-sub{font-size:16px;color:var(--muted);margin-bottom:28px;font-weight:500;}
-.auth-input{width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:10px;padding:15px 18px;font-size:20px;color:var(--ink);font-family:inherit;font-weight:700;outline:none;text-align:center;letter-spacing:3px;margin-bottom:16px;}
-.auth-input:focus{border-color:var(--blue);background:#fff;}
-.auth-btn{width:100%;background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;border:none;border-radius:10px;padding:16px;font-size:20px;font-weight:800;cursor:pointer;font-family:inherit;}
-.auth-error{color:var(--red);font-size:13px;font-weight:700;margin-top:10px;display:none;}
-.auth-name{font-size:26px;font-weight:900;color:var(--ink);margin-bottom:4px;}
-.auth-cred{font-size:16px;font-weight:600;color:var(--muted);margin-bottom:2px;}
-/* HEADER */
-.header{background:#ffffff;padding:20px 32px 18px;border-bottom:2px solid var(--border);box-shadow:0 2px 10px rgba(21,101,192,.08);}
-.header-inner{max-width:1180px;margin:0 auto;}
-.header-sub{font-size:13px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:6px;font-weight:700;}
-.header h1{font-size:36px;font-weight:900;color:var(--ink);}
-.header-desc{margin-top:4px;font-size:14px;color:var(--muted);font-weight:500;}
-.container{max-width:1180px;margin:0 auto;padding:28px 20px 0;}
-/* CARDS */
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:20px;box-shadow:0 2px 8px rgba(21,101,192,.06);}
-.card-title{font-size:16px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:18px;font-weight:800;padding-bottom:10px;border-bottom:2px solid #e3eaf7;}
-/* FORM */
-.fields{display:flex;gap:14px;flex-wrap:wrap;}
-.field{flex:1 1 170px;}
-.field label{display:block;font-size:15px;color:var(--muted);margin-bottom:6px;letter-spacing:.3px;text-transform:uppercase;font-weight:700;}
-.field input,.field select,.field textarea{width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--ink);font-size:20px;outline:none;font-family:inherit;font-weight:600;transition:border-color .2s;}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);background:#fff;}
-.field textarea{resize:vertical;min-height:100px;line-height:1.6;font-weight:500;font-size:20px;}
-.auto-badge{display:none;margin-top:6px;font-size:14px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 12px;border-radius:5px;}
-.other-input{display:none;margin-top:8px;}
-.other-input.visible{display:block;}
-/* REEVAL */
-.reeval-card{background:linear-gradient(135deg,#e3f2fd,#f0f7ff);border:1.5px solid #90caf9;border-radius:12px;padding:18px 22px;margin-bottom:20px;}
-.reeval-title{font-size:11px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:12px;}
-.reeval-note{font-size:15px;color:var(--muted);margin-top:8px;font-weight:500;}
-/* EDIT BANNER */
-.edit-banner{background:linear-gradient(135deg,#fff3e0,#fff8f0);border:1.5px solid #ffb74d;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:none;align-items:center;justify-content:space-between;gap:10px;}
-.edit-banner.visible{display:flex;}
-.edit-banner-text{font-size:14px;font-weight:700;color:#e65100;}
-.btn-cancel-edit{padding:8px 18px;font-size:13px;font-weight:700;border:1.5px solid #ffb74d;border-radius:7px;cursor:pointer;background:transparent;color:#e65100;font-family:inherit;}
-/* LOEHR GRID */
-.scale-headers{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
-.scale-head{text-align:center;font-size:13px;font-weight:800;letter-spacing:2px;padding-bottom:5px;text-transform:uppercase;}
-.items-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
-.item-cell{background:var(--input);border-radius:8px;border:1.5px solid var(--border);padding:5px;display:flex;align-items:center;gap:4px;transition:border-color .2s;}
-.item-cell.filled{border-color:var(--scale-color);}
-.item-num{font-size:11px;color:var(--muted);min-width:16px;font-weight:600;}
-.item-cell input{width:100%;background:transparent;border:none;outline:none;font-size:20px;font-weight:800;text-align:center;color:#aab5c8;-moz-appearance:textfield;font-family:inherit;}
-.item-cell input::-webkit-outer-spin-button,.item-cell input::-webkit-inner-spin-button{-webkit-appearance:none;}
-.item-cell.filled input{color:var(--scale-color);}
-.sums-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px;}
-.sum-cell{border-radius:8px;padding:8px 4px;text-align:center;border:1.5px solid var(--scale-color);background:color-mix(in srgb,var(--scale-color) 12%,#fff);}
-.sum-label{font-size:9px;color:var(--muted);margin-bottom:2px;font-weight:700;letter-spacing:1px;}
-input.sum-value{width:100%;background:transparent;border:none;outline:none;font-size:26px;font-weight:900;color:var(--scale-color);text-align:center;-moz-appearance:textfield;font-family:inherit;padding:0;}
-input.sum-value::-webkit-outer-spin-button,input.sum-value::-webkit-inner-spin-button{-webkit-appearance:none;}
-input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
-.sum-max{font-size:9px;color:var(--muted);font-weight:600;}
-.counter{font-size:18px;font-weight:800;}
-.counter.done{color:var(--green);}
-.counter.pending{color:var(--muted);}
-/* BUTTONS */
-.btn-eval{display:block;margin:0 auto 24px;padding:17px 56px;font-size:20px;font-weight:800;border:none;border-radius:10px;cursor:not-allowed;background:#dde3ed;color:var(--muted);transition:all .2s;font-family:inherit;}
-.btn-eval.ready{background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;cursor:pointer;box-shadow:0 4px 16px rgba(21,101,192,.3);}
-.btn-pdf{padding:13px 28px;font-size:18px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;font-family:inherit;}
-.btn-pdf:hover{opacity:.88;}
-.btn-pdf:disabled{opacity:.5;cursor:wait;}
-.btn-save{padding:13px 28px;font-size:18px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;font-family:inherit;}
-.btn-save:hover{opacity:.88;}
-.btn-save:disabled{opacity:.5;cursor:wait;}
-.btn-save.saved{background:#e8f5e9;color:var(--green);border:1.5px solid var(--green);cursor:default;}
-.btn-reset{display:block;margin:18px auto 0;background:transparent;border:1.5px solid var(--border);color:var(--muted);border-radius:8px;padding:12px 32px;cursor:pointer;font-size:18px;font-family:inherit;font-weight:600;}
-.btn-reset:hover{border-color:var(--blue);color:var(--blue);}
-.btn-secondary{padding:12px 24px;font-size:18px;font-weight:700;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--card);color:var(--ink2);font-family:inherit;transition:all .2s;}
-.btn-secondary:hover{border-color:var(--blue);color:var(--blue);}
-/* HISTORY MODAL */
-#hist-modal{position:fixed;inset:0;background:rgba(15,20,35,.6);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;}
-#hist-modal.open{display:flex;}
-.hist-box{background:#fff;border-radius:18px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.3);}
-.hist-header{background:var(--blue);padding:22px 28px;border-radius:18px 18px 0 0;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:sticky;top:0;z-index:5;}
-.hist-title{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px;}
-.hist-sub{font-size:16px;color:#bbdefb;font-weight:600;}
-.hist-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:38px;height:38px;border-radius:10px;font-size:22px;cursor:pointer;font-family:inherit;flex-shrink:0;line-height:1;}
-.hist-close:hover{background:rgba(255,255,255,.35);}
-.hist-body{padding:24px 28px 28px;}
-.hist-card{background:var(--input);border:1.5px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:14px;}
-.hist-card:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(21,101,192,.12);}
-.hist-num{display:inline-flex;align-items:center;background:var(--blue);color:#fff;font-size:15px;font-weight:900;padding:6px 14px;border-radius:20px;}
-.hist-num.latest{background:var(--green);}
-.hist-date{font-size:17px;font-weight:700;color:var(--ink);margin-top:8px;}
-.hist-meta{font-size:15px;color:var(--muted);font-weight:600;margin-top:2px;}
-.hist-scores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;}
-.hist-score{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
-.hist-score-lbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;}
-.hist-score-val{font-size:24px;font-weight:900;}
-.hist-actions{display:flex;gap:10px;flex-wrap:wrap;}
-.hist-btn{padding:10px 18px;font-size:16px;font-weight:800;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:var(--ink2);font-family:inherit;}
-.hist-btn:hover{border-color:var(--blue);color:var(--blue);}
-.hist-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
-
-/* TOAST */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:13px 24px;border-radius:10px;font-size:14px;font-weight:700;z-index:9999;transition:transform .3s,opacity .3s;opacity:0;pointer-events:none;white-space:nowrap;}
-.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-.toast.success{background:var(--green);}
-.toast.error{background:var(--red);}
-/* RESULTS */
-.results{animation:fadeIn .4s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;}}
-.results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
-.results-title{font-size:13px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;font-weight:800;}
-.results-actions{display:flex;gap:10px;flex-wrap:wrap;}
-.hidden{display:none;}
-/* PDF CAPTURE */
-#pdf-capture{background:#fff;padding:28px 32px;border-radius:12px;border:1px solid var(--border);font-family:'Nunito','Segoe UI',Arial,sans-serif;color:var(--ink);}
-.pdf-hdr{background:var(--blue);border-radius:10px;padding:20px 24px;margin-bottom:22px;}
-.pdf-hdr-eye{font-size:10px;letter-spacing:3px;color:#90caf9;text-transform:uppercase;margin-bottom:6px;font-weight:700;}
-.pdf-hdr-title{font-size:22px;font-weight:900;color:#fff;margin-bottom:18px;}
-.pdf-info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-.pdf-chip{background:rgba(255,255,255,.13);border-radius:8px;padding:10px 14px;}
-.pdf-chip-lbl{font-size:10px;letter-spacing:2px;color:#90caf9;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
-.pdf-chip-val{font-size:15px;font-weight:800;color:#fff;line-height:1.2;}
-.pdf-section{font-size:11px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin:22px 0 12px;padding-bottom:8px;border-bottom:2px solid #e3eaf7;}
-.pdf-box-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.pdf-box{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:16px 18px;}
-.pdf-box-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;font-weight:700;}
-.pdf-box-big{font-size:34px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:6px;}
-.pdf-box-medium{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:6px;line-height:1.3;}
-.pdf-box-tag{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:5px;display:inline-block;margin-bottom:8px;}
-.pdf-box-text{font-size:13px;color:var(--ink2);line-height:1.65;font-weight:500;}
-.anx-layout{display:grid;grid-template-columns:210px 1fr;gap:12px;}
-.anx-left{display:flex;flex-direction:column;gap:10px;}
-.anx-mini{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;flex:1;}
-.anx-mini-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
-.anx-mini-sub{font-size:11px;color:#9aabc0;margin-bottom:8px;font-weight:500;}
-.anx-mini-score{font-size:30px;font-weight:900;color:var(--ink);line-height:1;margin-bottom:6px;}
-.anx-right{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;justify-content:center;}
-.anx-right-lbl{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:700;}
-.anx-right-text{font-size:14px;color:var(--ink2);line-height:1.75;font-weight:500;}
-.pdf-composites{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-.pdf-comp{border-radius:10px;padding:18px 20px;border:1.5px solid;}
-.pdf-comp-desc{font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
-.pdf-comp-name{font-size:16px;font-weight:900;color:var(--ink);margin-bottom:4px;}
-.pdf-comp-score-row{display:flex;align-items:baseline;gap:5px;margin-bottom:10px;}
-.pdf-comp-score{font-size:38px;font-weight:900;line-height:1;}
-.pdf-comp-max{font-size:14px;color:var(--muted);font-weight:600;}
-.pdf-comp-bar-bg{background:rgba(0,0,0,.08);border-radius:99px;height:6px;margin-bottom:8px;}
-.pdf-comp-bar{height:100%;border-radius:99px;}
-.pdf-comp-level{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;}
-.pdf-detail-card{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:4px;}
-.pdf-detail-title{font-size:10px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:16px;}
-.pdf-scale-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-.pdf-scale-row:last-child{margin-bottom:0;}
-.pdf-scale-key{min-width:38px;font-size:12px;font-weight:800;letter-spacing:1px;}
-.pdf-scale-name{flex:1;font-size:13px;color:var(--ink2);font-weight:600;}
-.pdf-scale-bar-bg{flex:2;background:#dde3ed;border-radius:99px;height:7px;}
-.pdf-scale-bar{height:100%;border-radius:99px;}
-.pdf-scale-score{min-width:28px;font-size:15px;font-weight:900;text-align:right;}
-.pdf-scale-level{min-width:185px;font-size:10px;letter-spacing:1px;text-align:right;font-weight:700;}
-.pdf-narrative{background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:4px;}
-.pdf-narrative-text{font-size:14px;color:var(--ink2);line-height:1.75;min-height:52px;outline:none;white-space:pre-wrap;word-break:break-word;font-weight:500;}
-.pdf-narrative-text:empty::before{content:attr(data-ph);color:#b0bec5;font-style:italic;}
-.pdf-narrative-text[contenteditable="true"]:focus{border-left:3px solid var(--blue);padding-left:10px;}
-.pdf-footer{margin-top:24px;padding-top:16px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;}
-.pdf-footer-sig{font-size:13px;color:var(--ink2);font-weight:600;}
-.pdf-footer-sig strong{display:block;color:var(--ink);font-size:15px;margin-bottom:2px;font-weight:900;}
-.pdf-footer-right{font-size:12px;color:var(--muted);text-align:right;line-height:1.6;font-weight:600;}
-/* DATABASE */
-.db-section{margin-top:40px;padding-top:20px;border-top:3px solid var(--border);}
-.db-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
-.db-title{font-size:26px;font-weight:900;color:var(--ink);}
-.db-subtitle{font-size:17px;color:var(--muted);font-weight:500;margin-top:4px;}
-.db-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
-.db-stat{background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;}
-.db-stat-val{font-size:34px;font-weight:900;color:var(--blue);}
-.db-stat-lbl{font-size:14px;color:var(--muted);font-weight:700;margin-top:4px;letter-spacing:.5px;}
-.db-table-wrap{background:var(--card);border:1.5px solid var(--border);border-radius:10px;overflow-x:auto;margin-bottom:20px;}
-.db-table{width:100%;border-collapse:collapse;font-size:22px;}
-.db-table th{background:#f5f7fc;color:var(--muted);font-size:14px;letter-spacing:1px;text-transform:uppercase;font-weight:800;padding:16px 18px;text-align:left;border-bottom:1.5px solid var(--border);}
-.db-table td{padding:16px 18px;border-bottom:1px solid #eef1f7;color:var(--ink2);font-weight:600;}
-.db-table tr:last-child td{border-bottom:none;}
-.db-table tr:hover td{background:#f8f9fc;}
-.db-empty{text-align:center;padding:32px;color:var(--muted);font-size:14px;font-weight:600;}
-/* NAME DROPDOWN MENU */
-.name-cell{position:relative;}
-.name-btn{color:var(--blue);cursor:pointer;font-weight:800;font-size:20px;background:none;border:none;font-family:inherit;text-align:left;padding:0;display:inline-flex;align-items:center;gap:5px;}
-.name-btn::after{content:'▾';font-size:11px;opacity:.6;}
-.name-btn:hover{text-decoration:underline;}
-.action-menu{position:absolute;top:110%;left:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:200;min-width:200px;display:none;}
-.action-menu.open{display:block;}
-.action-menu-btn{display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;font-size:18px;font-weight:700;border:none;background:transparent;cursor:pointer;border-radius:7px;font-family:inherit;color:var(--ink2);text-align:left;}
-.action-menu-btn:hover{background:var(--input);}
-.action-menu-btn.danger{color:var(--red);}
-.action-menu-btn.danger:hover{background:#ffebee;}
-/* QUERY */
-.query-box{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:22px 24px;}
-.query-box-title{font-size:20px;font-weight:800;color:var(--ink);margin-bottom:8px;}
-.query-box-sub{font-size:16px;color:var(--muted);margin-bottom:16px;font-weight:500;}
-.query-examples{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
-.query-example{background:#e8f0fe;color:var(--blue);border:none;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-.query-example:hover{background:#c5d8fc;}
-.query-input-row{display:flex;gap:10px;}
-.query-input{flex:1;background:var(--input);border:1.5px solid var(--border);border-radius:8px;padding:14px 18px;font-size:20px;color:var(--ink);font-family:inherit;font-weight:600;outline:none;}
-.query-input:focus{border-color:var(--blue);background:#fff;}
-.btn-query{padding:14px 28px;font-size:18px;font-weight:800;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(135deg,#1565C0,#1e88e5);color:#fff;font-family:inherit;white-space:nowrap;}
-.btn-query:disabled{opacity:.5;cursor:wait;}
-.query-response{margin-top:18px;background:#f5f7fc;border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;}
-.query-response-lbl{font-size:10px;color:var(--blue);letter-spacing:3px;text-transform:uppercase;font-weight:800;margin-bottom:10px;}
-.query-response-text{font-size:18px;color:var(--ink2);line-height:1.8;font-weight:500;}
-.thinking-dots::after{content:'';animation:dots 1.2s infinite;}
-@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
-@media print{
-  body{background:#fff;}
-  .header,.container>.card,.btn-eval,.results-header,.btn-reset,.db-section,#auth-overlay,.reeval-card,.edit-banner{display:none!important;}
-  #results{display:block!important;}
-  #pdf-capture{border:none;padding:0;}
+:root{
+  color-scheme: light;
+  --marca:#1aa8e0; --marca-fuerte:#0b7fae; --marca-suave:#e8f6fd;
+  --plano:#f9f9f7; --superficie:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --ink3:#898781;
+  --linea:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  --bien:#0a7d0a; --aviso:#fab219; --serio:#c2622f; --critico:#b3261e;
+  --radio:12px;
 }
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+    --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+    --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+    --bien:#0ca30c; --serio:#ec835a; --critico:#e05a52;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+  --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+  --bien:#0ca30c; --serio:#ec835a; --critico:#e05a52;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plano);color:var(--ink);font-family:'Nunito','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+#acceso{position:fixed;inset:0;background:var(--marca);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.acceso-caja{background:var(--superficie);border-radius:20px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.acceso-caja img{width:110px;margin-bottom:14px}
+.acceso-sub{font-size:14px;color:var(--ink2);margin-bottom:22px}
+.campo{width:100%;background:var(--plano);border:1.5px solid var(--eje);border-radius:10px;padding:12px 14px;font-size:16px;font-weight:600;color:var(--ink);font-family:inherit;outline:none;margin-bottom:10px;color-scheme:inherit}
+.campo:focus{border-color:var(--marca)}
+.boton{width:100%;background:var(--marca);color:#fff;border:none;border-radius:10px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.boton:hover{background:var(--marca-fuerte)}
+.error{color:var(--critico);font-size:14px;font-weight:700;margin-top:10px;display:none}
+
+header{background:var(--superficie);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:100}
+.header-in{max-width:1080px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px;margin-right:auto}
+.marca img{width:30px}
+.marca-nombre{font-size:17px;font-weight:900;line-height:1.15}
+.marca-rol{font-size:12px;color:var(--ink2);font-weight:600}
+nav{display:flex;gap:4px;align-items:center}
+nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
+nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+nav a.activo{background:var(--marca);color:#fff}
+.btn-tema{background:none;border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-tema:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+
+.envoltura{max-width:1080px;margin:0 auto;padding:20px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:20px;margin-bottom:16px}
+.tarjeta-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:uppercase;letter-spacing:.8px}
+.ayuda{font-size:13.5px;color:var(--ink2);margin-bottom:16px}
+.grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.campo-caja label{display:block;font-size:11.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.campo-caja input,.campo-caja select,.campo-caja textarea{width:100%;background:var(--plano);border:1.5px solid var(--borde);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:15.5px;color:var(--ink);outline:none;color-scheme:inherit}
+.campo-caja input:focus,.campo-caja select:focus,.campo-caja textarea:focus{border-color:var(--marca)}
+.campo-caja textarea{min-height:100px;resize:vertical;line-height:1.55}
+.ancho-total{grid-column:1/-1}
+.insignia{display:inline-block;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:20px;margin-top:5px}
+
+/* Buscador de atleta */
+.buscador{position:relative}
+#sugerencias{display:none;position:absolute;top:100%;left:0;right:0;background:var(--superficie);border:1.5px solid var(--borde);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);max-height:280px;overflow-y:auto;z-index:300;margin-top:4px}
+.sug{display:block;width:100%;text-align:left;background:none;border:none;padding:11px 14px;cursor:pointer;font-family:inherit;color:var(--ink);border-bottom:1px solid var(--linea)}
+.sug:last-child{border-bottom:none}
+.sug:hover,.sug.marcada{background:var(--marca-suave)}
+.sug-nom{font-size:15.5px;font-weight:700}
+.sug-sub{font-size:12.5px;color:var(--ink2);font-weight:600}
+.chip-atleta{display:flex;align-items:center;gap:10px;background:var(--marca-suave);border:1px solid var(--marca);border-radius:10px;padding:11px 14px;margin-bottom:14px;flex-wrap:wrap}
+.chip-atleta-nom{font-size:16px;font-weight:800}
+.chip-atleta-sub{font-size:13px;color:var(--ink2);font-weight:600}
+.btn-chico{background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-chico:hover{background:var(--plano);border-color:var(--marca)}
+
+/* Qué pruebas se cargan */
+.pruebas{display:flex;flex-wrap:wrap;gap:9px}
+.prueba-chip{display:inline-flex;align-items:center;gap:8px;background:var(--plano);border:1.5px solid var(--borde);border-radius:22px;padding:9px 15px;font-size:14.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.prueba-chip input{width:17px;height:17px;accent-color:var(--marca);cursor:pointer}
+.prueba-chip.on{background:var(--marca-suave);border-color:var(--marca);color:var(--marca-fuerte)}
+.invalida{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--critico);cursor:pointer;margin-top:12px}
+.invalida input{width:17px;height:17px;accent-color:var(--critico);cursor:pointer}
+
+/* Loehr */
+.loehr-cab{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:7px}
+.loehr-col{font-size:10.5px;font-weight:800;text-align:center;color:var(--ink2);line-height:1.25;text-transform:uppercase;letter-spacing:.3px}
+.loehr-fila{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:7px}
+.celda{position:relative;background:var(--plano);border:1.5px solid var(--borde);border-radius:8px;padding:4px}
+.celda.ok{border-color:var(--marca);background:var(--marca-suave)}
+.celda .num{position:absolute;top:2px;left:5px;font-size:9.5px;font-weight:800;color:var(--ink3)}
+.celda input{width:100%;background:none;border:none;text-align:center;font-family:inherit;font-size:17px;font-weight:800;color:var(--ink);outline:none;padding:9px 0 3px}
+.sumas{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)}
+.suma{text-align:center}
+.suma label{display:block;font-size:10px;font-weight:800;color:var(--ink3);text-transform:uppercase;margin-bottom:3px}
+.suma input{width:100%;background:var(--plano);border:1.5px solid var(--borde);border-radius:8px;padding:8px 2px;text-align:center;font-family:inherit;font-size:17px;font-weight:800;color:var(--ink);outline:none}
+.suma input:focus{border-color:var(--marca)}
+.suma small{font-size:10.5px;color:var(--ink3);font-weight:700}
+@media(max-width:700px){
+  .loehr-cab{display:none}
+  .loehr-fila,.sumas{grid-template-columns:repeat(2,1fr)}
+  .celda .num{font-size:11px}
+}
+.contador{font-size:13px;font-weight:800;padding:4px 12px;border-radius:20px;background:var(--plano);color:var(--ink2)}
+.contador.listo{background:rgba(12,163,12,.15);color:var(--bien)}
+
+.barra-final{position:sticky;bottom:0;background:var(--superficie);border-top:1px solid var(--borde);padding:14px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:90}
+.barra-final .aviso-guardar{font-size:13.5px;color:var(--ink2);margin-right:auto}
+.btn-guardar{background:var(--marca);color:#fff;border:none;border-radius:10px;padding:13px 24px;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer}
+.btn-guardar:hover{background:var(--marca-fuerte)}
+.btn-guardar:disabled{opacity:.55;cursor:default}
+
+.borrador{display:none;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(250,178,25,.13);border:1.5px solid rgba(250,178,25,.55);border-radius:var(--radio);padding:14px 18px;margin-bottom:16px}
+.borrador.ver{display:flex}
+.borrador-txt{flex:1;min-width:220px;font-size:14.5px;color:var(--ink2)}
+.borrador-txt strong{display:block;font-size:15.5px;color:var(--ink);font-weight:900}
+
+#aviso{position:fixed;left:50%;transform:translateX(-50%);top:14px;background:var(--superficie);border:1px solid var(--borde);border-radius:10px;padding:11px 18px;box-shadow:0 10px 30px rgba(0,0,0,.2);font-size:14.5px;font-weight:700;z-index:999;opacity:0;pointer-events:none;transition:opacity .15s}
+#aviso.ver{opacity:1}
+#aviso.mal{border-color:var(--critico);color:var(--critico)}
 </style>
 </head>
 <body>
 
-<div id="auth-overlay">
-  <div class="auth-box">
-    <img src="/assets/logo.png" alt="Logo de Melany Ordóñez" style="width:140px;height:140px;object-fit:contain;margin-bottom:16px;">
-    <div class="auth-name">Lic. Melany Ordóñez</div>
-    <div class="auth-cred">Máster en Psicología del Deporte</div>
-    <div class="auth-sub" style="margin-top:6px;margin-bottom:22px;">Inventario Psicológico de Rendimiento Deportivo</div>
-    <input type="text" class="auth-input" id="auth-email" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')verificarPassword()">
-    <input type="password" class="auth-input" id="auth-input" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')verificarPassword()">
-    <button class="auth-btn" onclick="verificarPassword()">Ingresar</button>
-    <div class="auth-error" id="auth-error">Contraseña incorrecta. Intentá de nuevo.</div>
+<div id="acceso">
+  <div class="acceso-caja">
+    <img src="/assets/logo.png" alt="Logo de Melany Ordóñez">
+    <div class="acceso-sub">Psicología del Deporte</div>
+    <input type="text" class="campo" id="usuario" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')entrar()">
+    <input type="password" class="campo" id="clave" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="boton" onclick="entrar()">Ingresar</button>
+    <div class="error" id="acceso-error"></div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
-<div id="hist-modal">
-  <div class="hist-box">
-    <div class="hist-header">
+<header>
+  <div class="header-in">
+    <div class="marca">
+      <img src="/assets/icono.png" alt="">
       <div>
-        <div class="hist-title" id="hist-name">Jugador</div>
-        <div class="hist-sub" id="hist-count">— evaluaciones</div>
+        <div class="marca-nombre">Melany Ordóñez</div>
+        <div class="marca-rol">Psicología del Deporte</div>
       </div>
-      <button class="hist-close" onclick="cerrarHistoricoIndex()">×</button>
     </div>
-    <div class="hist-body" id="hist-body"></div>
+    <nav>
+      <a href="/evaluar" class="activo">Evaluar</a>
+      <a href="/atletas">Atletas</a>
+      <button class="btn-tema" id="btn-tema" onclick="rotarTema()" title="Cambiar entre claro y oscuro"></button>
+    </nav>
+  </div>
+</header>
+
+<div class="envoltura">
+
+  <div class="borrador" id="borrador">
+    <div class="borrador-txt">
+      <strong>Tenés una evaluación sin guardar</strong>
+      <span id="borrador-info"></span>
+    </div>
+    <button class="btn-chico" style="background:var(--aviso);border-color:var(--aviso);color:#3d2d00" onclick="aplicarBorrador()">Continuar con ella</button>
+    <button class="btn-chico" onclick="descartarBorrador()">Empezar en blanco</button>
+  </div>
+
+  <!-- ATLETA -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Atleta</h2></div>
+    <div class="ayuda" id="ayuda-atleta">Escribí el nombre. Si ya está en el sistema aparece en la lista y se cargan sus datos; si no, se crea uno nuevo.</div>
+
+    <div class="chip-atleta" id="chip-atleta" style="display:none">
+      <div>
+        <div class="chip-atleta-nom" id="chip-nom"></div>
+        <div class="chip-atleta-sub" id="chip-sub"></div>
+      </div>
+      <button class="btn-chico" style="margin-left:auto" onclick="soltarAtleta()">Cambiar de atleta</button>
+    </div>
+
+    <div class="campo-caja buscador" id="caja-buscador">
+      <label for="buscar-atleta">Nombre completo</label>
+      <input type="text" id="buscar-atleta" autocomplete="off" placeholder="Ej. Jonathan Reyes" oninput="buscarAtletas()" onkeydown="teclaBusqueda(event)">
+      <div id="sugerencias"></div>
+    </div>
+
+    <div class="grilla" id="datos-atleta" style="margin-top:12px">
+      <div class="campo-caja"><label for="a-sexo">Sexo</label>
+        <select id="a-sexo"><option value="">—</option><option>Masculino</option><option>Femenino</option></select></div>
+      <div class="campo-caja"><label for="a-nacimiento">Fecha de nacimiento</label>
+        <input type="date" id="a-nacimiento" oninput="calcularEdad()"></div>
+      <div class="campo-caja"><label for="a-edad">Edad al evaluar</label>
+        <input type="number" id="a-edad" min="1" max="99" placeholder="—"></div>
+      <div class="campo-caja"><label for="a-deporte">Deporte</label>
+        <input type="text" id="a-deporte" list="lista-deportes" placeholder="Ej. Fútbol"><datalist id="lista-deportes"></datalist></div>
+      <div class="campo-caja"><label for="a-organizacion">Organización</label>
+        <input type="text" id="a-organizacion" list="lista-organizaciones" placeholder="Ej. TDS - FFH"><datalist id="lista-organizaciones"></datalist></div>
+      <div class="campo-caja"><label for="a-categoria">Categoría</label>
+        <input type="text" id="a-categoria" list="lista-categorias" placeholder="Ej. Sub-15"><datalist id="lista-categorias"></datalist></div>
+      <div class="campo-caja"><label for="a-centro">Centro de formación</label>
+        <input type="text" id="a-centro" list="lista-centros" placeholder="Ej. Tegucigalpa"><datalist id="lista-centros"></datalist></div>
+      <div class="campo-caja"><label for="a-posicion">Posición</label>
+        <input type="text" id="a-posicion" placeholder="Ej. Mediocampista"></div>
+    </div>
+  </div>
+
+  <!-- SESIÓN -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Esta evaluación</h2></div>
+    <div class="grilla">
+      <div class="campo-caja"><label for="s-fecha">Fecha de aplicación</label>
+        <input type="date" id="s-fecha" oninput="calcularEdad()"></div>
+      <div class="campo-caja"><label for="s-contexto">Contexto</label>
+        <input type="text" id="s-contexto" list="lista-contextos" placeholder="Ej. Evaluación inicial"><datalist id="lista-contextos">
+          <option>Evaluación inicial</option><option>Seguimiento</option><option>Reevaluación</option><option>Previo a competencia</option></datalist></div>
+      <div class="campo-caja"><label for="s-aplicada">Aplicada por</label>
+        <input type="text" id="s-aplicada" placeholder="Ej. Melany Ordóñez"></div>
+      <div class="campo-caja"><label for="s-interpretada">Interpretada por</label>
+        <input type="text" id="s-interpretada" placeholder="Ej. Melany Ordóñez"></div>
+    </div>
+  </div>
+
+  <!-- QUÉ PRUEBAS -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Qué pruebas estoy cargando</h2></div>
+    <div class="ayuda">Marcá solo las que aplicaste hoy. Las que no marques quedan como estaban: podés repetir el Loehr sin volver a cargar el CI.</div>
+    <div class="pruebas" id="selector-pruebas"></div>
+  </div>
+
+  <div id="secciones-pruebas"></div>
+
+  <!-- CIERRE -->
+  <div class="tarjeta">
+    <div class="tarjeta-cab"><h2>Conclusión y recomendaciones</h2></div>
+    <div class="ayuda">Todo perfil debería llevar las dos. Si las dejás vacías, el atleta queda marcado como pendiente de completar.</div>
+    <div class="grilla">
+      <div class="campo-caja ancho-total"><label for="c-conclusion">Conclusión</label>
+        <textarea id="c-conclusion" placeholder="Perfil psicológico general, fortalezas y áreas de atención prioritaria…"></textarea></div>
+      <div class="campo-caja ancho-total"><label for="c-recomendaciones">Recomendaciones</label>
+        <textarea id="c-recomendaciones" placeholder="Recomendaciones para el atleta y el cuerpo técnico…"></textarea></div>
+    </div>
   </div>
 </div>
-<div id="success-modal"><div class="success-box"><div class="success-icon">✅</div><div class="success-title">¡Guardado con éxito!</div><div class="success-sub" id="success-sub">El perfil fue guardado correctamente.</div></div></div>
-<div class="autosave-bar" id="autosave-bar">💾 Borrador guardado automáticamente</div>
 
-<div class="header">
-  <div class="header-inner" style="display:flex;align-items:center;gap:20px;">
-    <img src="/assets/icono.png" alt="" style="width:52px;height:52px;object-fit:contain;flex-shrink:0;">
-    <div>
-      <div class="header-sub">Melany Ordóñez · Psicología del Deporte</div>
-      <h1>Perfil Psicológico Deportivo</h1>
-    </div>
-    <a href="/atletas" style="margin-left:auto;background:#1aa8e0;color:#fff;text-decoration:none;font-size:17px;font-weight:800;padding:10px 18px;border-radius:9px;white-space:nowrap;">Fichas de atletas →</a>
-  </div>
+<div class="barra-final">
+  <div class="aviso-guardar" id="aviso-guardar"></div>
+  <button class="btn-chico" onclick="limpiarTodo()">Limpiar</button>
+  <button class="btn-guardar" id="btn-guardar" onclick="guardar()">Guardar evaluación</button>
 </div>
 
-<div class="container">
-
-<div class="draft-bar" id="draft-bar">
-  <div class="draft-txt">
-    <strong>Tenés un borrador sin guardar</strong>
-    <span id="draft-info"></span>
-  </div>
-  <button class="draft-btn draft-btn-si" onclick="aplicarBorrador()">Continuar con el borrador</button>
-  <button class="draft-btn" onclick="descartarBorrador()">Empezar en blanco</button>
-</div>
-
-
-  <div class="edit-banner" id="edit-banner">
-    <div class="edit-banner-text">✏️ Modo edición — <span id="edit-banner-name"></span></div>
-    <button class="btn-cancel-edit" onclick="cancelarEdicion()">Cancelar</button>
-  </div>
-
-  <div class="reeval-card">
-    <div class="reeval-title">¿Re-evaluación de un jugador existente?</div>
-    <div class="fields">
-      <div class="field" style="flex:2 1 260px;position:relative;">
-        <label>Buscar jugador por nombre</label>
-        <input type="text" id="inp-buscar-jugador" placeholder="Escribí el nombre del jugador…"
-          oninput="buscarJugadores()" onfocus="buscarJugadores()" autocomplete="off">
-        <div id="lista-jugadores" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.15);max-height:280px;overflow-y:auto;z-index:300;margin-top:4px;"></div>
-      </div>
-      <div class="field" style="flex:0 1 auto;display:flex;align-items:flex-end;">
-        <button onclick="limpiarBusquedaJugador()" style="padding:12px 20px;font-size:16px;font-weight:700;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:#fff;color:var(--muted);font-family:inherit;">Limpiar</button>
-      </div>
-    </div>
-    <div class="reeval-note" id="reeval-info">Escribí el nombre de un jugador existente para auto-completar sus datos fijos (CI, temperamento, ansiedad rasgo). Solo llenás lo que cambió.</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Datos del Atleta</div>
-    <div class="fields">
-      <div class="field" style="flex:2 1 260px;">
-        <label>Nombre completo</label>
-        <input type="text" id="inp-name" placeholder="Ej. Jonathan Reyes">
-      </div>
-      <div class="field">
-        <label>Categoría</label>
-        <select id="inp-cat" onchange="toggleOther()">
-          <option value="Sub-15 Masculino">Sub-15 Masculino</option>
-          <option value="Sub-15 Femenino">Sub-15 Femenino</option>
-          <option value="Sub-16 Masculino">Sub-16 Masculino</option>
-          <option value="Sub-16 Femenino">Sub-16 Femenino</option>
-          <option value="__otro__">Otro</option>
-        </select>
-        <input type="text" id="inp-cat-other" class="other-input" placeholder="Ej. Sub-13 Masculino…">
-      </div>
-      <div class="field">
-        <label>Centro de Formación (CFT)</label>
-        <select id="inp-cft">
-          <option value="Tegucigalpa">Tegucigalpa</option>
-          <option value="San Pedro Sula">San Pedro Sula</option>
-          <option value="Choluteca">Choluteca</option>
-          <option value="La Ceiba">La Ceiba</option>
-          <option value="Colón">Colón</option>
-          <option value="Roatán">Roatán</option>
-          <option value="Olancho">Olancho</option>
-          <option value="Danlí">Danlí</option>
-          <option value="Occidente">Occidente</option>
-        </select>
-      </div>
-    </div>
-    <div class="fields" style="margin-top:14px;">
-      <div class="field"><label>Fecha de Nacimiento</label><input type="date" id="inp-dob" oninput="updateAge()"></div>
-      <div class="field"><label>Fecha de Aplicación</label><input type="date" id="inp-date" oninput="updateAge()"></div>
-      <div class="field" style="flex:0 1 150px;">
-        <label>Edad</label>
-        <input type="number" id="edad-calc" min="1" max="99" placeholder="—" style="font-weight:800;color:var(--blue);">
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;font-weight:600;">Edad actual · editable</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Área Cognitiva y Personalidad</div>
-    <div class="fields">
-      <div class="field" style="flex:0 1 200px;">
-        <label>Puntuación CI</label>
-        <input type="number" id="inp-ci" min="0" max="200" placeholder="Ej. 90" oninput="updateCiBadge()">
-        <div class="auto-badge" id="ci-badge"></div>
-        <label style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;font-size:15px;color:var(--red);font-weight:700;cursor:pointer;">
-          <input type="checkbox" id="ci-invalida" onchange="updateCiBadge()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--red);">
-          Prueba Inválida
-        </label>
-      </div>
-      <div class="field" style="flex:2 1 280px;">
-        <label>Tipo de Temperamento · Eysenck</label>
-        <select id="inp-temp" onchange="fillTempDesc()">
-          <option value="">— Seleccionar —</option>
-          <option value="Sanguíneo">Sanguíneo (Extrovertido-Estable)</option>
-          <option value="Colérico">Colérico (Extrovertido-Inestable)</option>
-          <option value="Flemático">Flemático (Introvertido-Estable)</option>
-          <option value="Melancólico">Melancólico (Introvertido-Inestable)</option>
-        </select>
-        <label class="invalida-check">
-          <input type="checkbox" id="temp-invalida" onchange="fillTempDesc()">
-          Prueba inválida
-        </label>
-      </div>
-    </div>
-    <div class="fields" style="margin-top:14px;">
-      <div class="field" style="flex:1 1 100%;">
-        <label>Resumen del Temperamento (editable)</label>
-        <textarea id="inp-temp-desc" placeholder="Describe el temperamento del jugador en relación a su rendimiento deportivo…"></textarea>
-      </div>
-    </div>
-    <div style="margin-top:22px;padding-top:18px;border-top:1.5px solid #e3eaf7;">
-      <div class="card-title" style="margin-bottom:16px;border-bottom:none;padding-bottom:0;">Ansiedad · Spielberger</div>
-      <div class="fields">
-        <div class="field" style="flex:0 1 200px;">
-          <label>Ansiedad Estado (puntuación)</label>
-          <input type="number" id="inp-ae" min="0" max="80" placeholder="0 – 80" oninput="updateAnxBadge('ae')">
-          <div class="auto-badge" id="ae-badge"></div>
-        </div>
-        <div class="field" style="flex:0 1 200px;">
-          <label>Ansiedad Rasgo (puntuación)</label>
-          <input type="number" id="inp-ar" min="0" max="80" placeholder="0 – 80" oninput="updateAnxBadge('ar')">
-          <div class="auto-badge" id="ar-badge"></div>
-        </div>
-        <div class="field" style="flex:2 1 240px;">
-          <label>Interpretación (editable)</label>
-          <textarea id="inp-anx-desc" placeholder="Interpretación de los niveles de ansiedad…"></textarea>
-        </div>
-      </div>
-      <div class="fields">
-        <label class="invalida-check">
-          <input type="checkbox" id="anx-invalida" onchange="updateAnxBadge('ae');updateAnxBadge('ar');">
-          Prueba inválida (no se guardan los puntajes)
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div class="card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Loehr IPRD</div>
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <label class="invalida-check" style="margin-top:0;">
-          <input type="checkbox" id="loehr-invalida" onchange="updateCounter()">
-          Prueba inválida
-        </label>
-        <div class="counter pending" id="counter">0 / 42</div>
-      </div>
-    </div>
-    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px;">💡 Podés llenar los 42 ítems <strong>o</strong> escribir directamente las sumas por escala en las celdas de abajo.</div>
-    <div class="scale-headers" id="scale-headers"></div>
-    <div id="items-grid"></div>
-    <div class="sums-row" id="sums-row"></div>
-    <div style="margin-top:18px;padding-top:14px;border-top:1.5px solid #e3eaf7;">
-      <div class="field">
-        <label>Interpretación del perfil Loehr (editable)</label>
-        <textarea id="inp-loehr-interp" style="min-height:100px;" placeholder="Análisis e interpretación de los resultados del Inventario Loehr. Fortalezas identificadas, áreas de atención y aspectos a trabajar con el jugador…"></textarea>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Conclusión y Recomendaciones</div>
-    <div class="field" style="margin-bottom:14px;">
-      <label>Conclusión</label>
-      <textarea id="inp-conclusion" style="min-height:120px;" placeholder="Descripción del perfil psicológico general, fortalezas y áreas de atención prioritaria…"></textarea>
-    </div>
-    <div class="field">
-      <label>Recomendaciones</label>
-      <textarea id="inp-recomendaciones" style="min-height:120px;" placeholder="Recomendaciones para el entrenador y el equipo técnico…"></textarea>
-    </div>
-  </div>
-
-  <button class="btn-eval" id="btn-eval" disabled>Faltan 42 respuestas</button>
-
-  <div class="hidden" id="results">
-    <div class="results-header">
-      <div class="results-title" id="results-title">Perfil Psicológico</div>
-      <div class="results-actions">
-        <button class="btn-save" id="btn-save" onclick="guardarPerfil()">💾 Guardar</button>
-        <button class="btn-pdf" id="btn-pdf" onclick="downloadPDF()">📥 Descargar PDF</button>
-      </div>
-    </div>
-    <div id="pdf-capture">
-      <div class="pdf-hdr">
-        <div class="pdf-hdr-eye">Inventario Psicológico de Rendimiento Deportivo</div>
-        <div class="pdf-hdr-title">Perfil Psicológico Deportivo</div>
-        <div class="pdf-info-grid" id="pdf-header-info"></div>
-      </div>
-      <div class="pdf-section">Área Cognitiva y Personalidad</div>
-      <div class="pdf-box-grid">
-        <div class="pdf-box">
-          <div class="pdf-box-lbl">Capacidad Intelectual</div>
-          <div class="pdf-box-big" id="pdf-ci">—</div>
-          <div class="pdf-box-tag" id="pdf-ci-tag" style="background:#e8edf5;color:#6b7a99;">—</div>
-        </div>
-        <div class="pdf-box">
-          <div class="pdf-box-lbl">Temperamento · Eysenck</div>
-          <div class="pdf-box-medium" id="pdf-temp-name">—</div>
-          <div class="pdf-box-text" id="pdf-temp-desc">—</div>
-        </div>
-      </div>
-      <div class="pdf-section">Niveles de Ansiedad · Spielberger</div>
-      <div class="anx-layout">
-        <div class="anx-left">
-          <div class="anx-mini">
-            <div class="anx-mini-lbl">Ansiedad Estado</div>
-            <div class="anx-mini-sub">Nivel de activación en este momento</div>
-            <div class="anx-mini-score" id="pdf-ae">—</div>
-            <div class="pdf-box-tag" id="pdf-ae-tag" style="background:#e8edf5;color:#6b7a99;">—</div>
-          </div>
-          <div class="anx-mini">
-            <div class="anx-mini-lbl">Ansiedad Rasgo</div>
-            <div class="anx-mini-sub">Predisposición habitual</div>
-            <div class="anx-mini-score" id="pdf-ar">—</div>
-            <div class="pdf-box-tag" id="pdf-ar-tag" style="background:#e8edf5;color:#6b7a99;">—</div>
-          </div>
-        </div>
-        <div class="anx-right">
-          <div class="anx-right-lbl">Interpretación</div>
-          <div class="anx-right-text" id="pdf-anx-desc">—</div>
-        </div>
-      </div>
-      <div class="pdf-section">Perfil Compuesto · Loehr IPRD</div>
-      <div class="pdf-composites" id="composites"></div>
-      <div class="pdf-detail-card">
-        <div class="pdf-detail-title">Detalle por Escala</div>
-        <div id="scale-details"></div>
-      </div>
-      <div class="pdf-section">Interpretación · Loehr IPRD</div>
-      <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-loehr-interp" contenteditable="true" data-ph="Interpretación del perfil Loehr…"></div></div>
-      <div class="pdf-section">Conclusión</div>
-      <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-conclusion" contenteditable="true" data-ph="La conclusión aparecerá aquí…"></div></div>
-      <div class="pdf-section">Recomendaciones</div>
-      <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-recomendaciones" contenteditable="true" data-ph="Las recomendaciones aparecerán aquí…"></div></div>
-      <div class="pdf-footer">
-        <div class="pdf-footer-sig" style="display:flex;align-items:center;gap:11px;"><img src="/assets/icono.png" alt="" style="width:34px;height:34px;object-fit:contain;"><span><strong>Lic. Melany Ordóñez</strong>Máster en Psicología del Deporte</span></div>
-        <div class="pdf-footer-right" id="pdf-footer-right"></div>
-      </div>
-    </div>
-    <button class="btn-reset" onclick="resetAll()">↺ Nueva evaluación</button>
-  </div>
-
-  <div class="db-section">
-    <div class="db-title-row">
-      <div><div class="db-title">📊 Base de Datos</div><div class="db-subtitle">Perfiles guardados · Consultas con IA</div></div>
-      <button class="btn-secondary" onclick="cargarPerfiles()">↻ Actualizar</button>
-    </div>
-    <div class="db-stats">
-      <div class="db-stat"><div class="db-stat-val" id="stat-total">—</div><div class="db-stat-lbl">Evaluaciones guardadas</div></div>
-      <div class="db-stat"><div class="db-stat-val" id="stat-jugadores">—</div><div class="db-stat-lbl">Atletas</div></div>
-      <div class="db-stat"><div class="db-stat-val" id="stat-centros">—</div><div class="db-stat-lbl">Centros</div></div>
-      <div class="db-stat"><div class="db-stat-val" id="stat-avg">—</div><div class="db-stat-lbl">Prom. Autoconfianza</div></div>
-    </div>
-    <div style="margin-bottom:12px;">
-      <input type="text" id="db-search" placeholder="🔍 Buscar por nombre, CFT, temperamento, categoría…"
-        oninput="filtrarYRenderTabla()"
-        style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:11px 16px;font-size:15px;color:var(--ink);font-family:inherit;font-weight:600;outline:none;">
-    </div>
-    <div class="db-table-wrap">
-      <table class="db-table">
-        <thead><tr>
-          <th>Nombre</th><th>Fecha Nac.</th><th>CFT</th><th>Temperamento</th>
-          <th>Autoconf.</th><th>C. Emocional</th><th>Concentración</th><th>Motivación</th>
-        </tr></thead>
-        <tbody id="db-tbody"><tr><td colspan="8" class="db-empty">Cargando…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="query-box">
-      <div class="query-box-title">🤖 Consultá tu base de datos</div>
-      <div class="query-box-sub">Hacé preguntas en lenguaje natural sobre los perfiles guardados</div>
-      <div class="query-examples">
-        <button class="query-example" onclick="setQuery(this.textContent)">¿Cuál es el temperamento más frecuente?</button>
-        <button class="query-example" onclick="setQuery(this.textContent)">¿Qué habilidad Loehr tiene menor promedio?</button>
-        <button class="query-example" onclick="setQuery(this.textContent)">¿Cuál es el nivel promedio de ansiedad estado?</button>
-        <button class="query-example" onclick="setQuery(this.textContent)">Comparar Sub-15 Masculino vs Femenino en concentración</button>
-        <button class="query-example" onclick="setQuery(this.textContent)">¿Qué jugadores necesitan atención especial en control emocional?</button>
-      </div>
-      <div class="query-input-row">
-        <input type="text" class="query-input" id="query-input" placeholder="Escribí tu pregunta aquí…" onkeydown="if(event.key==='Enter')consultarIA()">
-        <button class="btn-query" id="btn-query" onclick="consultarIA()">Consultar</button>
-      </div>
-      <div class="query-response hidden" id="query-response">
-        <div class="query-response-lbl" style="display:flex;justify-content:space-between;align-items:center;">Respuesta<button class="btn-ai-report hidden" id="btn-ai-report" onclick="generarReporteIA()">📄 Generar reporte PDF</button></div>
-        <div class="query-response-text" id="query-response-text"></div>
-      </div>
-    </div>
-  </div>
-
-</div>
+<div id="aviso"></div>
 
 <script>
-const{createClient}=supabase;
-// La clave anon es pública por diseño: la protección real la dan Supabase Auth + las políticas RLS (ver supabase/seguridad.sql).
-// La sesión vive en sessionStorage, así se cierra al cerrar la pestaña.
-const sb=createClient('https://esbmtenfcjbrrocrnfep.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',{auth:{storage:window.sessionStorage}});
-
-const SCALES={
-  AC:{label:"Autoconfianza",color:"#1565C0",items:[1,8,15,22,29,36]},
-  EN:{label:"Energía Negativa",color:"#c62828",items:[2,9,16,23,30,37]},
-  CAT:{label:"Control Atencional",color:"#2e7d32",items:[3,10,17,24,31,38]},
-  CVI:{label:"Control Visualización",color:"#6a1b9a",items:[4,11,18,25,32,39]},
-  NM:{label:"Nivel Motivacional",color:"#e65100",items:[5,12,19,26,33,40]},
-  EP:{label:"Energía Positiva",color:"#00838f",items:[6,13,20,27,34,41]},
-  ACT:{label:"Control de Actitudes",color:"#f9a825",items:[7,14,21,28,35,42]},
-};
-const COMPOSITES=[
-  {label:"Autoconfianza",max:30,scales:["AC"],desc:"Pronóstico de éxito competitivo"},
-  {label:"Control Emocional",max:60,scales:["EP","EN"],desc:"Energía positiva + control negativo"},
-  {label:"Concentración",max:60,scales:["CAT","CVI"],desc:"Atención + visualización"},
-  {label:"Motivación",max:30,scales:["NM"],desc:"Nivel motivacional"},
+const TEMAS = [
+  { v:'auto',  lbl:'Automático' },
+  { v:'light', lbl:'Claro' },
+  { v:'dark',  lbl:'Oscuro' }
 ];
-const TEMP_SUBS={"Sanguíneo":"Extrovertido · Estable","Colérico":"Extrovertido · Inestable","Flemático":"Introvertido · Estable","Melancólico":"Introvertido · Inestable"};
-const TEMP_DEFS={
-  "Sanguíneo":"Sistema nervioso rápido y equilibrado. Extrovertido, adaptable y comunicativo. Eleva el espíritu del equipo de forma natural. Responde bien al refuerzo positivo y a objetivos de corto plazo.",
-  "Colérico":"Líder apasionado con alta competitividad y determinación. Toma decisiones rápidas. Puede reaccionar impulsivamente bajo presión. Se beneficia del trabajo en regulación emocional.",
-  "Flemático":"Constante, fiable y calmado bajo presión. Mantiene rendimiento estable en situaciones de alta demanda. Puede requerir estímulo externo para tomar iniciativa.",
-  "Melancólico":"Perfeccionista y analítico. Procesa el error con profundidad. Se beneficia de trabajo en gestión del error y construcción progresiva de la autoconfianza.",
+function temaGuardado(){
+  try { return localStorage.getItem('tds-tema') || 'auto'; } catch(e) { return 'auto'; }
+}
+function aplicarTema(v){
+  if (v === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+  try { localStorage.setItem('tds-tema', v); } catch(e) {}
+  const b = document.getElementById('btn-tema');
+  if (b) {
+    const t = TEMAS.find(x => x.v === v);
+    b.textContent = (v === 'dark' ? '🌙 ' : v === 'light' ? '☀️ ' : '🖥️ ') + t.lbl;
+  }
+}
+function rotarTema(){
+  const i = TEMAS.findIndex(x => x.v === temaGuardado());
+  aplicarTema(TEMAS[(i + 1) % TEMAS.length].v);
+}
+aplicarTema(temaGuardado());
+
+const { createClient } = supabase;
+const sb = createClient(
+  'https://esbmtenfcjbrrocrnfep.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  { auth: { storage: window.sessionStorage } }
+);
+const DOMINIO = 'tds.example.com';
+
+const ESCALAS = [
+  ['AC','Autoconfianza',          [1,8,15,22,29,36]],
+  ['EN','Energía Negativa',       [2,9,16,23,30,37]],
+  ['CAT','Control Atencional',    [3,10,17,24,31,38]],
+  ['CVI','Control Visualización', [4,11,18,25,32,39]],
+  ['NM','Nivel Motivacional',     [5,12,19,26,33,40]],
+  ['EP','Energía Positiva',       [6,13,20,27,34,41]],
+  ['ACT','Control de Actitudes',  [7,14,21,28,35,42]]
+];
+const TEMPERAMENTOS = {
+  'Sanguíneo':'Sistema nervioso rápido y equilibrado. Extrovertido, adaptable y comunicativo. Eleva el espíritu del equipo de forma natural. Responde bien al refuerzo positivo y a objetivos de corto plazo.',
+  'Colérico':'Líder apasionado con alta competitividad y determinación. Toma decisiones rápidas. Puede reaccionar impulsivamente bajo presión. Se beneficia del trabajo en regulación emocional.',
+  'Flemático':'Constante, fiable y calmado bajo presión. Mantiene rendimiento estable en situaciones de alta demanda. Puede requerir estímulo externo para tomar iniciativa.',
+  'Melancólico':'Perfeccionista y analítico. Procesa el error con profundidad. Se beneficia de trabajo en gestión del error y construcción progresiva de la autoconfianza.'
 };
-const answers=new Array(43).fill(0);
-let perfilesBD=[];
-let perfilGuardado=false;
-let editandoId=null;
+const PRUEBAS = [
+  { k:'ci',           lbl:'Coeficiente intelectual' },
+  { k:'temperamento', lbl:'Temperamento' },
+  { k:'ansiedad',     lbl:'Ansiedad' },
+  { k:'loehr',        lbl:'Inventario Loehr' }
+];
 
-// AUTH
-// Se entra con un usuario simple (ej. "practicante1"). Supabase pide un correo, así que el usuario
-// se convierte en "practicante1@tds.example.com". Esos correos no existen ni reciben nada: las cuentas
-// se crean a mano en Supabase con "Auto confirm". Si se escribe un correo completo, se usa tal cual.
-const DOMINIO_USUARIOS='tds.example.com';
-function usuarioAEmail(u){
-  u=(u||'').trim().toLowerCase();
-  if(!u)return '';
-  return u.indexOf('@')!==-1?u:u+'@'+DOMINIO_USUARIOS;
-}
-async function verificarPassword(){
-  const email=usuarioAEmail(document.getElementById('auth-email').value);
-  const inp=document.getElementById('auth-input').value;
-  const errEl=document.getElementById('auth-error');
-  errEl.style.display='none';
-  if(!email||!inp){
-    errEl.textContent='Ingresá tu usuario y contraseña.';
-    errEl.style.display='block';
-    return;
-  }
-  try{
-    const{error}=await sb.auth.signInWithPassword({email:email,password:inp});
-    if(!error){
-      marcarSesionActiva();
-      document.getElementById('auth-overlay').style.display='none';
-      hookAutosave();
-      iniciarControlInactividad();
-      restoreDraft();
-      cargarPerfiles();
-    } else if(error.status===400){
-      errEl.textContent='Usuario o contraseña incorrectos. Intentá de nuevo.';
-      errEl.style.display='block';
-      document.getElementById('auth-input').value='';
-    } else {
-      throw error;
-    }
-  } catch(e){
-    errEl.textContent='Error de conexión. Intentá de nuevo.';
-    errEl.style.display='block';
-  }
-}
+let ATLETAS = [], ATLETA = null, ACTIVAS = { ci:false, temperamento:false, ansiedad:false, loehr:false };
+let marcada = -1, sugeridos = [];
 
-// HELPERS
-function getLevel(score,max){
-  const p=score/max;
-  if(p>=26/30)return{label:"HABILIDAD EXCELENTE",bg:"#e8f5e9",text:"#1b5e20",border:"#2e7d32"};
-  if(p>=20/30)return{label:"MEJORAR Y PERFECCIONAR",bg:"#fff3e0",text:"#e65100",border:"#f57c00"};
-  return{label:"ATENCIÓN ESPECIAL",bg:"#ffebee",text:"#b71c1c",border:"#c62828"};
-}
-var CI_INVALIDA='PRUEBA INVÁLIDA';
-var INVALIDA=CI_INVALIDA;
-function ciDiag(v){
-  if(v>=130)return{label:"MUY SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
-  if(v>=120)return{label:"SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
-  if(v>=110)return{label:"ALTO",bg:"#e8f5e9",color:"#1b5e20"};
-  if(v>=90)return{label:"NORMAL",bg:"#e3f2fd",color:"#1565C0"};
-  if(v>=80)return{label:"NORMAL BAJO",bg:"#fff3e0",color:"#e65100"};
-  return{label:"BAJO",bg:"#ffebee",color:"#b71c1c"};
-}
-function anxLevel(v){
-  if(v<=29)return{label:"BAJO",bg:"#e8f5e9",color:"#1b5e20"};
-  if(v<=44)return{label:"MEDIO",bg:"#e3f2fd",color:"#1565C0"};
-  return{label:"ALTO",bg:"#ffebee",color:"#b71c1c"};
-}
-function calcAge(dob,app){
-  if(!dob)return null;
-  function parseLocal(s){
-    if(!s){var n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
-    var parts=s.substring(0,10).split('-').map(Number);
-    return new Date(parts[0],parts[1]-1,parts[2]);
+// ── Utilidades ───────────────────────────────────────────────────────────
+function g(id){ return document.getElementById(id); }
+function val(id){ const n = g(id); if (!n) return null; const v = n.value.trim(); return v === '' ? null : v; }
+function num(id){ const v = val(id); if (v == null) return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
+function el(tag, props, hijos){
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'txt') n.textContent = props[k];
+    else if (k === 'style') n.setAttribute('style', props[k]);
+    else if (k.startsWith('on')) n.addEventListener(k.substring(2), props[k]);
+    else n.setAttribute(k, props[k]);
   }
-  var base=parseLocal(app||null),birth=parseLocal(dob);
-  var age=base.getFullYear()-birth.getFullYear();
-  var m=base.getMonth()-birth.getMonth();
-  if(m<0||(m===0&&base.getDate()<birth.getDate()))age--;
-  if(age<0||age>100)return null;
-  return age;
+  (hijos || []).forEach(h => h && n.appendChild(h));
+  return n;
 }
-// Fecha de hoy en hora local (YYYY-MM-DD). toISOString() usa UTC y en Honduras (UTC-6) da el día siguiente después de las 6 p. m.
+// La fecha de hoy en hora local: con UTC, después de las 6 de la tarde en
+// Honduras la aplicación quedaría fechada al día siguiente.
 function hoyLocal(){
-  var d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-function formatDate(val){
-  if(!val)return'—';
-  const parts=val.substring(0,10).split('-');
-  const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return parseInt(parts[2])+' '+months[parseInt(parts[1])-1]+' '+parts[0];
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso){
+  if (!iso) return '—';
+  const p = iso.substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES[parseInt(p[1],10)-1] + ' ' + p[0];
 }
-function applyTag(el,d){el.textContent=d.label;el.style.background=d.bg;el.style.color=d.color;}
-function toast(msg,type){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.className='toast '+(type||'')+' show';
-  setTimeout(function(){t.className='toast';},3200);
+function edadEntre(nacimiento, hasta){
+  if (!nacimiento) return null;
+  const n = nacimiento.substring(0,10).split('-').map(Number);
+  const h = (hasta || hoyLocal()).substring(0,10).split('-').map(Number);
+  let e = h[0] - n[0];
+  if (h[1] < n[1] || (h[1] === n[1] && h[2] < n[2])) e--;
+  return (e >= 0 && e <= 100) ? e : null;
 }
-function scoreColor30(v){if(v==null)return'#aaa';if(v>=26)return'#2e7d32';if(v>=20)return'#e65100';return'#b71c1c';}
-function lv60color(v){if(v==null)return'#aaa';if(v>=50)return'#2e7d32';if(v>=40)return'#e65100';return'#b71c1c';}
+function avisar(texto, mal){
+  const a = g('aviso');
+  a.textContent = texto;
+  a.className = 'ver' + (mal ? ' mal' : '');
+  clearTimeout(avisar.t);
+  avisar.t = setTimeout(() => { a.className = ''; }, mal ? 5000 : 2500);
+}
+function nivelCI(v){
+  if (v >= 130) return 'MUY SUPERIOR'; if (v >= 120) return 'SUPERIOR';
+  if (v >= 110) return 'ALTO';         if (v >= 90)  return 'NORMAL';
+  if (v >= 80)  return 'NORMAL BAJO';  return 'BAJO';
+}
+function nivelAnsiedad(v){ return v <= 29 ? 'BAJO' : v <= 44 ? 'MEDIO' : 'ALTO'; }
 
-// FORM
-function updateAge(){
-  var dob=document.getElementById('inp-dob').value;
-  var age=calcAge(dob,null);
-  if(age!==null)document.getElementById('edad-calc').value=age;
-}
-function toggleOther(){
-  document.getElementById('inp-cat-other').classList.toggle('visible',document.getElementById('inp-cat').value==='__otro__');
-}
-function updateCiBadge(){
-  const v=parseInt(document.getElementById('inp-ci').value),b=document.getElementById('ci-badge');
-  if(document.getElementById('ci-invalida').checked){
-    b.style.display='inline-block';b.textContent=INVALIDA;
-    b.style.background='#ffebee';b.style.color='#b71c1c';return;
-  }
-  if(isNaN(v)){b.style.display='none';return;}
-  const d=ciDiag(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
-}
-function updateAnxBadge(id){
-  const v=parseInt(document.getElementById('inp-'+id).value),b=document.getElementById(id+'-badge');
-  var inv=document.getElementById('anx-invalida');
-  if(inv&&inv.checked){
-    b.style.display='inline-block';b.textContent=INVALIDA;
-    b.style.background='#ffebee';b.style.color='#b71c1c';return;
-  }
-  if(isNaN(v)){b.style.display='none';return;}
-  const d=anxLevel(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
-}
-function fillTempDesc(){
-  var key=document.getElementById('inp-temp').value;
-  if(document.getElementById('temp-invalida').checked){
-    document.getElementById('inp-temp-desc').value='';return;
-  }
-  if(!key)return;
-  var ta=document.getElementById('inp-temp-desc');
-  var isDefault=Object.values(TEMP_DEFS).some(function(d){return d===ta.value;});
-  if(!ta.value||isDefault)ta.value=TEMP_DEFS[key]||'';
+// ── Acceso ───────────────────────────────────────────────────────────────
+async function entrar(){
+  const u = (g('usuario').value || '').trim().toLowerCase();
+  const c = g('clave').value;
+  const err = g('acceso-error');
+  err.style.display = 'none';
+  if (!u || !c) { err.textContent = 'Ingresá tu usuario y contraseña.'; err.style.display = 'block'; return; }
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: u.includes('@') ? u : u + '@' + DOMINIO, password: c });
+    if (!error) { sessionStorage.setItem('tds-auth','ok'); sessionStorage.setItem('tds-auth-time', Date.now()); arrancar(); return; }
+    if (error.status === 400) { err.textContent = 'Usuario o contraseña incorrectos.'; g('clave').value = ''; }
+    else throw error;
+  } catch(e) { err.textContent = 'Error de conexión. Intentá de nuevo.'; }
+  err.style.display = 'block';
 }
 
-// RE-EVAL
-function poblarDropdownJugadores(perfiles){
-  // Replaced by search — no-op
+// ── Arranque ─────────────────────────────────────────────────────────────
+async function arrancar(){
+  g('acceso').style.display = 'none';
+  g('s-fecha').value = hoyLocal();
+  pintarSelector();
+  const r = await sb.from('atletas').select('*').order('nombre');
+  ATLETAS = (r && r.data) || [];
+  llenarSugerencias();
+  engancharAutoguardado();
+  ofrecerBorrador();
 }
 
-function evaluacionesDe(nombre){
-  return perfilesBD
-    .filter(function(p){return (p.nombre||'').trim().toLowerCase()===(nombre||'').trim().toLowerCase();})
-    .sort(function(a,b){
-      var da=a.fecha_aplicacion||a.created_at||'';
-      var db=b.fecha_aplicacion||b.created_at||'';
-      return da.localeCompare(db);
+function llenarSugerencias(){
+  const campos = { 'lista-deportes':'deporte', 'lista-organizaciones':'organizacion',
+                   'lista-categorias':'categoria', 'lista-centros':'centro' };
+  Object.keys(campos).forEach(idLista => {
+    const dl = g(idLista);
+    dl.textContent = '';
+    [...new Set(ATLETAS.map(a => a[campos[idLista]]).filter(Boolean))].sort()
+      .forEach(v => dl.appendChild(el('option',{value:v})));
+  });
+}
+
+// ── Buscador de atleta ───────────────────────────────────────────────────
+function buscarAtletas(){
+  const q = g('buscar-atleta').value.trim().toLowerCase();
+  const caja = g('sugerencias');
+  marcada = -1;
+  if (q.length < 2) { caja.style.display = 'none'; return; }
+  sugeridos = ATLETAS.filter(a => (a.nombre || '').toLowerCase().includes(q)).slice(0, 8);
+  caja.textContent = '';
+  if (!sugeridos.length) { caja.style.display = 'none'; return; }
+  sugeridos.forEach((a, i) => {
+    caja.appendChild(el('button',{class:'sug',type:'button',onclick:() => elegirAtleta(a)},[
+      el('div',{class:'sug-nom',txt:a.nombre}),
+      el('div',{class:'sug-sub',txt:[a.categoria, a.centro, a.organizacion].filter(Boolean).join(' · ') || 'sin datos'})
+    ]));
+  });
+  caja.style.display = 'block';
+}
+function teclaBusqueda(e){
+  const caja = g('sugerencias');
+  if (caja.style.display !== 'block') return;
+  const botones = caja.querySelectorAll('.sug');
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    marcada += (e.key === 'ArrowDown' ? 1 : -1);
+    if (marcada < 0) marcada = botones.length - 1;
+    if (marcada >= botones.length) marcada = 0;
+    botones.forEach((b,i) => b.classList.toggle('marcada', i === marcada));
+  } else if (e.key === 'Enter' && marcada >= 0) {
+    e.preventDefault();
+    elegirAtleta(sugeridos[marcada]);
+  } else if (e.key === 'Escape') caja.style.display = 'none';
+}
+document.addEventListener('click', e => {
+  const caja = g('sugerencias');
+  if (caja && !caja.contains(e.target) && e.target !== g('buscar-atleta')) caja.style.display = 'none';
+});
+
+function elegirAtleta(a){
+  ATLETA = a;
+  g('sugerencias').style.display = 'none';
+  g('caja-buscador').style.display = 'none';
+  g('chip-atleta').style.display = 'flex';
+  g('chip-nom').textContent = a.nombre;
+  g('chip-sub').textContent = [a.categoria, a.centro, a.organizacion].filter(Boolean).join(' · ') || 'sin datos cargados';
+  g('ayuda-atleta').textContent = 'Los datos del atleta se pueden corregir acá; se guardan en su ficha.';
+  ['sexo','nacimiento','deporte','organizacion','categoria','centro','posicion'].forEach(k => {
+    const campo = { sexo:'sexo', nacimiento:'fecha_nacimiento', deporte:'deporte',
+                    organizacion:'organizacion', categoria:'categoria', centro:'centro', posicion:'posicion' }[k];
+    g('a-' + k).value = a[campo] == null ? '' : a[campo];
+  });
+  calcularEdad();
+  avisar('Atleta cargado: ' + a.nombre);
+  autoguardar();
+}
+function soltarAtleta(){
+  ATLETA = null;
+  g('chip-atleta').style.display = 'none';
+  g('caja-buscador').style.display = 'block';
+  g('buscar-atleta').value = '';
+  g('ayuda-atleta').textContent = 'Escribí el nombre. Si ya está en el sistema aparece en la lista y se cargan sus datos; si no, se crea uno nuevo.';
+  ['sexo','nacimiento','edad','deporte','organizacion','categoria','centro','posicion'].forEach(k => { g('a-' + k).value = ''; });
+  g('buscar-atleta').focus();
+}
+function calcularEdad(){
+  const e = edadEntre(val('a-nacimiento'), val('s-fecha'));
+  if (e != null) g('a-edad').value = e;
+}
+
+// ── Selector de pruebas ──────────────────────────────────────────────────
+function pintarSelector(){
+  const cont = g('selector-pruebas');
+  cont.textContent = '';
+  PRUEBAS.forEach(p => {
+    const c = el('input',{type:'checkbox'});
+    c.checked = !!ACTIVAS[p.k];
+    const chip = el('label',{class:'prueba-chip' + (c.checked ? ' on' : '')},[ c, document.createTextNode(p.lbl) ]);
+    c.addEventListener('change', () => {
+      ACTIVAS[p.k] = c.checked;
+      chip.classList.toggle('on', c.checked);
+      pintarSecciones();
+      autoguardar();
     });
-}
-
-function buscarJugadores(){
-  var q=document.getElementById('inp-buscar-jugador').value.trim().toLowerCase();
-  var lista=document.getElementById('lista-jugadores');
-  if(!q){lista.style.display='none';return;}
-  var nombres={};
-  perfilesBD.forEach(function(p){
-    if(!p.nombre)return;
-    var key=p.nombre.trim();
-    if(!nombres[key])nombres[key]={nombre:key,count:0,cft:p.cft,cat:p.categoria};
-    nombres[key].count++;
+    cont.appendChild(chip);
   });
-  var matches=Object.keys(nombres).map(function(k){return nombres[k];})
-    .filter(function(n){return n.nombre.toLowerCase().indexOf(q)!==-1;})
-    .sort(function(a,b){return a.nombre.localeCompare(b.nombre,'es');})
-    .slice(0,8);
-  if(matches.length===0){
-    lista.innerHTML='<div style="padding:16px 18px;color:var(--muted);font-size:17px;font-weight:600;">Sin resultados — se creara un perfil nuevo</div>';
-    lista.style.display='block';
-    return;
+  pintarSecciones();
+}
+
+function tarjetaPrueba(k, titulo, ayuda, cuerpo){
+  const inv = el('input',{type:'checkbox',id:'inv-' + k, onchange:() => { refrescarContador(); autoguardar(); }});
+  return el('div',{class:'tarjeta',id:'tarjeta-' + k},[
+    el('div',{class:'tarjeta-cab'},[ el('h2',{txt:titulo}), k === 'loehr' ? el('div',{class:'contador',id:'contador'}) : null ]),
+    ayuda ? el('div',{class:'ayuda',txt:ayuda}) : null,
+    cuerpo,
+    el('label',{class:'invalida'},[ inv, document.createTextNode('Prueba inválida (no se guardan los puntajes)') ]),
+    el('div',{class:'campo-caja',style:'margin-top:14px'},[
+      el('label',{for:'interp-' + k, txt: k === 'temperamento' ? 'Descripción' : 'Interpretación'}),
+      el('textarea',{id:'interp-' + k, placeholder: k === 'temperamento'
+        ? 'Cómo se expresa su temperamento en el rendimiento deportivo…'
+        : 'Interpretación de los resultados…'})
+    ])
+  ]);
+}
+
+function pintarSecciones(){
+  const guardado = recogerPruebas();        // no perder lo escrito al marcar otra
+  const cont = g('secciones-pruebas');
+  cont.textContent = '';
+
+  if (ACTIVAS.ci) cont.appendChild(tarjetaPrueba('ci','Coeficiente intelectual', null,
+    el('div',{class:'grilla'},[
+      el('div',{class:'campo-caja'},[ el('label',{for:'ci-valor',txt:'Puntuación'}),
+        el('input',{type:'number',id:'ci-valor',min:'0',max:'200',placeholder:'Ej. 90'}) ])
+    ])));
+
+  if (ACTIVAS.temperamento) {
+    const sel = el('select',{id:'temp-valor', onchange:() => {
+      const t = sel.value, ta = g('interp-temperamento');
+      if (t && ta && (!ta.value.trim() || Object.values(TEMPERAMENTOS).includes(ta.value.trim())))
+        ta.value = TEMPERAMENTOS[t] || '';
+      autoguardar();
+    }});
+    sel.appendChild(el('option',{value:'',txt:'— Seleccionar —'}));
+    Object.keys(TEMPERAMENTOS).forEach(t => sel.appendChild(el('option',{value:t,txt:t})));
+    cont.appendChild(tarjetaPrueba('temperamento','Temperamento · Eysenck', null,
+      el('div',{class:'grilla'},[ el('div',{class:'campo-caja'},[ el('label',{for:'temp-valor',txt:'Tipo'}), sel ]) ])));
   }
-  lista.innerHTML=matches.map(function(m){
-    return '<div data-nombre="'+escHtml(m.nombre)+'" onclick="seleccionarJugador(this.dataset.nombre)" '+
-      'style="padding:14px 18px;cursor:pointer;border-bottom:1px solid #eef1f7;display:flex;justify-content:space-between;align-items:center;gap:12px;" '+
-      'onmouseover="this.style.background=\'#f4f6fb\'" onmouseout="this.style.background=\'#fff\'">'+
-      '<div><div style="font-size:19px;font-weight:800;color:#1a2340;">'+escHtml(m.nombre)+'</div>'+
-      '<div style="font-size:15px;color:#6b7a99;font-weight:600;">'+escHtml(m.cft||'-')+' - '+escHtml(m.cat||'-')+'</div></div>'+
-      '<span style="background:#e8f0fe;color:#1565C0;font-size:14px;font-weight:800;padding:5px 12px;border-radius:14px;white-space:nowrap;">'+
-      m.count+' eval'+(m.count!==1?'s':'')+'</span></div>';
-  }).join('');
-  lista.style.display='block';
+
+  if (ACTIVAS.ansiedad) cont.appendChild(tarjetaPrueba('ansiedad','Ansiedad · Spielberger',
+    'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.',
+    el('div',{class:'grilla'},[
+      el('div',{class:'campo-caja'},[ el('label',{for:'anx-estado',txt:'Ansiedad estado'}),
+        el('input',{type:'number',id:'anx-estado',min:'20',max:'80',placeholder:'20 – 80'}) ]),
+      el('div',{class:'campo-caja'},[ el('label',{for:'anx-rasgo',txt:'Ansiedad rasgo'}),
+        el('input',{type:'number',id:'anx-rasgo',min:'20',max:'80',placeholder:'20 – 80'}) ])
+    ])));
+
+  if (ACTIVAS.loehr) cont.appendChild(tarjetaPrueba('loehr','Inventario Loehr',
+    'Cargá los 42 ítems y las sumas se calculan solas, o escribí directamente las siete sumas.',
+    cuerpoLoehr()));
+
+  if (guardado) restaurarPruebas(guardado);
+  refrescarContador();
 }
 
-function seleccionarJugador(nombre){
-  document.getElementById('inp-buscar-jugador').value=nombre;
-  document.getElementById('lista-jugadores').style.display='none';
-  cargarDatosFijos(nombre);
-}
-
-function limpiarBusquedaJugador(){
-  document.getElementById('inp-buscar-jugador').value='';
-  document.getElementById('lista-jugadores').style.display='none';
-  resetAll();
-}
-
-document.addEventListener('click',function(e){
-  var lista=document.getElementById('lista-jugadores');
-  var input=document.getElementById('inp-buscar-jugador');
-  if(lista&&input&&!lista.contains(e.target)&&e.target!==input){
-    lista.style.display='none';
+function cuerpoLoehr(){
+  const caja = el('div');
+  const cab = el('div',{class:'loehr-cab'});
+  ESCALAS.forEach(([k,nombre]) => cab.appendChild(el('div',{class:'loehr-col',txt:nombre})));
+  caja.appendChild(cab);
+  for (let fila = 0; fila < 6; fila++) {
+    const f = el('div',{class:'loehr-fila'});
+    ESCALAS.forEach(([k,nombre,items]) => {
+      const item = items[fila];
+      const inp = el('input',{type:'number',min:'1',max:'5',id:'item-' + item,
+        inputmode:'numeric','aria-label':nombre + ', ítem ' + item});
+      const celda = el('div',{class:'celda',id:'celda-' + item},[ el('span',{class:'num',txt:String(item)}), inp ]);
+      inp.addEventListener('input', () => { sumarEscalas(); refrescarContador(); autoguardar(); });
+      f.appendChild(celda);
+    });
+    caja.appendChild(f);
   }
-});
-
-function cargarDatosFijos(nombreParam){
-  var nombre=nombreParam||document.getElementById('inp-buscar-jugador').value.trim();
-  if(!nombre)return;
-  var evals=evaluacionesDe(nombre);
-  if(evals.length===0)return;
-  // Use the LATEST evaluation as base
-  var rec=evals[evals.length-1];
-  document.getElementById('inp-name').value=rec.nombre||'';
-  var opts=[];
-  var catOpts=document.getElementById('inp-cat').options;
-  for(var i=0;i<catOpts.length;i++)opts.push(catOpts[i].value);
-  if(rec.categoria&&opts.indexOf(rec.categoria)!==-1){
-    document.getElementById('inp-cat').value=rec.categoria;
-    document.getElementById('inp-cat-other').classList.remove('visible');
-  } else if(rec.categoria){
-    document.getElementById('inp-cat').value='__otro__';
-    document.getElementById('inp-cat-other').value=rec.categoria;
-    document.getElementById('inp-cat-other').classList.add('visible');
-  }
-  if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
-  if(rec.fecha_nacimiento)document.getElementById('inp-dob').value=rec.fecha_nacimiento;
-  if(rec.edad)document.getElementById('edad-calc').value=rec.edad;
-  document.getElementById('ci-invalida').checked=rec.ci_diagnostico===CI_INVALIDA;
-  if(rec.ci){document.getElementById('inp-ci').value=rec.ci;updateCiBadge();}
-  if(rec.temperamento)document.getElementById('inp-temp').value=rec.temperamento;
-  if(rec.temperamento_resumen)document.getElementById('inp-temp-desc').value=rec.temperamento_resumen;
-  if(rec.ansiedad_rasgo){document.getElementById('inp-ar').value=rec.ansiedad_rasgo;updateAnxBadge('ar');}
-  // Set today's date for the new evaluation
-  document.getElementById('inp-date').value=hoyLocal();
-  updateAge();
-  var info=document.getElementById('reeval-info');
-  if(info)info.innerHTML='<strong style="color:var(--blue);">Evaluacion #'+(evals.length+1)+'</strong> de '+rec.nombre+
-    ' - Datos fijos precargados desde la evaluacion #'+evals.length+' ('+fmtFecha(rec.fecha_aplicacion)+')';
-  toast('Datos de '+nombre+' cargados - sera la evaluacion #'+(evals.length+1),'success');
-}
-
-function fmtFecha(v){
-  if(!v)return'-';
-  var p=v.substring(0,10).split('-');
-  var m=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return parseInt(p[2])+' '+m[parseInt(p[1])-1]+' '+p[0];
-}
-
-// LOEHR GRID
-var headersEl=document.getElementById('scale-headers');
-var gridEl=document.getElementById('items-grid');
-var sumsEl=document.getElementById('sums-row');
-Object.entries(SCALES).forEach(function(entry){
-  var key=entry[0],sc=entry[1];
-  var d=document.createElement('div');
-  d.className='scale-head';d.style.color=sc.color;d.style.borderBottom='2px solid '+sc.color;d.textContent=key;
-  headersEl.appendChild(d);
-});
-for(var row=0;row<6;row++){
-  var rowEl=document.createElement('div');rowEl.className='items-row';
-  Object.entries(SCALES).forEach(function(entry){
-    var key=entry[0],sc=entry[1];
-    var item=sc.items[row];
-    var cell=document.createElement('div');
-    cell.className='item-cell';cell.style.setProperty('--scale-color',sc.color);cell.id='cell-'+item;
-    cell.innerHTML='<span class="item-num">'+item+'</span><input type="number" min="1" max="5" id="inp-'+item+'" placeholder="-">';
-    rowEl.appendChild(cell);
-    (function(i){cell.querySelector('input').addEventListener('input',function(e){onAnswer(i,e.target.value);});})(item);
+  const sumas = el('div',{class:'sumas'});
+  ESCALAS.forEach(([k,nombre]) => {
+    const inp = el('input',{type:'number',min:'6',max:'30',id:'suma-' + k,placeholder:'0','aria-label':'Suma de ' + nombre});
+    inp.addEventListener('input', () => { refrescarContador(); autoguardar(); });
+    sumas.appendChild(el('div',{class:'suma'},[ el('label',{txt:k}), inp, el('small',{txt:'/ 30'}) ]));
   });
-  gridEl.appendChild(rowEl);
+  caja.appendChild(sumas);
+  return caja;
 }
-Object.entries(SCALES).forEach(function(entry){
-  var key=entry[0],sc=entry[1];
-  var d=document.createElement('div');d.className='sum-cell';d.style.setProperty('--scale-color',sc.color);
-  d.innerHTML='<div class="sum-label">SUMA</div><input type="number" class="sum-value" id="sumval-'+key+'" min="0" max="30" placeholder="0" oninput="onSumInput()"><div class="sum-max">/30</div>';
-  sumsEl.appendChild(d);
-});
-document.getElementById('inp-date').value=hoyLocal();
 
-function scaleScore(key){return parseInt(document.getElementById('sumval-'+key).value)||0;}
-// Cada escala tiene 6 ítems de 1 a 5, así que una suma válida va de 6 a 30.
-var SUMA_MIN=6,SUMA_MAX=30;
-function sumaValida(k){
-  var v=Number(document.getElementById('sumval-'+k).value);
-  return Number.isInteger(v)&&v>=SUMA_MIN&&v<=SUMA_MAX;
+function sumarEscalas(){
+  ESCALAS.forEach(([k,nombre,items]) => {
+    const usados = items.filter(i => Number(g('item-' + i).value) > 0);
+    const suma = items.reduce((s,i) => s + (Number(g('item-' + i).value) || 0), 0);
+    const campo = g('suma-' + k);
+    if (usados.length) { campo.value = suma; campo.dataset.auto = '1'; }
+    else if (campo.dataset.auto === '1') { campo.value = ''; delete campo.dataset.auto; }
+    items.forEach(i => {
+      const v = Number(g('item-' + i).value);
+      g('celda-' + i).classList.toggle('ok', v >= 1 && v <= 5);
+    });
+  });
 }
-function allSumsManual(){
-  return Object.keys(SCALES).every(sumaValida);
+function itemsCargados(){
+  if (!ACTIVAS.loehr) return 0;
+  let n = 0;
+  ESCALAS.forEach(([k,nombre,items]) => items.forEach(i => {
+    const v = Number(g('item-' + i).value); if (v >= 1 && v <= 5) n++;
+  }));
+  return n;
 }
-function itemsCompletos(){
-  return answers.slice(1).filter(function(v){return v>0;}).length;
+function sumasCompletas(){
+  return ESCALAS.every(([k]) => { const v = Number(g('suma-' + k).value); return Number.isInteger(v) && v >= 6 && v <= 30; });
 }
-// El perfil solo se puede generar con los 42 ítems completos, o sin ítems y con las 7 sumas ingresadas a mano.
-// Si hay ítems a medias, las sumas serían parciales.
 function loehrListo(){
-  var filled=itemsCompletos();
-  return filled===42||(filled===0&&allSumsManual());
+  if (!ACTIVAS.loehr) return true;
+  if (g('inv-loehr') && g('inv-loehr').checked) return true;
+  const n = itemsCargados();
+  return n === 42 || (n === 0 && sumasCompletas());
 }
-function onSumInput(){updateCounter();}
-function updateSums(){
-  Object.keys(SCALES).forEach(function(k){
-    var el=document.getElementById('sumval-'+k);
-    var usados=SCALES[k].items.filter(function(i){return answers[i]>0;}).length;
-    var fromItems=SCALES[k].items.reduce(function(s,i){return s+(answers[i]||0);},0);
-    if(usados>0){el.value=fromItems;el.dataset.auto='1';}
-    else if(el.dataset.auto==='1'){el.value='';delete el.dataset.auto;}
+function refrescarContador(){
+  const c = g('contador');
+  if (!c) return;
+  if (g('inv-loehr') && g('inv-loehr').checked) { c.textContent = 'Prueba inválida'; c.className = 'contador listo'; return; }
+  const n = itemsCargados();
+  if (n === 42) { c.textContent = '42 / 42'; c.className = 'contador listo'; }
+  else if (n === 0 && sumasCompletas()) { c.textContent = '✓ Sumas cargadas'; c.className = 'contador listo'; }
+  else { c.textContent = n + ' / 42'; c.className = 'contador'; }
+}
+
+// ── Recoger y restaurar lo cargado ───────────────────────────────────────
+function recogerPruebas(){
+  const d = { ci:{}, temperamento:{}, ansiedad:{}, loehr:{ items:{}, sumas:{} } };
+  let algo = false;
+  PRUEBAS.forEach(p => {
+    const inv = g('inv-' + p.k), interp = g('interp-' + p.k);
+    if (inv) { d[p.k].invalida = inv.checked; algo = true; }
+    if (interp) { d[p.k].interpretacion = interp.value; algo = true; }
   });
-}
-function onAnswer(item,val){
-  var n=parseInt(val),cell=document.getElementById('cell-'+item);
-  if(val===''||isNaN(n)||n<1||n>5){answers[item]=0;cell.classList.remove('filled');}
-  else{answers[item]=n;cell.classList.add('filled');}
-  updateSums();updateCounter();
-}
-function updateCounter(){
-  var invLoehr=document.getElementById('loehr-invalida');
-  if(invLoehr&&invLoehr.checked){
-    var c=document.getElementById('counter'),b=document.getElementById('btn-eval');
-    c.textContent='Prueba inválida';c.className='counter done';
-    b.disabled=false;b.className='btn-eval ready';
-    b.textContent=editandoId?'⚡ VER PERFIL':'⚡ VER PERFIL COMPLETO';
-    return;
+  if (g('ci-valor')) d.ci.valor = g('ci-valor').value;
+  if (g('temp-valor')) d.temperamento.valor = g('temp-valor').value;
+  if (g('anx-estado')) { d.ansiedad.estado = g('anx-estado').value; d.ansiedad.rasgo = g('anx-rasgo').value; }
+  if (g('suma-AC')) {
+    ESCALAS.forEach(([k,n,items]) => {
+      d.loehr.sumas[k] = g('suma-' + k).value;
+      items.forEach(i => { d.loehr.items[i] = g('item-' + i).value; });
+    });
   }
-  var filled=itemsCompletos();
-  var sumsOk=filled===0&&allSumsManual();
-  var ready=loehrListo();
-  var counter=document.getElementById('counter'),btn=document.getElementById('btn-eval');
-  if(filled===42){counter.textContent='42 / 42';counter.className='counter done';}
-  else if(sumsOk){counter.textContent='✓ Sumas ingresadas';counter.className='counter done';}
-  else{counter.textContent=filled+' / 42';counter.className='counter pending';}
-  if(ready){
-    btn.disabled=false;btn.className='btn-eval ready';
-    btn.textContent=editandoId?'⚡ VER PERFIL':'⚡ VER PERFIL COMPLETO';
-  } else {
-    btn.disabled=true;btn.className='btn-eval';
-    var algunaSuma=Object.keys(SCALES).some(function(k){return document.getElementById('sumval-'+k).value!=='';});
-    if(filled>0)btn.textContent='Faltan '+(42-filled)+' respuestas';
-    else if(algunaSuma)btn.textContent='Cada suma debe estar entre '+SUMA_MIN+' y '+SUMA_MAX;
-    else btn.textContent='Completá los ítems o ingresá las sumas';
-  }
+  return algo ? d : null;
 }
-document.getElementById('btn-eval').addEventListener('click',showResults);
-
-function calcNumEvaluacion(nombre,fechaAplicacion){
-  if(editandoId){
-    // Editing existing — find its actual position
-    var evals=evaluacionesDe(nombre);
-    for(var i=0;i<evals.length;i++){
-      if(evals[i].id===editandoId)return '#'+(i+1);
-    }
-  }
-  if(viendoId){
-    var evals2=evaluacionesDe(nombre);
-    for(var j=0;j<evals2.length;j++){
-      if(evals2[j].id===viendoId)return '#'+(j+1);
-    }
-  }
-  // New evaluation — count existing + 1
-  var existing=evaluacionesDe(nombre);
-  return '#'+(existing.length+1);
-}
-
-var viendoId=null;
-
-// SHOW RESULTS
-function showResults(){
-  var name=document.getElementById('inp-name').value||'Atleta';
-  var catSel=document.getElementById('inp-cat').value;
-  var cat=catSel==='__otro__'?(document.getElementById('inp-cat-other').value||'Otro'):catSel;
-  var cft=document.getElementById('inp-cft').value;
-  var dob=document.getElementById('inp-dob').value;
-  var date=document.getElementById('inp-date').value;
-  var edadManual=parseInt(document.getElementById('edad-calc').value);
-  var edadFallback=(!isNaN(edadManual)&&edadManual>0)?edadManual:null;
-  var ageEval=calcAge(dob,date)||edadFallback;
-  var ageActual=calcAge(dob,null)||edadFallback;
-  document.getElementById('results-title').textContent='Perfil · '+name+' · '+cat;
-  document.getElementById('pdf-header-info').innerHTML=
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Nombre</div><div class="pdf-chip-val">'+escHtml(name)+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Categoría</div><div class="pdf-chip-val">'+escHtml(cat)+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Centro de Formación</div><div class="pdf-chip-val">'+escHtml(cft)+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Aplicación</div><div class="pdf-chip-val">'+formatDate(date)+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Fecha de Nacimiento</div><div class="pdf-chip-val">'+(dob?formatDate(dob):'—')+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad al evaluar</div><div class="pdf-chip-val">'+(ageEval!==null?ageEval+' años':'—')+'</div></div>'+
-    '<div class="pdf-chip"><div class="pdf-chip-lbl">Edad actual</div><div class="pdf-chip-val">'+(ageActual!==null?ageActual+' años':'—')+'</div></div>'+
-    '<div class="pdf-chip" style="background:rgba(255,255,255,.22);"><div class="pdf-chip-lbl">N° de Evaluación</div><div class="pdf-chip-val">'+calcNumEvaluacion(name,date)+'</div></div>';
-  var ciInvalida=document.getElementById('ci-invalida')&&document.getElementById('ci-invalida').checked;
-  var ciVal=parseInt(document.getElementById('inp-ci').value);
-  if(ciInvalida){document.getElementById('pdf-ci').textContent='—';applyTag(document.getElementById('pdf-ci-tag'),{label:'PRUEBA INVÁLIDA',bg:'#ffebee',color:'#b71c1c'});}
-  else if(!isNaN(ciVal)){document.getElementById('pdf-ci').textContent=ciVal;applyTag(document.getElementById('pdf-ci-tag'),ciDiag(ciVal));}
-  else{document.getElementById('pdf-ci').textContent='—';document.getElementById('pdf-ci-tag').textContent='No aplicado';}
-  var tempInvalida=document.getElementById('temp-invalida')&&document.getElementById('temp-invalida').checked;
-  var tempKey=document.getElementById('inp-temp').value;
-  var tempDesc=document.getElementById('inp-temp-desc').value.trim();
-  if(tempInvalida||tempKey==='__invalida__'){document.getElementById('pdf-temp-name').textContent='PRUEBA INVÁLIDA';document.getElementById('pdf-temp-desc').textContent='—';}
-  else if(tempKey){
-    var sub=TEMP_SUBS[tempKey]||'';
-    document.getElementById('pdf-temp-name').innerHTML=tempKey+' <span style="font-size:13px;color:var(--muted);font-weight:600;">· '+sub+'</span>';
-    document.getElementById('pdf-temp-desc').textContent=tempDesc||'—';
-  } else {document.getElementById('pdf-temp-name').textContent='—';document.getElementById('pdf-temp-desc').textContent='—';}
-  document.getElementById('pdf-loehr-interp').textContent=document.getElementById('inp-loehr-interp').value.trim()||'';
-  var anxInv=document.getElementById('anx-invalida').checked;
-  var aeVal=anxInv?NaN:parseInt(document.getElementById('inp-ae').value);
-  var arVal=anxInv?NaN:parseInt(document.getElementById('inp-ar').value);
-  if(anxInv){
-    document.getElementById('pdf-ae').textContent='—';
-    applyTag(document.getElementById('pdf-ae-tag'),{label:INVALIDA,bg:'#ffebee',color:'#b71c1c'});
-    document.getElementById('pdf-ar').textContent='—';
-    applyTag(document.getElementById('pdf-ar-tag'),{label:INVALIDA,bg:'#ffebee',color:'#b71c1c'});
-  } else if(!isNaN(aeVal)){document.getElementById('pdf-ae').textContent=aeVal;applyTag(document.getElementById('pdf-ae-tag'),anxLevel(aeVal));}
-  else{document.getElementById('pdf-ae').textContent='—';document.getElementById('pdf-ae-tag').textContent='No aplicado';}
-  if(!isNaN(arVal)){document.getElementById('pdf-ar').textContent=arVal;applyTag(document.getElementById('pdf-ar-tag'),anxLevel(arVal));}
-  else{document.getElementById('pdf-ar').textContent='—';document.getElementById('pdf-ar-tag').textContent='No aplicado';}
-  document.getElementById('pdf-anx-desc').textContent=document.getElementById('inp-anx-desc').value.trim()||'—';
-  var compEl=document.getElementById('composites');compEl.innerHTML='';
-  COMPOSITES.forEach(function(c){
-    var score=c.scales.reduce(function(s,k){return s+scaleScore(k);},0);
-    var lv=getLevel(score,c.max),pct=(score/c.max)*100;
-    var div=document.createElement('div');div.className='pdf-comp';div.style.background=lv.bg;div.style.borderColor=lv.border;
-    div.innerHTML='<div class="pdf-comp-desc" style="color:'+lv.text+'">'+c.desc+'</div>'+
-      '<div class="pdf-comp-name">'+c.label+'</div>'+
-      '<div class="pdf-comp-score-row"><span class="pdf-comp-score" style="color:'+lv.text+'">'+score+'</span><span class="pdf-comp-max">/ '+c.max+'</span></div>'+
-      '<div class="pdf-comp-bar-bg"><div class="pdf-comp-bar" style="width:'+pct+'%;background:'+lv.border+'"></div></div>'+
-      '<div class="pdf-comp-level" style="color:'+lv.text+'">'+lv.label+'</div>';
-    compEl.appendChild(div);
+function restaurarPruebas(d){
+  PRUEBAS.forEach(p => {
+    const inv = g('inv-' + p.k), interp = g('interp-' + p.k);
+    if (inv && d[p.k]) inv.checked = !!d[p.k].invalida;
+    if (interp && d[p.k] && d[p.k].interpretacion) interp.value = d[p.k].interpretacion;
   });
-  var detEl=document.getElementById('scale-details');detEl.innerHTML='';
-  Object.entries(SCALES).forEach(function(entry){
-    var key=entry[0],sc=entry[1];
-    var score=scaleScore(key),lv=getLevel(score,30);
-    detEl.innerHTML+='<div class="pdf-scale-row">'+
-      '<div class="pdf-scale-key" style="color:'+sc.color+'">'+key+'</div>'+
-      '<div class="pdf-scale-name">'+sc.label+'</div>'+
-      '<div class="pdf-scale-bar-bg"><div class="pdf-scale-bar" style="width:'+(score/30*100)+'%;background:'+sc.color+'"></div></div>'+
-      '<div class="pdf-scale-score" style="color:'+sc.color+'">'+score+'</div>'+
-      '<div class="pdf-scale-level" style="color:'+lv.text+'">'+lv.label+'</div></div>';
-  });
-  document.getElementById('pdf-conclusion').textContent=document.getElementById('inp-conclusion').value.trim()||'';
-  document.getElementById('pdf-recomendaciones').textContent=document.getElementById('inp-recomendaciones').value.trim()||'';
-  // El pie lleva la firma de la psicóloga a la izquierda y la fecha a la derecha.
-  // El centro y el programa del atleta ya figuran en sus datos, arriba.
-  document.getElementById('pdf-footer-right').textContent='Emitido el '+formatDate(date);
-  perfilGuardado=false;
-  var btnS=document.getElementById('btn-save');
-  btnS.className='btn-save';btnS.disabled=false;
-  btnS.textContent=editandoId?'💾 Actualizar registro':'💾 Guardar';
-  btnS.onclick=guardarPerfil;
-  document.getElementById('results').classList.remove('hidden');
-  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+  if (g('ci-valor') && d.ci && d.ci.valor) g('ci-valor').value = d.ci.valor;
+  if (g('temp-valor') && d.temperamento && d.temperamento.valor) g('temp-valor').value = d.temperamento.valor;
+  if (g('anx-estado') && d.ansiedad) { g('anx-estado').value = d.ansiedad.estado || ''; g('anx-rasgo').value = d.ansiedad.rasgo || ''; }
+  if (g('suma-AC') && d.loehr) {
+    ESCALAS.forEach(([k,n,items]) => {
+      if (d.loehr.sumas && d.loehr.sumas[k]) g('suma-' + k).value = d.loehr.sumas[k];
+      items.forEach(i => { if (d.loehr.items && d.loehr.items[i]) g('item-' + i).value = d.loehr.items[i]; });
+    });
+    sumarEscalas();
+  }
 }
 
-// GUARDAR
-async function guardarPerfil(){
-  if(perfilGuardado)return;
-  if(!loehrListo()){toast('El Loehr está incompleto: completá los 42 ítems o las 7 sumas (6 a 30).','error');return;}
-  // Refresh PDF view with current form values before saving
-  showResults();
-  var btn=document.getElementById('btn-save');
-  btn.disabled=true;btn.textContent=editandoId?'Actualizando…':'Guardando…';
-  var catSel=document.getElementById('inp-cat').value;
-  var cat=catSel==='__otro__'?(document.getElementById('inp-cat-other').value||'Otro'):catSel;
-  var dob=document.getElementById('inp-dob').value;
-  var date=document.getElementById('inp-date').value;
-  var ciInvalida=document.getElementById('ci-invalida').checked;
-  var anxInvalida=document.getElementById('anx-invalida').checked;
-  var tempInvalida=document.getElementById('temp-invalida').checked;
-  var loehrInvalida=document.getElementById('loehr-invalida').checked;
-  var invalidas=[];
-  if(ciInvalida)invalidas.push('ci');
-  if(tempInvalida)invalidas.push('temperamento');
-  if(anxInvalida)invalidas.push('ansiedad');
-  if(loehrInvalida)invalidas.push('loehr');
-  var ciVal=ciInvalida?NaN:parseInt(document.getElementById('inp-ci').value);
-  var aeVal=anxInvalida?NaN:parseInt(document.getElementById('inp-ae').value);
-  var arVal=anxInvalida?NaN:parseInt(document.getElementById('inp-ar').value);
-  var tempKey=tempInvalida?'':document.getElementById('inp-temp').value;
-  var ac=0,en=0,cat2=0,cvi=0,nm=0,ep=0,act=0;
-  if(!loehrInvalida){
-    ac=scaleScore('AC');en=scaleScore('EN');cat2=scaleScore('CAT');
-    cvi=scaleScore('CVI');nm=scaleScore('NM');ep=scaleScore('EP');act=scaleScore('ACT');
-  }
-  var perfil={
-    nombre:document.getElementById('inp-name').value||'Sin nombre',
-    categoria:cat,cft:document.getElementById('inp-cft').value,
-    fecha_nacimiento:dob||null,fecha_aplicacion:date||null,
-    edad:calcAge(dob,date)||parseInt(document.getElementById('edad-calc').value)||null, // edad al momento de la evaluación
-    ci:isNaN(ciVal)?null:ciVal,ci_diagnostico:ciInvalida?CI_INVALIDA:(isNaN(ciVal)?null:ciDiag(ciVal).label),
-    temperamento:tempKey||null,
-    temperamento_resumen:document.getElementById('inp-temp-desc').value.trim()||null,
-    ansiedad_estado:isNaN(aeVal)?null:aeVal,
-    ansiedad_estado_nivel:anxInvalida?INVALIDA:(isNaN(aeVal)?null:anxLevel(aeVal).label),
-    ansiedad_rasgo:isNaN(arVal)?null:arVal,
-    ansiedad_rasgo_nivel:anxInvalida?INVALIDA:(isNaN(arVal)?null:anxLevel(arVal).label),
-    ansiedad_interpretacion:document.getElementById('inp-anx-desc').value.trim()||null,
-    loehr_ac:ac,loehr_en:en,loehr_cat:cat2,loehr_cvi:cvi,
-    loehr_nm:nm,loehr_ep:ep,loehr_act:act,
-    loehr_autoconfianza:ac,loehr_control_emocional:ep+en,
-    loehr_concentracion:cat2+cvi,loehr_motivacion:nm,
-    loehr_interpretacion:document.getElementById('inp-loehr-interp').value.trim()||null,
-    conclusion:document.getElementById('inp-conclusion').value.trim()||null,
-    recomendaciones:document.getElementById('inp-recomendaciones').value.trim()||null,
-    invalidas:invalidas.length?invalidas:null,
+// ── Guardar ──────────────────────────────────────────────────────────────
+function datosAtleta(){
+  return {
+    nombre: ATLETA ? ATLETA.nombre : val('buscar-atleta'),
+    sexo: val('a-sexo'), fecha_nacimiento: val('a-nacimiento'),
+    deporte: val('a-deporte'), organizacion: val('a-organizacion'),
+    categoria: val('a-categoria'), centro: val('a-centro'), posicion: val('a-posicion')
   };
-  try{
-    var result;
-    if(editandoId){result=await sb.from('perfiles').update(perfil).eq('id',editandoId);}
-    else{result=await sb.from('perfiles').insert([perfil]);}
-    if(result.error)throw result.error;
-    perfilGuardado=true;
-    btn.className='btn-save saved';btn.textContent='✓ '+(editandoId?'Actualizado':'Guardado');
-    showSuccessModal(perfil.nombre);
-    clearDraft();
-    editandoId=null;
-    document.getElementById('edit-banner').classList.remove('visible');
-    cargarPerfiles();
-  } catch(err){
-    btn.disabled=false;btn.textContent=editandoId?'💾 Actualizar registro':'💾 Guardar';
-    toast('Error al guardar. Revisá tu conexión.','error');console.error(err);
-  }
 }
 
-// ── HISTÓRICO (index) ─────────────────────────────────────────────────
-function verHistoricoIndex(id){
-  closeAllMenus();
-  var rec=perfilesBD.find(function(p){return p.id===id;});
-  if(!rec)return;
-  var evals=evaluacionesDe(rec.nombre);
-  document.getElementById('hist-name').textContent=rec.nombre||'Jugador';
-  document.getElementById('hist-count').textContent=
-    evals.length+' evaluación'+(evals.length!==1?'es':'')+' · '+(rec.cft||'—')+' · '+(rec.categoria||'—');
-  var body=document.getElementById('hist-body');
-  body.innerHTML=evals.map(function(e,i){
-    var esUltima=(i===evals.length-1);
-    return '<div class="hist-card">'+
-      '<span class="hist-num'+(esUltima?' latest':'')+'">Evaluación #'+(i+1)+(esUltima?' · Más reciente':'')+'</span>'+
-      '<div class="hist-date">'+fmtFecha(e.fecha_aplicacion)+'</div>'+
-      '<div class="hist-meta">'+(e.temperamento||'Sin temperamento')+' · CI '+(e.ci||'—')+' · Ansiedad E '+(e.ansiedad_estado||'—')+'</div>'+
-      '<div class="hist-scores">'+
-        histScoreIdx('Autoconf.',e.loehr_autoconfianza,30)+
-        histScoreIdx('C. Emocional',e.loehr_control_emocional,60)+
-        histScoreIdx('Concentración',e.loehr_concentracion,60)+
-        histScoreIdx('Motivación',e.loehr_motivacion,30)+
-      '</div>'+
-      '<div class="hist-actions">'+
-        '<button class="hist-btn primary" onclick="cerrarHistoricoIndex();descargarPerfilPDF(\''+e.id+'\')">📥 Ver y descargar PDF</button>'+
-        '<button class="hist-btn" onclick="cerrarHistoricoIndex();editarRegistro(\''+e.id+'\')">✏️ Editar</button>'+
-        '<button class="hist-btn" style="color:var(--red);border-color:#ffcdd2;" onclick="eliminarRegistro(\''+e.id+'\')">🗑 Eliminar</button>'+
-      '</div>'+
-    '</div>';
-  }).join('');
-  document.getElementById('hist-modal').classList.add('open');
+function revisar(){
+  const problemas = [];
+  const a = datosAtleta();
+  if (!a.nombre) problemas.push('Falta el nombre del atleta.');
+  if (!val('s-fecha')) problemas.push('Falta la fecha de aplicación.');
+  if (!PRUEBAS.some(p => ACTIVAS[p.k])) problemas.push('No marcaste ninguna prueba para cargar.');
+  if (ACTIVAS.loehr && !loehrListo())
+    problemas.push('El Loehr está incompleto: cargá los 42 ítems, o las siete sumas entre 6 y 30, o marcalo como inválido.');
+  if (ACTIVAS.ci && !(g('inv-ci').checked) && num('ci-valor') == null)
+    problemas.push('Falta la puntuación de CI (o marcalo como prueba inválida).');
+  if (ACTIVAS.temperamento && !(g('inv-temperamento').checked) && !val('temp-valor'))
+    problemas.push('Falta elegir el temperamento (o marcalo como prueba inválida).');
+  if (ACTIVAS.ansiedad && !(g('inv-ansiedad').checked) && num('anx-estado') == null && num('anx-rasgo') == null)
+    problemas.push('Falta al menos un puntaje de ansiedad (o marcala como prueba inválida).');
+  return problemas;
 }
 
-function histScoreIdx(lbl,val,max){
-  var color='#aaa';
-  if(val!=null){
-    var p=val/max;
-    color=p>=26/30?'#2e7d32':p>=20/30?'#e65100':'#b71c1c';
-  }
-  return '<div class="hist-score"><div class="hist-score-lbl">'+lbl+'</div>'+
-    '<div class="hist-score-val" style="color:'+color+'">'+(val!=null?val:'—')+
-    '<span style="font-size:14px;color:#aaa;font-weight:600;">/'+max+'</span></div></div>';
-}
+async function guardar(){
+  const problemas = revisar();
+  if (problemas.length) { avisar(problemas[0], true); return; }
 
-function cerrarHistoricoIndex(){
-  document.getElementById('hist-modal').classList.remove('open');
-}
+  const btn = g('btn-guardar');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    const a = datosAtleta();
+    const fecha = val('s-fecha');
 
-function nuevaEvalDesdeTabla(id){
-  closeAllMenus();
-  var rec=perfilesBD.find(function(p){return p.id===id;});
-  if(!rec)return;
-  resetAll();
-  setTimeout(function(){
-    document.getElementById('inp-buscar-jugador').value=rec.nombre||'';
-    cargarDatosFijos(rec.nombre);
-    window.scrollTo({top:0,behavior:'smooth'});
-  },100);
-}
-
-document.addEventListener('click',function(e){
-  if(e.target&&e.target.id==='hist-modal')cerrarHistoricoIndex();
-});
-
-// NAME MENU
-function toggleMenu(e,id){
-  e.stopPropagation();
-  closeAllMenus();
-  var m=document.getElementById('menu-'+id);
-  if(m)m.classList.add('open');
-}
-function closeAllMenus(){
-  document.querySelectorAll('.action-menu.open').forEach(function(m){m.classList.remove('open');});
-}
-document.addEventListener('click',closeAllMenus);
-
-// VER PERFIL (load and show results)
-function verPerfil(id){
-  closeAllMenus();
-  var rec=perfilesBD.find(function(p){return p.id===id;});
-  if(!rec){toast('No se encontró el perfil','error');return;}
-  for(var i=1;i<=42;i++){
-    answers[i]=0;
-    var inp=document.getElementById('inp-'+i);if(inp)inp.value='';
-    var cell=document.getElementById('cell-'+i);if(cell)cell.classList.remove('filled');
-  }
-  document.getElementById('inp-name').value=rec.nombre||'';
-  var opts=[...document.getElementById('inp-cat').options].map(function(o){return o.value;});
-  if(rec.categoria&&opts.includes(rec.categoria)){
-    document.getElementById('inp-cat').value=rec.categoria;
-    document.getElementById('inp-cat-other').classList.remove('visible');
-  } else if(rec.categoria){
-    document.getElementById('inp-cat').value='__otro__';
-    document.getElementById('inp-cat-other').value=rec.categoria;
-    document.getElementById('inp-cat-other').classList.add('visible');
-  }
-  if(rec.cft)document.getElementById('inp-cft').value=rec.cft;
-  // Se asigna todo (con '' si falta) para no arrastrar valores del perfil abierto antes.
-  function val(v){return v!=null?v:'';}
-  document.getElementById('inp-dob').value=val(rec.fecha_nacimiento);
-  document.getElementById('inp-date').value=val(rec.fecha_aplicacion);
-  document.getElementById('edad-calc').value=val(rec.edad);
-  var inv=rec.invalidas||[];
-  document.getElementById('ci-invalida').checked=inv.indexOf('ci')!==-1||rec.ci_diagnostico===CI_INVALIDA;
-  document.getElementById('temp-invalida').checked=inv.indexOf('temperamento')!==-1||rec.temperamento==='__invalida__';
-  document.getElementById('anx-invalida').checked=inv.indexOf('ansiedad')!==-1;
-  document.getElementById('loehr-invalida').checked=inv.indexOf('loehr')!==-1;
-  document.getElementById('inp-ci').value=val(rec.ci);updateCiBadge();
-  document.getElementById('inp-temp').value=rec.temperamento==='__invalida__'?'':val(rec.temperamento);
-  document.getElementById('inp-temp-desc').value=val(rec.temperamento_resumen);
-  document.getElementById('inp-ae').value=val(rec.ansiedad_estado);updateAnxBadge('ae');
-  document.getElementById('inp-ar').value=val(rec.ansiedad_rasgo);updateAnxBadge('ar');
-  document.getElementById('inp-anx-desc').value=val(rec.ansiedad_interpretacion);
-  document.getElementById('inp-loehr-interp').value=val(rec.loehr_interpretacion);
-  document.getElementById('inp-conclusion').value=val(rec.conclusion);
-  document.getElementById('inp-recomendaciones').value=val(rec.recomendaciones);
-  var loehrMap={AC:'loehr_ac',EN:'loehr_en',CAT:'loehr_cat',CVI:'loehr_cvi',NM:'loehr_nm',EP:'loehr_ep',ACT:'loehr_act'};
-  Object.entries(loehrMap).forEach(function(e){
-    var el=document.getElementById('sumval-'+e[0]);
-    if(el){el.value=rec[e[1]]||'';delete el.dataset.auto;}
-  });
-  updateAge();
-  editandoId=null;
-  viendoId=id;
-  document.getElementById('edit-banner').classList.remove('visible');
-  showResults();
-  toast('Perfil de '+(rec.nombre||'jugador')+' cargado','success');
-}
-
-// DESCARGAR PDF desde tabla
-async function descargarPerfilPDF(id){
-  closeAllMenus();
-  verPerfil(id);
-  await new Promise(function(r){setTimeout(r,500);});
-  downloadPDF();
-}
-
-// EDITAR
-function editarRegistro(id){
-  closeAllMenus();
-  var rec=perfilesBD.find(function(p){return p.id===id;});
-  if(!rec)return;
-  verPerfil(id);
-  editandoId=id;
-  var banner=document.getElementById('edit-banner');
-  document.getElementById('edit-banner-name').textContent=rec.nombre||'registro';
-  banner.classList.add('visible');
-  var btnS=document.getElementById('btn-save');
-  btnS.textContent='💾 Actualizar registro';
-  btnS.onclick=guardarPerfil;
-  toast('Modo edición: '+(rec.nombre||''),'');
-}
-function cancelarEdicion(){
-  editandoId=null;
-  document.getElementById('edit-banner').classList.remove('visible');
-  resetAll();
-}
-
-// ELIMINAR
-async function eliminarRegistro(id){
-  closeAllMenus();
-  var rec=perfilesBD.find(function(p){return p.id===id;});
-  var nombre=rec?rec.nombre:'este jugador';
-  if(!confirm('¿Eliminar el perfil de '+nombre+'? Esta acción no se puede deshacer.'))return;
-  var result=await sb.from('perfiles').delete().eq('id',id);
-  if(result.error){toast('Error al eliminar','error');return;}
-  toast('Perfil de '+nombre+' eliminado','');
-  cargarPerfiles();
-}
-
-// CARGAR PERFILES
-async function cargarPerfiles(){
-  try{
-    var result=await sb.from('perfiles').select('*').order('created_at',{ascending:false});
-    if(result.error)throw result.error;
-    perfilesBD=result.data||[];
-    filtrarYRenderTabla();renderStats(perfilesBD);poblarDropdownJugadores(perfilesBD);
-  } catch(err){
-    document.getElementById('db-tbody').innerHTML='<tr><td colspan="8" class="db-empty">Error al cargar datos.</td></tr>';
-    console.error(err);
-  }
-}
-
-function mostrarTodos(){
-  window.location.href='/atletas';
-}
-
-function filtrarYRenderTabla(){
-  var q=document.getElementById('db-search')?.value?.toLowerCase()||'';
-  var filtrado=perfilesBD.filter(function(p){
-    return !q||(p.nombre||'').toLowerCase().includes(q)||
-           (p.cft||'').toLowerCase().includes(q)||
-           (p.temperamento||'').toLowerCase().includes(q)||
-           (p.categoria||'').toLowerCase().includes(q);
-  });
-  // If no search, show only last 5 (already sorted newest first from DB)
-  // If searching, show all matches
-  var toShow=q?filtrado:filtrado.slice(0,5);
-  renderTabla(toShow, !q && perfilesBD.length>5);
-}
-
-function renderTabla(data, showMoreLink){
-  var tbody=document.getElementById('db-tbody');
-  if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="8" class="db-empty">No se encontraron perfiles.</td></tr>';return;}
-  var sorted=data.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
-  var extra=showMoreLink?'<tr><td colspan="8" style="text-align:center;padding:14px;"><button onclick="mostrarTodos()" style="background:none;border:none;color:var(--blue);font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline;">Ver las fichas de todos los atletas →</button></td></tr>':'';
-  tbody.innerHTML=sorted.map(function(p){
-    return '<tr>'+
-      '<td class="name-cell">'+
-        '<button class="name-btn" onclick="toggleMenu(event,\''+p.id+'\')">'+escHtml(p.nombre||'—')+'</button>'+
-        '<div class="action-menu" id="menu-'+p.id+'">'+
-          '<button class="action-menu-btn" onclick="descargarPerfilPDF(\''+p.id+'\')">📥 Descargar PDF</button>'+
-          '<button class="action-menu-btn" onclick="editarRegistro(\''+p.id+'\')">✏️ Editar perfil</button>'+
-          '<button class="action-menu-btn" onclick="nuevaEvalDesdeTabla(\''+p.id+'\')">🆕 Nueva evaluación</button>'+
-          '<button class="action-menu-btn" onclick="verHistoricoIndex(\''+p.id+'\')">📊 Ver histórico</button>'+
-          '<button class="action-menu-btn danger" onclick="eliminarRegistro(\''+p.id+'\')">🗑 Eliminar</button>'+
-        '</div>'+
-      '</td>'+
-      '<td>'+(p.fecha_nacimiento?formatDate(p.fecha_nacimiento):'—')+'</td>'+
-      '<td>'+(p.cft||'—')+'</td>'+
-      '<td>'+(p.temperamento||'—')+'</td>'+
-      '<td style="color:'+scoreColor30(p.loehr_autoconfianza)+';font-weight:800;">'+(p.loehr_autoconfianza!=null?p.loehr_autoconfianza:'—')+'<span style="color:#aaa;font-weight:500">/30</span></td>'+
-      '<td style="color:'+lv60color(p.loehr_control_emocional)+';font-weight:800;">'+(p.loehr_control_emocional!=null?p.loehr_control_emocional:'—')+'<span style="color:#aaa;font-weight:500">/60</span></td>'+
-      '<td style="color:'+lv60color(p.loehr_concentracion)+';font-weight:800;">'+(p.loehr_concentracion!=null?p.loehr_concentracion:'—')+'<span style="color:#aaa;font-weight:500">/60</span></td>'+
-      '<td style="color:'+scoreColor30(p.loehr_motivacion)+';font-weight:800;">'+(p.loehr_motivacion!=null?p.loehr_motivacion:'—')+'<span style="color:#aaa;font-weight:500">/30</span></td>'+
-    '</tr>';
-  }).join('')+extra;
-}
-function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-
-async function renderStats(data){
-  document.getElementById('stat-total').textContent=data.length||0;
-  // El número de atletas sale de la tabla de atletas, no de contar nombres
-  // distintos: ahí un mismo jugador escrito de dos formas contaba doble.
-  var cuantos=new Set(data.map(function(p){return p.nombre;}).filter(Boolean)).size||0;
-  try{
-    var r=await sb.from('atletas').select('id',{count:'exact',head:true});
-    if(!r.error&&typeof r.count==='number')cuantos=r.count;
-  }catch(e){}
-  document.getElementById('stat-jugadores').textContent=cuantos;
-  document.getElementById('stat-centros').textContent=new Set(data.map(function(p){return p.cft;}).filter(Boolean)).size||0;
-  var vals=data.map(function(p){return p.loehr_autoconfianza;}).filter(function(v){return v!=null;});
-  document.getElementById('stat-avg').textContent=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length):'—';
-}
-
-// QUERY IA
-function setQuery(txt){document.getElementById('query-input').value=txt;document.getElementById('query-input').focus();}
-function renderMd(t){
-  return t
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/^### (.+)$/gm,'<br><strong style="font-size:14px;color:var(--blue);display:block;margin-top:8px;">$1</strong>')
-    .replace(/^## (.+)$/gm,'<br><strong style="font-size:15px;color:var(--blue);display:block;margin-top:10px;">$1</strong>')
-    .replace(/^# (.+)$/gm,'<strong style="font-size:16px;color:var(--ink);display:block;margin-top:10px;">$1</strong>')
-    .replace(/^- (.+)$/gm,'<span style="display:block;padding-left:12px;margin:2px 0;">• $1</span>')
-    .replace(/\|(.+)\|/g,function(m){return '<span style="display:inline-block;padding:2px 8px;background:#f5f7fc;border-radius:4px;margin:2px;font-size:13px;">'+m.replace(/\|/g,' | ')+'</span>';})
-    .replace(/\n\n/g,'<br><br>')
-    .replace(/\n/g,'<br>');
-}
-async function consultarIA(){
-  var pregunta=document.getElementById('query-input').value.trim();
-  if(!pregunta)return;
-  if(perfilesBD.length===0){toast('Primero cargá los perfiles','error');return;}
-  var btn=document.getElementById('btn-query');
-  btn.disabled=true;btn.textContent='Analizando…';
-  var respDiv=document.getElementById('query-response'),respText=document.getElementById('query-response-text');
-  respDiv.classList.remove('hidden');
-  respText.className='query-response-text thinking-dots';respText.textContent='Analizando datos';
-  var resumenDatos=JSON.stringify(perfilesBD.map(function(p){return{
-    nombre:p.nombre,categoria:p.categoria,cft:p.cft,edad:p.edad,
-    fecha_nacimiento:p.fecha_nacimiento,
-    anio_nacimiento:p.fecha_nacimiento?p.fecha_nacimiento.substring(0,4):null,
-    ci:p.ci,temperamento:p.temperamento,
-    ansiedad_estado:p.ansiedad_estado,ansiedad_estado_nivel:p.ansiedad_estado_nivel,
-    ansiedad_rasgo:p.ansiedad_rasgo,ansiedad_rasgo_nivel:p.ansiedad_rasgo_nivel,
-    loehr_ac:p.loehr_ac,loehr_en:p.loehr_en,loehr_cat:p.loehr_cat,loehr_cvi:p.loehr_cvi,
-    loehr_nm:p.loehr_nm,loehr_ep:p.loehr_ep,loehr_act:p.loehr_act,
-    loehr_autoconfianza:p.loehr_autoconfianza,loehr_control_emocional:p.loehr_control_emocional,
-    loehr_concentracion:p.loehr_concentracion,loehr_motivacion:p.loehr_motivacion,
-    fecha_aplicacion:p.fecha_aplicacion,
-  };}));
-  var prompt='Sos una psicóloga del deporte del programa TDS de Honduras. Tenés acceso a todos los perfiles psicológicos guardados. IMPORTANTE: Los datos están completos — si el usuario pregunta por jugadores de cierta categoría o año de nacimiento, buscalos en el campo anio_nacimiento o categoria. Nunca digas que no tenés datos si hay perfiles en la lista.\n\nPerfiles ('+perfilesBD.length+' jugadores):\n'+resumenDatos+'\n\nEscalas Loehr(/30): AC=Autoconfianza, EN=Energía Negativa, CAT=Control Atencional, CVI=Control Visualización, NM=Nivel Motivacional, EP=Energía Positiva, ACT=Control de Actitudes.\nCompuestos: Autoconfianza(/30), Control Emocional(/60=EP+EN), Concentración(/60=CAT+CVI), Motivación(/30).\nNiveles: ≥87%=Habilidad Excelente, 67-86%=Mejorar y Perfeccionar, <67%=Atención Especial.\nSexo: si la categoría contiene "Masculino" es masculino, si contiene "Femenino" es femenino.\n\nRespondé en español con los datos reales de los perfiles.\n\nPregunta: '+pregunta;
-  try{
-    var ses=await sb.auth.getSession();
-    var token=ses.data&&ses.data.session?ses.data.session.access_token:'';
-    var response=await fetch('/api/consulta',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({prompt:prompt})});
-    var data=await response.json();
-    if(response.status===401)throw{userMsg:'Tu sesión venció. Recargá la página e ingresá de nuevo.'};
-    if(!response.ok)throw{userMsg:data.error||'Error al conectar con la IA.'};
-    var texto=(data.content&&data.content[0]&&data.content[0].text)||'No se pudo obtener respuesta.';
-    lastAIResponse=texto;
-    respText.className='query-response-text';
-    respText.innerHTML=renderMd(texto);
-    document.getElementById('btn-ai-report').classList.remove('hidden');
-  } catch(err){
-    respText.className='query-response-text';
-    respText.textContent=(err&&err.userMsg)||'Error al conectar con la IA.';console.error(err);
-  }
-  btn.disabled=false;btn.textContent='Consultar';
-}
-
-// PDF
-async function downloadPDF(){
-  var btn=document.getElementById('btn-pdf');
-  btn.disabled=true;btn.textContent='⏳ Generando…';
-  var nombre=(document.getElementById('inp-name').value||'Atleta').replace(/\s+/g,'_');
-  try{
-    var jsPDF=window.jspdf.jsPDF;
-    var capture=document.getElementById('pdf-capture');
-    // Capture full element
-    var canvas=await html2canvas(capture,{scale:2.2,backgroundColor:'#ffffff',useCORS:true,logging:false,allowTaint:true});
-    var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var margin=12;
-    var pageW=pdf.internal.pageSize.getWidth();
-    var pageH=pdf.internal.pageSize.getHeight();
-    var usableW=pageW-margin*2;
-    var usableH=pageH-margin*2;
-    var imgW=usableW;
-    var imgH=(canvas.height*imgW)/canvas.width;
-    var pxPerMm=canvas.width/imgW;
-    // Get section boundaries relative to capture element
-    var captureRect=capture.getBoundingClientRect();
-    var sectionEls=Array.from(capture.querySelectorAll(
-      '.pdf-hdr,.pdf-section,.pdf-box-grid,.anx-layout,.pdf-composites,.pdf-detail-card,.pdf-narrative,.pdf-footer'
-    ));
-    // Build list of section tops in mm
-    var sectionMms=[0];
-    sectionEls.forEach(function(el){
-      var r=el.getBoundingClientRect();
-      var topMm=(r.top-captureRect.top)*(imgH/captureRect.height);
-      var botMm=(r.bottom-captureRect.top)*(imgH/captureRect.height);
-      if(topMm>2)sectionMms.push(topMm);
-    });
-    sectionMms.push(imgH);
-    sectionMms=sectionMms.filter(function(v,i,a){return a.indexOf(v)===i;}).sort(function(a,b){return a-b;});
-    // Build pages: fill each page greedily, cutting only at section boundaries
-    var pages=[];
-    var pageStart=0;
-    while(pageStart<imgH){
-      var pageEnd=pageStart+usableH;
-      if(pageEnd>=imgH){pages.push([pageStart,imgH]);break;}
-      // Find the last section boundary before pageEnd
-      var cutAt=pageEnd;
-      for(var i=sectionMms.length-1;i>=0;i--){
-        if(sectionMms[i]<=pageEnd&&sectionMms[i]>pageStart){cutAt=sectionMms[i];break;}
-      }
-      if(cutAt===pageStart)cutAt=pageEnd; // no boundary found, force cut
-      pages.push([pageStart,cutAt]);
-      pageStart=cutAt;
-    }
-    // Render each page
-    pages.forEach(function(range,pi){
-      var startMm=range[0],endMm=range[1];
-      var startPx=Math.floor(startMm*pxPerMm);
-      var endPx=Math.ceil(endMm*pxPerMm);
-      var sliceH=endPx-startPx;
-      var sc=document.createElement('canvas');
-      sc.width=canvas.width;sc.height=sliceH;
-      sc.getContext('2d').drawImage(canvas,0,startPx,canvas.width,sliceH,0,0,canvas.width,sliceH);
-      var sliceMm=endMm-startMm;
-      if(pi>0)pdf.addPage();
-      pdf.addImage(sc.toDataURL('image/png'),'PNG',margin,margin,imgW,sliceMm);
-    });
-    pdf.save('Perfil_'+nombre+'.pdf');
-  }catch(err){
-    console.error(err);
-    alert('No se pudo generar el PDF. Intenta de nuevo.');
-  }
-  btn.disabled=false;btn.textContent='📥 Descargar PDF';
-}
-
-// ── RESET ─────────────────────────────────────────────────────────────────
-function resetAll(){
-  for(var i=1;i<=42;i++){
-    answers[i]=0;
-    var inp=document.getElementById('inp-'+i);if(inp)inp.value='';
-    var cell=document.getElementById('cell-'+i);if(cell)cell.classList.remove('filled');
-  }
-  ['inp-name','inp-cat-other','inp-ci','inp-temp-desc','inp-ae','inp-ar','inp-anx-desc',
-   'inp-loehr-interp','inp-conclusion','inp-recomendaciones']
-    .forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('inp-cat').value='Sub-15 Masculino';
-  document.getElementById('inp-cft').value='Tegucigalpa';
-  document.getElementById('inp-temp').value='';
-  document.getElementById('inp-dob').value='';
-  document.getElementById('inp-date').value=hoyLocal();
-  document.getElementById('edad-calc').value='';
-  var bj=document.getElementById('inp-buscar-jugador');if(bj)bj.value='';
-  var lj=document.getElementById('lista-jugadores');if(lj)lj.style.display='none';
-  viendoId=null;
-  ['ci-badge','ae-badge','ar-badge'].forEach(function(id){document.getElementById(id).style.display='none';});
-  document.getElementById('inp-cat-other').classList.remove('visible');
-  document.getElementById('edit-banner').classList.remove('visible');
-  ['ci-invalida','temp-invalida','anx-invalida','loehr-invalida'].forEach(function(id){
-    var c=document.getElementById(id);if(c)c.checked=false;
-  });
-  Object.keys(SCALES).forEach(function(k){var el=document.getElementById('sumval-'+k);if(el)el.value='';});
-  editandoId=null;perfilGuardado=false;
-  clearDraft();
-  updateCounter();
-  document.getElementById('results').classList.add('hidden');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-// ── AUTO-SAVE ─────────────────────────────────────────────────────────────
-var autosaveTimer=null;
-var DRAFT_KEY='tds_draft_v1';
-var lastAIResponse='';
-
-function g(id){return document.getElementById(id);}
-
-function autoSaveForm(){
-  var draft={
-    nombre:g('inp-name')?g('inp-name').value:'',
-    cat:g('inp-cat')?g('inp-cat').value:'',
-    catOther:g('inp-cat-other')?g('inp-cat-other').value:'',
-    cft:g('inp-cft')?g('inp-cft').value:'',
-    dob:g('inp-dob')?g('inp-dob').value:'',
-    date:g('inp-date')?g('inp-date').value:'',
-    edad:g('edad-calc')?g('edad-calc').value:'',
-    ci:g('inp-ci')?g('inp-ci').value:'',
-    ciInvalida:g('ci-invalida')?g('ci-invalida').checked:false,
-    temp:g('inp-temp')?g('inp-temp').value:'',
-    tempInvalida:g('temp-invalida')?g('temp-invalida').checked:false,
-    anxInvalida:g('anx-invalida')?g('anx-invalida').checked:false,
-    loehrInvalida:g('loehr-invalida')?g('loehr-invalida').checked:false,
-    tempDesc:g('inp-temp-desc')?g('inp-temp-desc').value:'',
-    ae:g('inp-ae')?g('inp-ae').value:'',
-    ar:g('inp-ar')?g('inp-ar').value:'',
-    anxDesc:g('inp-anx-desc')?g('inp-anx-desc').value:'',
-    loehrInterp:g('inp-loehr-interp')?g('inp-loehr-interp').value:'',
-    conclusion:g('inp-conclusion')?g('inp-conclusion').value:'',
-    recomendaciones:g('inp-recomendaciones')?g('inp-recomendaciones').value:'',
-    sums:{},
-    answers:answers.slice()
-  };
-  Object.keys(SCALES).forEach(function(k){
-    var el=g('sumval-'+k);
-    draft.sums[k]=el?el.value:'';
-  });
-  try{localStorage.setItem(DRAFT_KEY,JSON.stringify(draft));showAutosaveBar();}
-  catch(e){console.log('Autosave error',e);}
-}
-
-function showAutosaveBar(){
-  var bar=g('autosave-bar');
-  if(!bar)return;
-  bar.classList.add('show');
-  clearTimeout(autosaveTimer);
-  autosaveTimer=setTimeout(function(){bar.classList.remove('show');},2500);
-}
-
-// El borrador NO se vuelca solo en el formulario: ver datos ya cargados al
-// entrar hace creer que el perfil quedó guardado, y es justo al revés. Se
-// ofrece, y solo se aplica si la psicóloga lo pide.
-function restoreDraft(){
-  try{
-    var raw=localStorage.getItem(DRAFT_KEY);
-    if(!raw)return;
-    var d=JSON.parse(raw);
-    if(!d.nombre&&!d.ci&&!d.ae){clearDraft();return;} // borrador vacío
-    var partes=[];
-    if(d.nombre)partes.push(d.nombre);
-    if(d.date)partes.push('evaluación del '+formatDate(d.date));
-    var info=g('draft-info');
-    if(info)info.textContent=partes.length
-      ? partes.join(' · ')+'. No está guardado en la base de datos.'
-      : 'No está guardado en la base de datos.';
-    var bar=g('draft-bar');
-    if(bar)bar.classList.add('show');
-  }catch(e){console.log('Restore error',e);}
-}
-
-function descartarBorrador(){
-  clearDraft();
-  var bar=g('draft-bar');
-  if(bar)bar.classList.remove('show');
-  toast('Borrador descartado','');
-}
-
-function aplicarBorrador(){
-  var bar=g('draft-bar');
-  if(bar)bar.classList.remove('show');
-  try{
-    var raw=localStorage.getItem(DRAFT_KEY);
-    if(!raw)return;
-    var d=JSON.parse(raw);
-    if(d.nombre&&g('inp-name'))g('inp-name').value=d.nombre;
-    if(d.cat&&g('inp-cat'))g('inp-cat').value=d.cat;
-    if(d.catOther&&g('inp-cat-other')){g('inp-cat-other').value=d.catOther;if(d.cat==='__otro__')g('inp-cat-other').classList.add('visible');}
-    if(d.cft&&g('inp-cft'))g('inp-cft').value=d.cft;
-    if(d.dob&&g('inp-dob'))g('inp-dob').value=d.dob;
-    if(d.date&&g('inp-date'))g('inp-date').value=d.date;
-    if(d.edad&&g('edad-calc'))g('edad-calc').value=d.edad;
-    if(d.ci&&g('inp-ci'))g('inp-ci').value=d.ci;
-    if(d.ciInvalida&&g('ci-invalida'))g('ci-invalida').checked=d.ciInvalida;
-    if(d.temp&&g('inp-temp'))g('inp-temp').value=d.temp;
-    if(d.tempInvalida&&g('temp-invalida'))g('temp-invalida').checked=d.tempInvalida;
-    if(d.anxInvalida&&g('anx-invalida'))g('anx-invalida').checked=d.anxInvalida;
-    if(d.loehrInvalida&&g('loehr-invalida'))g('loehr-invalida').checked=d.loehrInvalida;
-    if(d.tempDesc&&g('inp-temp-desc'))g('inp-temp-desc').value=d.tempDesc;
-    if(d.ae&&g('inp-ae'))g('inp-ae').value=d.ae;
-    if(d.ar&&g('inp-ar'))g('inp-ar').value=d.ar;
-    if(d.anxDesc&&g('inp-anx-desc'))g('inp-anx-desc').value=d.anxDesc;
-    if(d.loehrInterp&&g('inp-loehr-interp'))g('inp-loehr-interp').value=d.loehrInterp;
-    if(d.conclusion&&g('inp-conclusion'))g('inp-conclusion').value=d.conclusion;
-    if(d.recomendaciones&&g('inp-recomendaciones'))g('inp-recomendaciones').value=d.recomendaciones;
-    if(d.sums)Object.keys(SCALES).forEach(function(k){
-      var el=g('sumval-'+k);
-      if(el&&d.sums[k])el.value=d.sums[k];
-    });
-    if(d.answers)d.answers.forEach(function(v,i){
-      if(i>0&&v>0){
-        answers[i]=v;
-        var inp=g('inp-'+i),cell=g('cell-'+i);
-        if(inp)inp.value=v;
-        if(cell)cell.classList.add('filled');
-      }
-    });
-    updateCiBadge();updateAnxBadge('ae');updateAnxBadge('ar');updateSums();updateCounter();
-    window.scrollTo({top:0,behavior:'smooth'});
-    toast('Borrador restaurado — podés continuar donde lo dejaste','success');
-  }catch(e){console.log('Restore error',e);}
-}
-
-function clearDraft(){
-  try{localStorage.removeItem(DRAFT_KEY);}catch(e){}
-  var bar=document.getElementById('draft-bar');
-  if(bar)bar.classList.remove('show');
-}
-
-function hookAutosave(){
-  ['inp-name','inp-cat','inp-cat-other','inp-cft','inp-dob','inp-date',
-   'edad-calc','inp-ci','inp-temp','inp-temp-desc','inp-ae','inp-ar',
-   'inp-anx-desc','inp-loehr-interp','inp-conclusion','inp-recomendaciones']
-    .forEach(function(id){
-      var el=document.getElementById(id);
-      if(!el)return;
-      el.addEventListener('input',autoSaveForm);
-      el.addEventListener('change',autoSaveForm);
-    });
-  ['ci-invalida','temp-invalida','anx-invalida','loehr-invalida'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el)el.addEventListener('change',autoSaveForm);
-  });
-  var grid=document.getElementById('items-grid');
-  if(grid)grid.addEventListener('input',autoSaveForm);
-  var sums=document.getElementById('sums-row');
-  if(sums)sums.addEventListener('input',autoSaveForm);
-}
-
-// ── SUCCESS MODAL ─────────────────────────────────────────────────────────
-function showSuccessModal(nombre){
-  var modal=document.getElementById('success-modal');
-  if(!modal)return;
-  var sub=document.getElementById('success-sub');
-  if(sub)sub.textContent='El perfil de '+nombre+' fue guardado correctamente.';
-  modal.classList.add('show');
-  setTimeout(function(){modal.classList.remove('show');},2800);
-}
-
-// ── AI REPORT PDF ─────────────────────────────────────────────────────────
-async function generarReporteIA(){
-  if(!lastAIResponse)return;
-  var btn=document.getElementById('btn-ai-report');
-  if(btn){btn.disabled=true;btn.textContent='Generando…';}
-  try{
-    var jsPDF=window.jspdf.jsPDF;
-    var pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var margin=18,pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight(),lineH=7;
-    pdf.setFillColor(21,101,192);pdf.rect(0,0,pageW,28,'F');
-    pdf.setTextColor(255,255,255);pdf.setFontSize(14);pdf.setFont(undefined,'bold');
-    pdf.text('Análisis · TDS Honduras',margin,18);
-    pdf.setFontSize(9);pdf.setFont(undefined,'normal');
-    var today=new Date();
-    pdf.text(today.toLocaleDateString('es-HN',{day:'numeric',month:'long',year:'numeric'}),pageW-margin,18,{align:'right'});
-    var y=42;
-    pdf.setTextColor(26,35,64);pdf.setFontSize(11);pdf.setFont(undefined,'normal');
-    var clean=lastAIResponse
-      .replace(/\*\*(.+?)\*\*/g,'$1')
-      .replace(/^#{1,3} /gm,'')
-      .replace(/^- /gm,'• ');
-    var lines=pdf.splitTextToSize(clean,pageW-margin*2);
-    lines.forEach(function(line){
-      if(y>pageH-margin){pdf.addPage();y=margin;}
-      pdf.text(line,margin,y);
-      y+=lineH;
-    });
-    pdf.setTextColor(107,122,153);pdf.setFontSize(9);
-    pdf.text('Lic. Melany Ordóñez · Máster en Psicología del Deporte · TDS Honduras',margin,pageH-10);
-    pdf.save('Analisis_TDS_'+hoyLocal()+'.pdf');
-  }catch(e){toast('Error al generar reporte','error');console.error(e);}
-  if(btn){btn.disabled=false;btn.textContent='📄 Generar reporte PDF';}
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────
-// ── CONTROL DE SESIÓN (20 min inactividad) ──────────────────────────────
-var SESSION_KEY='tds-auth';
-var SESSION_TIME_KEY='tds-auth-time';
-var TIMEOUT_MIN=20;
-var inactivityTimer=null;
-
-function marcarSesionActiva(){
-  sessionStorage.setItem(SESSION_KEY,'ok');
-  sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
-}
-
-async function sesionValida(){
-  var res=await sb.auth.getSession();
-  if(!res.data||!res.data.session)return false;
-  if(sessionStorage.getItem(SESSION_KEY)!=='ok'){await cerrarSesion();return false;}
-  var last=parseInt(sessionStorage.getItem(SESSION_TIME_KEY)||'0');
-  if(!last){await cerrarSesion();return false;}
-  var mins=(Date.now()-last)/60000;
-  if(mins>TIMEOUT_MIN){await cerrarSesion();return false;}
-  return true;
-}
-
-async function cerrarSesion(){
-  sessionStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_TIME_KEY);
-  try{await sb.auth.signOut();}catch(e){}
-}
-
-function reiniciarInactividad(){
-  if(sessionStorage.getItem(SESSION_KEY)==='ok'){
-    sessionStorage.setItem(SESSION_TIME_KEY,Date.now().toString());
-  }
-  clearTimeout(inactivityTimer);
-  inactivityTimer=setTimeout(async function(){
-    try{autoSaveForm();}catch(e){}
-    await cerrarSesion();
-    alert('Sesión cerrada por inactividad. Tu trabajo quedó guardado — al ingresar de nuevo lo vas a recuperar.');
-    location.reload();
-  },TIMEOUT_MIN*60000);
-}
-
-function iniciarControlInactividad(){
-  ['click','keydown','scroll','mousemove','touchstart'].forEach(function(evt){
-    document.addEventListener(evt,reiniciarInactividad,{passive:true});
-  });
-  // Save draft before leaving the page
-  window.addEventListener('beforeunload',function(){
-    try{autoSaveForm();}catch(e){}
-  });
-  reiniciarInactividad();
-}
-
-sesionValida().then(function(ok){
-  if(!ok)return;
-  marcarSesionActiva();
-  document.getElementById('auth-overlay').style.display='none';
-  hookAutosave();
-  iniciarControlInactividad();
-  cargarPerfiles().then(function(){
-    var params=new URLSearchParams(window.location.search);
-    var verId=params.get('ver');
-    var editId=params.get('editar');
-    var nuevaId=params.get('nueva');
-    if(verId){
-      setTimeout(function(){verPerfil(verId);},600);
-    } else if(editId){
-      setTimeout(function(){editarRegistro(editId);},600);
-    } else if(nuevaId){
-      setTimeout(function(){
-        var rec=perfilesBD.find(function(p){return p.id===nuevaId;});
-        if(rec){
-          document.getElementById('inp-buscar-jugador').value=rec.nombre||'';
-          cargarDatosFijos(rec.nombre);
-          window.scrollTo({top:0,behavior:'smooth'});
-        }
-      },600);
+    // 1. El atleta: se actualiza el existente o se crea uno nuevo.
+    let atletaId;
+    if (ATLETA) {
+      const r = await sb.from('atletas').update(a).eq('id', ATLETA.id);
+      if (r.error) throw r.error;
+      atletaId = ATLETA.id;
     } else {
-      restoreDraft();
+      const r = await sb.from('atletas').insert([a]).select('id').single();
+      if (r.error) throw r.error;
+      atletaId = r.data.id;
     }
+
+    // 2. La sesión, que es lo que agrupa las pruebas de este día.
+    const rs = await sb.from('sesiones').insert([{
+      atleta_id: atletaId, fecha,
+      contexto: val('s-contexto'),
+      aplicada_por: val('s-aplicada'),
+      interpretada_por: val('s-interpretada'),
+      conclusion: val('c-conclusion'),
+      recomendaciones: val('c-recomendaciones')
+    }]).select('id').single();
+    if (rs.error) throw rs.error;
+    const sesionId = rs.data.id;
+
+    // 3. Una evaluación por prueba cargada. Una prueba inválida igual se
+    //    registra: se aplicó, aunque no haya dejado puntaje.
+    const filas = [];
+    PRUEBAS.forEach(p => {
+      if (!ACTIVAS[p.k]) return;
+      const invalida = g('inv-' + p.k).checked;
+      let datos = {};
+      if (!invalida) {
+        if (p.k === 'ci') { const v = num('ci-valor'); if (v != null) datos = { ci:v, diagnostico: nivelCI(v) }; }
+        else if (p.k === 'temperamento') { const t = val('temp-valor'); if (t) datos = { temperamento:t }; }
+        else if (p.k === 'ansiedad') {
+          const e = num('anx-estado'), r = num('anx-rasgo');
+          if (e != null) { datos.estado = e; datos.estado_nivel = nivelAnsiedad(e); }
+          if (r != null) { datos.rasgo = r;  datos.rasgo_nivel  = nivelAnsiedad(r); }
+        }
+        else if (p.k === 'loehr') {
+          const esc = {};
+          ESCALAS.forEach(([k]) => { esc[k] = Number(g('suma-' + k).value) || 0; });
+          datos = { escalas: esc };
+        }
+      } else if (p.k === 'ci') datos = { diagnostico: 'PRUEBA INVÁLIDA' };
+
+      filas.push({
+        atleta_id: atletaId, tipo: p.k, fecha, sesion_id: sesionId,
+        contexto: val('s-contexto'),
+        aplicada_por: val('s-aplicada'), interpretada_por: val('s-interpretada'),
+        datos, invalida,
+        motivo_invalidez: invalida ? 'Marcada como inválida al cargarla' : null,
+        interpretacion: val('interp-' + p.k)
+      });
+    });
+    const re = await sb.from('evaluaciones').insert(filas);
+    if (re.error) throw re.error;
+
+    borrarBorrador();
+    avisar('Evaluación guardada. Abriendo la ficha…');
+    setTimeout(() => { window.location.href = '/atletas?atleta=' + atletaId; }, 900);
+    return;
+  } catch(e) {
+    console.error(e);
+    avisar('No se pudo guardar: ' + ((e && e.message) || 'revisá tu conexión'), true);
+  }
+  btn.disabled = false; btn.textContent = 'Guardar evaluación';
+}
+
+function limpiarTodo(){
+  if (!confirm('¿Vaciar el formulario? Se pierde lo que no hayas guardado.')) return;
+  soltarAtleta();
+  ['s-contexto','s-aplicada','s-interpretada','c-conclusion','c-recomendaciones'].forEach(id => { g(id).value = ''; });
+  g('s-fecha').value = hoyLocal();
+  PRUEBAS.forEach(p => { ACTIVAS[p.k] = false; });
+  pintarSelector();
+  borrarBorrador();
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// ── Borrador ─────────────────────────────────────────────────────────────
+const CLAVE_BORRADOR = 'tds_evaluacion_v1';
+let temporizador = null;
+
+function autoguardar(){
+  clearTimeout(temporizador);
+  temporizador = setTimeout(() => {
+    const d = {
+      atletaId: ATLETA ? ATLETA.id : null,
+      nombre: ATLETA ? ATLETA.nombre : (g('buscar-atleta') ? g('buscar-atleta').value : ''),
+      atleta: datosAtleta(),
+      sesion: { fecha: val('s-fecha'), contexto: val('s-contexto'),
+                aplicada: val('s-aplicada'), interpretada: val('s-interpretada') },
+      cierre: { conclusion: val('c-conclusion'), recomendaciones: val('c-recomendaciones') },
+      activas: Object.assign({}, ACTIVAS),
+      pruebas: recogerPruebas()
+    };
+    if (!d.nombre && !PRUEBAS.some(p => ACTIVAS[p.k])) return;
+    try { localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(d));
+      g('aviso-guardar').textContent = 'Borrador guardado en este navegador'; } catch(e) {}
+  }, 700);
+}
+function borrarBorrador(){
+  try { localStorage.removeItem(CLAVE_BORRADOR); } catch(e) {}
+  g('borrador').classList.remove('ver');
+  g('aviso-guardar').textContent = '';
+}
+// El borrador se ofrece, no se vuelca solo: ver el formulario ya lleno al
+// entrar hace creer que la evaluación quedó guardada, y es al revés.
+function ofrecerBorrador(){
+  let d;
+  try { d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null'); } catch(e) { return; }
+  if (!d || (!d.nombre && !Object.values(d.activas || {}).some(Boolean))) return;
+  const partes = [];
+  if (d.nombre) partes.push(d.nombre);
+  if (d.sesion && d.sesion.fecha) partes.push('evaluación del ' + fechaCorta(d.sesion.fecha));
+  g('borrador-info').textContent = (partes.join(' · ') || 'Sin nombre') + '. No está guardada en la base de datos.';
+  g('borrador').classList.add('ver');
+}
+function descartarBorrador(){ borrarBorrador(); avisar('Borrador descartado'); }
+function aplicarBorrador(){
+  let d;
+  try { d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null'); } catch(e) { return; }
+  if (!d) return;
+  g('borrador').classList.remove('ver');
+  if (d.atletaId) {
+    const a = ATLETAS.find(x => x.id === d.atletaId);
+    if (a) elegirAtleta(a);
+  } else if (d.nombre) g('buscar-atleta').value = d.nombre;
+  if (d.atleta) {
+    const m = { sexo:'sexo', nacimiento:'fecha_nacimiento', deporte:'deporte', organizacion:'organizacion',
+                categoria:'categoria', centro:'centro', posicion:'posicion' };
+    Object.keys(m).forEach(k => { if (d.atleta[m[k]]) g('a-' + k).value = d.atleta[m[k]]; });
+  }
+  if (d.sesion) {
+    g('s-fecha').value = d.sesion.fecha || hoyLocal();
+    g('s-contexto').value = d.sesion.contexto || '';
+    g('s-aplicada').value = d.sesion.aplicada || '';
+    g('s-interpretada').value = d.sesion.interpretada || '';
+  }
+  if (d.cierre) {
+    g('c-conclusion').value = d.cierre.conclusion || '';
+    g('c-recomendaciones').value = d.cierre.recomendaciones || '';
+  }
+  ACTIVAS = Object.assign({ ci:false, temperamento:false, ansiedad:false, loehr:false }, d.activas || {});
+  pintarSelector();
+  if (d.pruebas) restaurarPruebas(d.pruebas);
+  calcularEdad();
+  refrescarContador();
+  avisar('Borrador restaurado');
+}
+function engancharAutoguardado(){
+  document.addEventListener('input', e => {
+    if (e.target && e.target.closest('.envoltura')) autoguardar();
   });
-});
+  window.addEventListener('beforeunload', () => {
+    clearTimeout(temporizador);
+    try {
+      const d = { atletaId: ATLETA ? ATLETA.id : null,
+                  nombre: ATLETA ? ATLETA.nombre : g('buscar-atleta').value,
+                  atleta: datosAtleta(),
+                  sesion: { fecha: val('s-fecha'), contexto: val('s-contexto'),
+                            aplicada: val('s-aplicada'), interpretada: val('s-interpretada') },
+                  cierre: { conclusion: val('c-conclusion'), recomendaciones: val('c-recomendaciones') },
+                  activas: Object.assign({}, ACTIVAS), pruebas: recogerPruebas() };
+      if (d.nombre || Object.values(ACTIVAS).some(Boolean)) localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(d));
+    } catch(e) {}
+  });
+}
+
+// ── Sesión ───────────────────────────────────────────────────────────────
+(async function(){
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && sessionStorage.getItem('tds-auth') === 'ok') arrancar();
+})();
 </script>
 </body>
 </html>

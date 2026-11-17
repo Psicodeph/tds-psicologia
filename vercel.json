@@ -11,7 +11,11 @@
     },
     {
       "source": "/evaluar",
-      "destination": "/evaluar.html"
+      "destination": "/index.html"
+    },
+    {
+      "source": "/clasico",
+      "destination": "/clasico.html"
     }
   ]
 }
