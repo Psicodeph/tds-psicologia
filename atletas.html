@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   color-scheme: light;
@@ -148,6 +150,55 @@ nav a.activo{background:var(--marca);color:#fff}
 .nota-fecha{font-size:13px;font-weight:800;color:var(--marca-fuerte)}
 .nota .texto-bloque:first-of-type{border-top:none;padding-top:6px;margin-top:4px}
 
+
+/* ── Reporte ──────────────────────────────────────────────────────────── */
+.ficha-cab-fila{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.boton-reporte{margin-left:auto;background:var(--marca);color:#fff;border:none;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.boton-reporte:hover{background:var(--marca-fuerte)}
+
+#reporte{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;overflow-y:auto;padding:20px;display:none}
+#reporte.ver{display:block}
+.rep-caja{max-width:900px;margin:0 auto}
+.rep-barra{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;margin-bottom:16px}
+.rep-grupo{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.rep-grupo:last-child{margin-bottom:0}
+.rep-lbl{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;width:100%;margin-bottom:2px}
+.rep-check{display:inline-flex;align-items:center;gap:7px;background:var(--plano);border:1px solid var(--borde);border-radius:20px;padding:7px 13px;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.rep-check input{width:16px;height:16px;accent-color:var(--marca);cursor:pointer}
+.rep-check.sensible{border-color:var(--serio)}
+.rep-nota{font-size:12.5px;color:var(--ink3);width:100%;margin-top:2px}
+.rep-acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--linea)}
+
+/* La hoja del reporte: fondo claro siempre, porque se imprime */
+.hoja{background:#fff;color:#1a1a1a;border-radius:var(--radio);padding:40px;box-shadow:0 14px 50px rgba(0,0,0,.3)}
+.hoja-cab{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1aa8e0;padding-bottom:16px;margin-bottom:6px}
+.hoja-cab img{width:46px}
+.hoja-marca{font-size:19px;font-weight:900;line-height:1.2;color:#0b0b0b}
+.hoja-rol{font-size:13px;color:#52514e;font-weight:600}
+.hoja-tipo{margin-left:auto;text-align:right;font-size:12px;color:#52514e;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.hoja-atleta{font-size:27px;font-weight:900;margin-top:18px;color:#0b0b0b}
+.hoja-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;margin-bottom:8px}
+.hoja-meta span{background:#f2f6f9;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#52514e;font-weight:600}
+.hoja-sec{margin-top:26px}
+.hoja-sec h3{font-size:15px;font-weight:900;color:#0b7fae;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #dde4ea;padding-bottom:5px;margin-bottom:12px}
+.hoja-p{font-size:14.5px;line-height:1.65;color:#2b2b2b;white-space:pre-wrap}
+.hoja-vacio{font-size:14px;color:#8a8a8a;font-style:italic}
+.hoja-par{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.hoja-caja{background:#f7fafc;border:1px solid #e3eaf0;border-radius:9px;padding:12px}
+.hoja-caja-lbl{font-size:12px;color:#52514e;font-weight:700}
+.hoja-caja-num{font-size:26px;font-weight:800;color:#0b0b0b;line-height:1.2}
+.hoja-caja-pie{font-size:11.5px;color:#767676;font-weight:600}
+.hoja-fila{display:grid;grid-template-columns:148px 1fr 40px 142px;gap:9px;align-items:center;padding:4px 0;font-size:13px}
+.hoja-pista{background:#eef2f6;border-radius:4px;height:13px;overflow:hidden}
+.hoja-llena{height:100%;background:#2a78d6;border-radius:0 4px 4px 0}
+.hoja-delta{font-size:12.5px;font-weight:800}
+.hoja-pie{margin-top:32px;padding-top:14px;border-top:1px solid #dde4ea;font-size:11.5px;color:#767676;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:640px){
+  .hoja{padding:22px}
+  .hoja-fila{grid-template-columns:100px 1fr 34px}
+  .hoja-fila .hoja-delta{grid-column:1/-1;padding-left:100px}
+}
+
 .aviso{background:var(--marca-suave);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;color:var(--ink2);font-size:14.5px}
 </style>
 </head>
@@ -192,6 +243,7 @@ nav a.activo{background:var(--marca);color:#fff}
   </div>
 </div>
 
+<div id="reporte" role="dialog" aria-label="Reporte"><div class="rep-caja" id="rep-caja"></div></div>
 <div id="tip" role="status" aria-live="polite"></div>
 
 <script>
@@ -418,7 +470,12 @@ function abrirFicha(id){
     ['Edad actual', edadEn(a.fecha_nacimiento, null) != null ? edadEn(a.fecha_nacimiento,null) + ' años' : null]
   ].filter(d => d[1]);
   cont.appendChild(el('div',{class:'ficha-cab'},[
-    el('div',{class:'ficha-nombre',txt:a.nombre}),
+    el('div',{class:'ficha-cab-fila'},[
+      el('div',{class:'ficha-nombre',txt:a.nombre}),
+      (PORATLETA[id] || []).length
+        ? el('button',{class:'boton-reporte',txt:'Generar reporte',onclick:() => abrirReporte(id)})
+        : null
+    ]),
     el('div',{class:'ficha-datos'}, datos.map(d =>
       el('div',{class:'dato'},[ el('b',{txt:d[0]}), document.createTextNode(d[1]) ])))
   ]));
@@ -672,7 +729,7 @@ function marcasEje(min, max, buscadas){
   return marcas;
 }
 function graficoLineas(series, fechas, opc){
-  const W = anchoDisponible(), angosto = W < 520;
+  const W = (opc && opc.ancho) || anchoDisponible(), angosto = W < 520;
   const H = angosto ? 250 : 300;
   const mL = angosto ? 34 : 44, mR = angosto ? 46 : 124, mT = 14, mB = 34;
   const ancho = W - mL - mR, alto = H - mT - mB;
@@ -795,6 +852,327 @@ function alternarTabla(ev, id){
   const oculta = t.classList.toggle('oculto');
   ev.target.textContent = oculta ? 'Ver tabla' : 'Ocultar tabla';
 }
+
+// ── Reporte para el atleta o el entrenador ───────────────────────────────
+// El CI viene desmarcado a propósito: es el dato más sensible del perfil y
+// normalmente no se comparte con el cuerpo técnico. Se activa con un clic.
+let REPORTE = { modo:'reciente', loehr:true, ansiedad:true, temperamento:true, ci:false, conclusiones:true };
+
+function abrirReporte(id){
+  REPORTE.atleta = id;
+  document.getElementById('reporte').classList.add('ver');
+  document.body.style.overflow = 'hidden';
+  pintarReporte();
+}
+function cerrarReporte(){
+  document.getElementById('reporte').classList.remove('ver');
+  document.body.style.overflow = '';
+}
+
+function pintarReporte(){
+  const caja = document.getElementById('rep-caja');
+  caja.textContent = '';
+  caja.appendChild(panelOpciones());
+  caja.appendChild(construirHoja(REPORTE.atleta));
+}
+// Al cambiar una opción se rehace solo la hoja: si se redibujara el panel
+// entero, el control recién tocado se reemplazaría y perdería el foco.
+function refrescarHoja(){
+  const vieja = document.getElementById('hoja');
+  const nueva = construirHoja(REPORTE.atleta);
+  if (vieja) vieja.replaceWith(nueva);
+  else document.getElementById('rep-caja').appendChild(nueva);
+}
+
+function panelOpciones(){
+  const panel = el('div',{class:'rep-barra'});
+
+  const modos = el('div',{class:'rep-grupo'});
+  modos.appendChild(el('div',{class:'rep-lbl',txt:'Qué mostrar'}));
+  [['reciente','Resultado más reciente'],['primera','Primera evaluación'],['evolucion','Evolución']]
+    .forEach(([v,lbl]) => modos.appendChild(el('button',{
+      class:'chip' + (REPORTE.modo === v ? ' chip-on' : ''), txt:lbl, 'data-modo':v,
+      onclick:() => {
+        REPORTE.modo = v;
+        modos.querySelectorAll('[data-modo]').forEach(c =>
+          c.classList.toggle('chip-on', c.getAttribute('data-modo') === v));
+        refrescarHoja();
+      }
+    })));
+  panel.appendChild(modos);
+
+  const secs = el('div',{class:'rep-grupo'});
+  secs.appendChild(el('div',{class:'rep-lbl',txt:'Qué incluir'}));
+  [['loehr','Perfil Loehr'],['ansiedad','Ansiedad'],['temperamento','Temperamento'],
+   ['ci','Coeficiente intelectual'],['conclusiones','Conclusiones y recomendaciones']]
+    .forEach(([k,lbl]) => {
+      const marca = el('input',{type:'checkbox'});
+      marca.checked = !!REPORTE[k];
+      marca.addEventListener('change', () => { REPORTE[k] = marca.checked; refrescarHoja(); });
+      secs.appendChild(el('label',{class:'rep-check' + (k === 'ci' ? ' sensible' : '')},
+        [ marca, document.createTextNode(lbl) ]));
+    });
+  secs.appendChild(el('div',{class:'rep-nota',
+    txt:'El coeficiente intelectual viene desmarcado: suele no compartirse con el cuerpo técnico.'}));
+  panel.appendChild(secs);
+
+  const acciones = el('div',{class:'rep-acciones'});
+  acciones.appendChild(el('button',{class:'boton-reporte',id:'btn-pdf',txt:'Descargar PDF',onclick:descargarPDF}));
+  acciones.appendChild(el('button',{class:'chip',txt:'Cerrar',onclick:cerrarReporte}));
+  panel.appendChild(acciones);
+  return panel;
+}
+
+function construirHoja(id){
+  const a = ATLETAS.find(x => x.id === id);
+  const hoja = el('div',{class:'hoja',id:'hoja'});
+  const loehr = evaluacionesDe(id,'loehr');
+  const titulo = { reciente:'Reporte de perfil', primera:'Primera evaluación', evolucion:'Reporte de evolución' }[REPORTE.modo];
+
+  const intro = el('div',{class:'hoja-intro'});
+  hoja.appendChild(intro);
+  intro.appendChild(el('div',{class:'hoja-cab'},[
+    el('img',{src:'/assets/icono.png',alt:''}),
+    el('div',null,[
+      el('div',{class:'hoja-marca',txt:'Melany Ordóñez'}),
+      el('div',{class:'hoja-rol',txt:'Psicología del Deporte'})
+    ]),
+    el('div',{class:'hoja-tipo',txt:titulo})
+  ]));
+  intro.appendChild(el('div',{class:'hoja-atleta',txt:a.nombre}));
+
+  const meta = [];
+  if (a.categoria) meta.push(a.categoria);
+  if (a.sexo) meta.push(a.sexo);
+  if (a.deporte) meta.push(a.deporte);
+  if (a.organizacion) meta.push(a.organizacion);
+  if (a.centro) meta.push(a.centro);
+  const edad = edadEn(a.fecha_nacimiento, null);
+  if (edad != null) meta.push(edad + ' años');
+  intro.appendChild(el('div',{class:'hoja-meta'}, meta.map(m => el('span',{txt:m}))));
+  intro.appendChild(el('div',{class:'hoja-meta'},[ el('span',{txt:'Período: ' + textoPeriodo(id)}) ]));
+
+  if (REPORTE.loehr && loehr.length) hoja.appendChild(hojaLoehr(loehr));
+  if (REPORTE.ansiedad) hojaPrueba(hoja, id, 'ansiedad');
+  if (REPORTE.temperamento) hojaPrueba(hoja, id, 'temperamento');
+  if (REPORTE.ci) hojaPrueba(hoja, id, 'ci');
+  if (REPORTE.conclusiones) hojaConclusiones(hoja, id);
+
+  hoja.appendChild(el('div',{class:'hoja-pie'},[
+    el('span',{txt:'Lic. Melany Ordóñez · Máster en Psicología del Deporte'}),
+    el('span',{txt:'Emitido el ' + fechaCorta(hoyLocalISO())})
+  ]));
+  return hoja;
+}
+
+function hoyLocalISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function textoPeriodo(id){
+  const todas = (PORATLETA[id] || []).map(e => e.fecha).filter(Boolean).sort();
+  const evs = evaluacionesDe(id);
+  if (!evs.length) return 'sin evaluaciones';
+  const d = evs[0].fecha, h = evs[evs.length-1].fecha;
+  if (!FILTRO.desde && !FILTRO.hasta && todas.length) return 'historial completo (' + fechaCorta(d) + ' a ' + fechaCorta(h) + ')';
+  return fechaCorta(d) + ' a ' + fechaCorta(h);
+}
+function seccionHoja(titulo){
+  const sec = el('div',{class:'hoja-sec'});
+  sec.appendChild(el('h3',{txt:titulo}));
+  return sec;
+}
+function parrafoHoja(titulo, texto){
+  const caja = el('div',{style:'margin-top:12px'});
+  caja.appendChild(el('div',{class:'texto-titulo',style:'color:#767676',txt:titulo}));
+  caja.appendChild(texto && String(texto).trim()
+    ? el('p',{class:'hoja-p',txt:String(texto).trim()})
+    : el('p',{class:'hoja-vacio',txt:'Sin redactar'}));
+  return caja;
+}
+
+function hojaLoehr(loehr){
+  const primera = loehr[0], ultima = loehr[loehr.length-1];
+  const esEvol = REPORTE.modo === 'evolucion' && loehr.length > 1;
+  const base = REPORTE.modo === 'primera' ? primera : ultima;
+  const sec = seccionHoja('Perfil psicológico de rendimiento (Loehr)');
+  sec.appendChild(el('div',{class:'hoja-rol',style:'margin-bottom:12px',
+    txt: esEvol ? 'Comparación entre ' + fechaCorta(primera.fecha) + ' y ' + fechaCorta(ultima.fecha)
+               : 'Aplicado el ' + fechaCorta(base.fecha)}));
+
+  sec.appendChild(el('div',{class:'hoja-par'}, COMPUESTOS.map(c => {
+    const v = puntajeCompuesto(base, c), n = nivelDe(v/c.max);
+    const caja = el('div',{class:'hoja-caja'},[
+      el('div',{class:'hoja-caja-lbl',txt:c.lbl}),
+      el('div',{class:'hoja-caja-num',txt:v + ' / ' + c.max}),
+      el('div',{class:'hoja-caja-pie',style:'color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
+    ]);
+    if (esEvol) {
+      const antes = puntajeCompuesto(primera, c), d = v - antes;
+      caja.appendChild(el('div',{class:'hoja-delta',
+        style:'color:' + (d > 0 ? '#006300' : d < 0 ? '#b3261e' : '#767676'),
+        txt: (d > 0 ? '▲ +' : d < 0 ? '▼ ' : '= ') + (d === 0 ? 'sin cambio' : d + ' desde ' + fechaCorta(primera.fecha))}));
+    }
+    return caja;
+  })));
+
+  const escalas = (base.datos && base.datos.escalas) || {};
+  const det = el('div',{style:'margin-top:16px'});
+  ESCALAS.forEach(([k,nombre]) => {
+    const v = Number(escalas[k]) || 0, n = nivelDe(v/30);
+    const fila = el('div',{class:'hoja-fila'},[
+      el('div',{style:'font-weight:700',txt:nombre}),
+      el('div',{class:'hoja-pista'},[ el('div',{class:'hoja-llena',style:'width:'+(v/30*100)+'%'}) ]),
+      el('div',{style:'font-weight:800;text-align:right',txt:String(v)}),
+      el('div',{style:'font-weight:800;font-size:11.5px;color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
+    ]);
+    det.appendChild(fila);
+  });
+  sec.appendChild(det);
+
+  if (esEvol) sec.appendChild(graficoLineas(
+    COMPUESTOS.map(c => ({ lbl:c.lbl, color:colorPlano(c.color), puntos: loehr.map(ev => {
+      const v = puntajeCompuesto(ev, c);
+      return { fecha:ev.fecha, valor:v, max:c.max, pct:(v/c.max)*100 };
+    })})),
+    loehr.map(ev => ev.fecha),
+    { min:0, max:100, sufijo:'%', ancho:700, formatoTip:p => p.valor + ' / ' + p.max }
+  ));
+
+  sec.appendChild(parrafoHoja('Interpretación', base.interpretacion));
+  return sec;
+}
+
+// En la hoja impresa los colores van planos: las variables CSS del tema
+// oscuro harían ilegible el texto sobre blanco.
+function colorPlano(c){
+  return { 'var(--s1)':'#2a78d6','var(--s2)':'#eb6834','var(--s3)':'#1baf7a','var(--s4)':'#eda100',
+           'var(--bien)':'#0a7d0a','var(--serio)':'#c2622f','var(--critico)':'#b3261e',
+           'var(--ink2)':'#52514e' }[c] || c;
+}
+
+function hojaPrueba(hoja, id, tipo){
+  const evs = evaluacionesDe(id, tipo);
+  if (!evs.length) return;
+  const ev = REPORTE.modo === 'primera' ? evs[0] : evs[evs.length-1];
+  if (tipo === 'ansiedad') {
+    const sec = seccionHoja('Ansiedad');
+    sec.appendChild(el('div',{class:'hoja-rol',style:'margin-bottom:12px',txt:'Evaluada el ' + fechaCorta(ev.fecha)}));
+    const cajas = [];
+    [['Ansiedad estado','estado'],['Ansiedad rasgo','rasgo']].forEach(([lbl,k]) => {
+      if (ev.datos && ev.datos[k] != null) {
+        const n = nivelAnsiedad(Number(ev.datos[k]));
+        cajas.push(el('div',{class:'hoja-caja'},[
+          el('div',{class:'hoja-caja-lbl',txt:lbl}),
+          el('div',{class:'hoja-caja-num',txt:String(ev.datos[k])}),
+          el('div',{class:'hoja-caja-pie',style:'color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
+        ]));
+      }
+    });
+    if (REPORTE.modo === 'evolucion' && evs.length > 1) {
+      const p = evs[0];
+      if (p.datos && p.datos.estado != null)
+        cajas.push(el('div',{class:'hoja-caja'},[
+          el('div',{class:'hoja-caja-lbl',txt:'Estado en ' + fechaCorta(p.fecha)}),
+          el('div',{class:'hoja-caja-num',txt:String(p.datos.estado)}),
+          el('div',{class:'hoja-caja-pie',txt:'medición inicial'})
+        ]));
+    }
+    sec.appendChild(el('div',{class:'hoja-par'}, cajas));
+    sec.appendChild(parrafoHoja('Interpretación', ev.interpretacion));
+    hoja.appendChild(sec);
+  } else if (tipo === 'temperamento') {
+    const sec = seccionHoja('Temperamento');
+    sec.appendChild(el('div',{style:'font-size:21px;font-weight:800',txt:(ev.datos && ev.datos.temperamento) || '—'}));
+    sec.appendChild(el('div',{class:'hoja-rol',txt:'Evaluado el ' + fechaCorta(ev.fecha)}));
+    sec.appendChild(parrafoHoja('Descripción', ev.interpretacion));
+    hoja.appendChild(sec);
+  } else if (tipo === 'ci') {
+    const sec = seccionHoja('Coeficiente intelectual');
+    const d = ev.datos || {};
+    sec.appendChild(el('div',{style:'font-size:27px;font-weight:800',
+      txt: ev.invalida ? 'Prueba inválida' : (d.ci != null ? String(d.ci) : '—')}));
+    sec.appendChild(el('div',{class:'hoja-rol',
+      txt:(ev.invalida ? '' : (d.diagnostico ? d.diagnostico + ' · ' : '')) + 'Aplicado el ' + fechaCorta(ev.fecha)}));
+    sec.appendChild(parrafoHoja('Interpretación', ev.interpretacion));
+    hoja.appendChild(sec);
+  }
+}
+
+function hojaConclusiones(hoja, id){
+  const todas = sesionesDe(id).filter(se => se.conclusion || se.recomendaciones);
+  const ses = REPORTE.modo === 'primera' ? todas.slice(-1)
+            : REPORTE.modo === 'evolucion' ? todas
+            : todas.slice(0,1);
+  const sec = seccionHoja('Conclusiones y recomendaciones');
+  if (!ses.length) {
+    sec.appendChild(parrafoHoja('Conclusión', null));
+    sec.appendChild(parrafoHoja('Recomendaciones', null));
+  } else ses.forEach((se,i) => {
+    if (ses.length > 1) sec.appendChild(el('div',{class:'hoja-rol',
+      style:'margin-top:' + (i ? '18px' : '0') + ';font-weight:800;color:#0b7fae',txt:fechaCorta(se.fecha)}));
+    sec.appendChild(parrafoHoja('Conclusión', se.conclusion));
+    sec.appendChild(parrafoHoja('Recomendaciones', se.recomendaciones));
+  });
+  hoja.appendChild(sec);
+}
+
+// El PDF se arma bloque por bloque (encabezado, cada sección, pie) en vez de
+// cortar una imagen larga a ciegas: así el salto de página nunca parte una
+// línea de texto ni un gráfico por la mitad.
+async function descargarPDF(){
+  const btn = document.getElementById('btn-pdf');
+  const a = ATLETAS.find(x => x.id === REPORTE.atleta);
+  btn.disabled = true; btn.textContent = 'Generando…';
+  try {
+    const hoja = document.getElementById('hoja');
+    const bloques = [hoja.querySelector('.hoja-intro')]
+      .concat(Array.from(hoja.querySelectorAll('.hoja-sec')))
+      .concat([hoja.querySelector('.hoja-pie')])
+      .filter(Boolean);
+
+    const pdf = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const anchoP = pdf.internal.pageSize.getWidth();
+    const altoP  = pdf.internal.pageSize.getHeight();
+    const margen = 12;
+    const anchoUtil = anchoP - margen*2;
+    const altoUtil  = altoP - margen*2;
+    let y = margen;
+
+    for (const bloque of bloques) {
+      const lienzo = await html2canvas(bloque, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+      const alto = lienzo.height * anchoUtil / lienzo.width;
+      const img = lienzo.toDataURL('image/jpeg', 0.94);
+
+      if (alto > altoUtil) {
+        // Una sección más alta que una página: se reparte, pero solo esa.
+        let resto = alto, desplazamiento = 0;
+        while (resto > 0.5) {
+          if (y > margen) { pdf.addPage(); y = margen; }
+          pdf.addImage(img, 'JPEG', margen, y - desplazamiento, anchoUtil, alto, undefined, 'FAST');
+          resto -= (altoUtil - (y - margen));
+          desplazamiento += (altoUtil - (y - margen));
+          y = margen + altoUtil;
+        }
+        y = margen + altoUtil;
+      } else {
+        if (y + alto > margen + altoUtil) { pdf.addPage(); y = margen; }
+        pdf.addImage(img, 'JPEG', margen, y, anchoUtil, alto, undefined, 'FAST');
+        y += alto + 4;
+      }
+    }
+
+    const limpio = (a && a.nombre ? a.nombre : 'atleta').replace(/[^\p{L}\p{N}]+/gu,'_').replace(/^_|_$/g,'');
+    pdf.save('Reporte_' + limpio + '_' + hoyLocalISO() + '.pdf');
+  } catch(e) {
+    console.error(e);
+    alert('No se pudo generar el PDF. Probá de nuevo.');
+  }
+  btn.disabled = false; btn.textContent = 'Descargar PDF';
+}
+
+document.getElementById('reporte').addEventListener('click', e => { if (e.target.id === 'reporte') cerrarReporte(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarReporte(); });
 
 let temporizadorTamano = null;
 window.addEventListener('resize', () => {
