@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atletas — Melany Ordóñez</title>
+<link rel="icon" href="/assets/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  color-scheme: light;
+  /* Marca */
+  --marca:#1aa8e0; --marca-fuerte:#0b7fae; --marca-suave:#e8f6fd;
+  /* Superficies e ink (palette.md) */
+  --plano:#f9f9f7; --superficie:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --ink3:#898781;
+  --linea:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  /* Series validadas: slots 1-4 */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  /* Estados */
+  --bien:#0ca30c; --aviso:#fab219; --serio:#ec835a; --critico:#d03b3b;
+  --radio:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+    --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+  --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plano);color:var(--ink);font-family:'Nunito','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+/* ── Acceso ───────────────────────────────────────────────── */
+#acceso{position:fixed;inset:0;background:var(--marca);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.acceso-caja{background:var(--superficie);border-radius:20px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.acceso-caja img{width:54px;margin-bottom:14px}
+.acceso-nombre{font-size:22px;font-weight:900}
+.acceso-sub{font-size:14px;color:var(--ink2);margin-bottom:22px}
+.campo{width:100%;background:var(--plano);border:1.5px solid var(--eje);border-radius:10px;padding:13px 15px;font-size:17px;font-weight:600;color:var(--ink);font-family:inherit;outline:none;margin-bottom:10px}
+.campo:focus{border-color:var(--marca)}
+.boton{width:100%;background:var(--marca);color:#fff;border:none;border-radius:10px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.boton:hover{background:var(--marca-fuerte)}
+.error{color:var(--critico);font-size:14px;font-weight:700;margin-top:10px;display:none}
+
+/* ── Encabezado ───────────────────────────────────────────── */
+header{background:var(--superficie);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:100}
+.header-in{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px;margin-right:auto}
+.marca img{width:30px}
+.marca-nombre{font-size:17px;font-weight:900;line-height:1.15}
+.marca-rol{font-size:12px;color:var(--ink2);font-weight:600}
+nav{display:flex;gap:4px}
+nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
+nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+nav a.activo{background:var(--marca);color:#fff}
+
+.envoltura{max-width:1240px;margin:0 auto;padding:20px}
+.columnas{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.columnas{grid-template-columns:1fr}}
+
+/* ── Lista de atletas ─────────────────────────────────────── */
+.panel{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:16px}
+.panel-titulo{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+#lista{max-height:min(68vh,620px);overflow-y:auto;margin:0 -8px}
+.item{display:block;width:100%;text-align:left;background:none;border:none;border-radius:9px;padding:10px 12px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.item:hover{background:var(--marca-suave)}
+.item[aria-current="true"]{background:var(--marca);color:#fff}
+.item[aria-current="true"] .item-sub{color:rgba(255,255,255,.85)}
+.item-nombre{font-size:15px;font-weight:700;line-height:1.3}
+.item-sub{font-size:12.5px;color:var(--ink2);font-weight:600}
+.vacio{color:var(--ink3);font-size:14px;padding:20px 12px;text-align:center}
+
+/* ── Ficha ────────────────────────────────────────────────── */
+.ficha-cab{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:20px;margin-bottom:16px}
+.ficha-nombre{font-size:26px;font-weight:900;line-height:1.15}
+.ficha-datos{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.dato{background:var(--plano);border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-size:13.5px}
+.dato b{display:block;font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+
+.tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:15px}
+.tarjeta-lbl{font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:3px}
+.tarjeta-num{font-size:30px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.tarjeta-pie{font-size:12px;color:var(--ink3);font-weight:600;margin-top:3px}
+.etiqueta{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:20px;margin-top:6px}
+
+.seccion{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:18px;margin-bottom:16px}
+.seccion-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.seccion-titulo{font-size:17px;font-weight:800}
+.seccion-sub{font-size:13.5px;color:var(--ink2);margin-bottom:16px}
+.enlace-tabla{background:none;border:none;color:var(--marca-fuerte);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
+
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px}
+.leyenda span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);font-weight:600}
+.trazo{width:16px;height:2px;border-radius:1px}
+
+.grafico{width:100%;overflow:visible;touch-action:pan-y}
+.tabla-datos{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+.tabla-datos th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:7px 8px;border-bottom:1px solid var(--linea);font-weight:800}
+.tabla-datos td{padding:7px 8px;border-bottom:1px solid var(--linea);font-variant-numeric:tabular-nums}
+.tabla-datos tr:last-child td{border-bottom:none}
+.oculto{display:none}
+
+/* Barras del Loehr */
+.barra-fila{display:grid;grid-template-columns:150px 1fr 44px 150px;gap:10px;align-items:center;padding:5px 0}
+@media(max-width:700px){.barra-fila{grid-template-columns:110px 1fr 40px;}.barra-fila .barra-nivel{grid-column:1/-1;padding-left:110px}}
+.barra-nombre{font-size:13.5px;font-weight:700}
+.barra-pista{background:var(--plano);border-radius:4px;height:14px;position:relative;overflow:hidden}
+.barra-valor{height:100%;background:var(--s1);border-radius:0 4px 4px 0}
+.barra-num{font-size:14px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.barra-nivel{font-size:11.5px;font-weight:800}
+
+/* Tooltip */
+#tip{position:fixed;pointer-events:none;z-index:500;background:var(--superficie);border:1px solid var(--borde);border-radius:9px;padding:9px 11px;box-shadow:0 8px 26px rgba(0,0,0,.18);font-size:13px;opacity:0;transition:opacity .1s}
+#tip.ver{opacity:1}
+.tip-fecha{font-size:11px;color:var(--ink3);font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.tip-fila{display:flex;align-items:center;gap:7px;margin-top:3px}
+.tip-val{font-weight:800;font-variant-numeric:tabular-nums}
+.tip-nom{color:var(--ink2);font-size:12.5px}
+
+.aviso{background:var(--marca-suave);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;color:var(--ink2);font-size:14.5px}
+</style>
+</head>
+<body>
+
+<div id="acceso">
+  <div class="acceso-caja">
+    <img src="/assets/icono.png" alt="">
+    <div class="acceso-nombre">Melany Ordóñez</div>
+    <div class="acceso-sub">Psicología del Deporte</div>
+    <input type="text" class="campo" id="usuario" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')entrar()">
+    <input type="password" class="campo" id="clave" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="boton" onclick="entrar()">Ingresar</button>
+    <div class="error" id="acceso-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-in">
+    <div class="marca">
+      <img src="/assets/icono.png" alt="">
+      <div>
+        <div class="marca-nombre">Melany Ordóñez</div>
+        <div class="marca-rol">Psicología del Deporte</div>
+      </div>
+    </div>
+    <nav>
+      <a href="/">Evaluar</a>
+      <a href="/atletas" class="activo">Atletas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="envoltura">
+  <div class="columnas">
+    <div class="panel">
+      <div class="panel-titulo">Atletas <span id="contador"></span></div>
+      <input type="search" class="campo" id="buscar" placeholder="Buscar por nombre…" oninput="pintarLista()" style="margin-bottom:8px;font-size:15px;padding:10px 12px">
+      <div id="lista"><div class="vacio">Cargando…</div></div>
+    </div>
+    <div id="ficha"><div class="aviso">Elegí un atleta de la lista para ver su ficha y su historial.</div></div>
+  </div>
+</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://esbmtenfcjbrrocrnfep.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  { auth: { storage: window.sessionStorage } }
+);
+const DOMINIO = 'tds.example.com';
+
+// ── Definición de las pruebas ────────────────────────────────────────────
+const ESCALAS = [
+  ['AC','Autoconfianza'], ['EN','Energía Negativa'], ['CAT','Control Atencional'],
+  ['CVI','Control Visualización'], ['NM','Nivel Motivacional'], ['EP','Energía Positiva'],
+  ['ACT','Control de Actitudes']
+];
+// Los compuestos tienen máximos distintos (30 y 60), así que la evolución se
+// grafica en porcentaje: un solo eje, y los umbrales de Loehr quedan fijos.
+const COMPUESTOS = [
+  { lbl:'Autoconfianza',    escalas:['AC'],       max:30, color:'var(--s1)' },
+  { lbl:'Control Emocional',escalas:['EP','EN'],  max:60, color:'var(--s2)' },
+  { lbl:'Concentración',    escalas:['CAT','CVI'],max:60, color:'var(--s3)' },
+  { lbl:'Motivación',       escalas:['NM'],       max:30, color:'var(--s4)' }
+];
+const NIVELES = [
+  { min:26/30, lbl:'Habilidad excelente',   color:'var(--bien)',    fondo:'rgba(12,163,12,.12)',  icono:'●' },
+  { min:20/30, lbl:'Mejorar y perfeccionar',color:'var(--serio)',   fondo:'rgba(236,131,90,.14)', icono:'◆' },
+  { min:0,     lbl:'Atención especial',     color:'var(--critico)', fondo:'rgba(208,59,59,.12)',  icono:'▲' }
+];
+function nivelDe(p){ return NIVELES.find(n => p >= n.min); }
+function nivelAnsiedad(v){
+  if (v == null) return null;
+  if (v <= 29) return { lbl:'Bajo',  color:'var(--bien)',    fondo:'rgba(12,163,12,.12)',  icono:'●' };
+  if (v <= 44) return { lbl:'Medio', color:'var(--ink2)',    fondo:'rgba(130,130,130,.14)',icono:'◆' };
+  return         { lbl:'Alto',  color:'var(--critico)', fondo:'rgba(208,59,59,.12)',  icono:'▲' };
+}
+function nivelCI(v){
+  if (v == null) return null;
+  if (v >= 130) return { lbl:'Muy superior', color:'var(--bien)' };
+  if (v >= 120) return { lbl:'Superior',     color:'var(--bien)' };
+  if (v >= 110) return { lbl:'Alto',         color:'var(--bien)' };
+  if (v >= 90)  return { lbl:'Normal',       color:'var(--ink2)' };
+  if (v >= 80)  return { lbl:'Normal bajo',  color:'var(--serio)' };
+  return          { lbl:'Bajo',         color:'var(--critico)' };
+}
+
+// ── Utilidades ───────────────────────────────────────────────────────────
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso){
+  if (!iso) return '—';
+  const p = iso.substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+function fechaMini(iso){
+  if (!iso) return '';
+  const p = iso.substring(0,10).split('-');
+  return MESES[parseInt(p[1],10)-1] + ' ' + p[0].substring(2);
+}
+function edadEn(nacimiento, hasta){
+  if (!nacimiento) return null;
+  const n = nacimiento.substring(0,10).split('-').map(Number);
+  const h = hasta ? hasta.substring(0,10).split('-').map(Number)
+                  : (d => [d.getFullYear(), d.getMonth()+1, d.getDate()])(new Date());
+  let e = h[0] - n[0];
+  if (h[1] < n[1] || (h[1] === n[1] && h[2] < n[2])) e--;
+  return (e >= 0 && e <= 100) ? e : null;
+}
+function el(tag, props, hijos){
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'txt') n.textContent = props[k];          // datos: nunca innerHTML
+    else if (k === 'html') n.innerHTML = props[k];      // solo marcado propio
+    else if (k === 'style') n.setAttribute('style', props[k]);
+    else if (k.startsWith('on')) n.addEventListener(k.substring(2), props[k]);
+    else n.setAttribute(k, props[k]);
+  }
+  (hijos || []).forEach(h => h && n.appendChild(h));
+  return n;
+}
+function svgEl(tag, props){
+  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in props) n.setAttribute(k, props[k]);
+  return n;
+}
+
+// ── Acceso ───────────────────────────────────────────────────────────────
+async function entrar(){
+  const u = document.getElementById('usuario').value.trim().toLowerCase();
+  const c = document.getElementById('clave').value;
+  const err = document.getElementById('acceso-error');
+  err.style.display = 'none';
+  if (!u || !c) { err.textContent = 'Ingresá tu usuario y contraseña.'; err.style.display='block'; return; }
+  const email = u.includes('@') ? u : u + '@' + DOMINIO;
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email, password: c });
+    if (!error) { sessionStorage.setItem('tds-auth','ok'); sessionStorage.setItem('tds-auth-time', Date.now()); arrancar(); return; }
+    if (error.status === 400) { err.textContent = 'Usuario o contraseña incorrectos.'; document.getElementById('clave').value=''; }
+    else throw error;
+  } catch(e) { err.textContent = 'Error de conexión. Intentá de nuevo.'; }
+  err.style.display = 'block';
+}
+
+// ── Datos ────────────────────────────────────────────────────────────────
+let ATLETAS = [], PORATLETA = {}, SELECCIONADO = null;
+
+async function arrancar(){
+  document.getElementById('acceso').style.display = 'none';
+  const [ra, re] = await Promise.all([
+    sb.from('atletas').select('*').order('nombre'),
+    sb.from('evaluaciones').select('*').order('fecha', { ascending: true })
+  ]);
+  if (ra.error || re.error) {
+    document.getElementById('lista').innerHTML = '';
+    document.getElementById('lista').appendChild(el('div',{class:'vacio',txt:'No se pudieron cargar los datos.'}));
+    console.error(ra.error || re.error);
+    return;
+  }
+  ATLETAS = ra.data || [];
+  PORATLETA = {};
+  (re.data || []).forEach(ev => { (PORATLETA[ev.atleta_id] = PORATLETA[ev.atleta_id] || []).push(ev); });
+  document.getElementById('contador').textContent = '(' + ATLETAS.length + ')';
+  pintarLista();
+}
+
+function evaluacionesDe(id, tipo){
+  return (PORATLETA[id] || []).filter(e => !tipo || e.tipo === tipo)
+    .sort((a,b) => (a.fecha || '').localeCompare(b.fecha || ''));
+}
+
+// ── Lista ────────────────────────────────────────────────────────────────
+function pintarLista(){
+  const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const lista = document.getElementById('lista');
+  lista.textContent = '';
+  const filtrados = ATLETAS.filter(a => !q || (a.nombre || '').toLowerCase().includes(q));
+  if (!filtrados.length) { lista.appendChild(el('div',{class:'vacio',txt:'Sin resultados.'})); return; }
+  filtrados.forEach(a => {
+    const evs = PORATLETA[a.id] || [];
+    const ultima = evs.map(e => e.fecha).sort().pop();
+    const partes = [a.categoria, evs.length + (evs.length === 1 ? ' evaluación' : ' evaluaciones')].filter(Boolean);
+    lista.appendChild(el('button', {
+      class:'item', 'aria-current': String(a.id === SELECCIONADO),
+      onclick: () => abrirFicha(a.id)
+    }, [
+      el('div',{class:'item-nombre',txt:a.nombre}),
+      el('div',{class:'item-sub',txt: partes.join(' · ') + (ultima ? ' · ' + fechaMini(ultima) : '')})
+    ]));
+  });
+}
+
+// ── Ficha ────────────────────────────────────────────────────────────────
+function abrirFicha(id){
+  SELECCIONADO = id;
+  pintarLista();
+  const a = ATLETAS.find(x => x.id === id);
+  const cont = document.getElementById('ficha');
+  cont.textContent = '';
+  if (!a) return;
+
+  const evs = evaluacionesDe(id);
+  const ultimaFecha = evs.map(e => e.fecha).sort().pop();
+
+  // Cabecera
+  const datos = [
+    ['Sexo', a.sexo], ['Categoría', a.categoria], ['Deporte', a.deporte],
+    ['Organización', a.organizacion], ['Centro', a.centro],
+    ['Nacimiento', a.fecha_nacimiento ? fechaCorta(a.fecha_nacimiento) : null],
+    ['Edad actual', edadEn(a.fecha_nacimiento, null) != null ? edadEn(a.fecha_nacimiento,null) + ' años' : null]
+  ].filter(d => d[1]);
+  cont.appendChild(el('div',{class:'ficha-cab'},[
+    el('div',{class:'ficha-nombre',txt:a.nombre}),
+    el('div',{class:'ficha-datos'}, datos.map(d =>
+      el('div',{class:'dato'},[ el('b',{txt:d[0]}), document.createTextNode(d[1]) ])))
+  ]));
+
+  if (!evs.length) { cont.appendChild(el('div',{class:'aviso',txt:'Este atleta todavía no tiene evaluaciones cargadas.'})); return; }
+
+  cont.appendChild(tarjetasResumen(id, evs, ultimaFecha));
+  const loehr = evaluacionesDe(id,'loehr');
+  if (loehr.length >= 2) cont.appendChild(seccionEvolucionLoehr(loehr));
+  if (loehr.length)      cont.appendChild(seccionLoehrActual(loehr[loehr.length-1], loehr.length));
+  const ansiedad = evaluacionesDe(id,'ansiedad');
+  if (ansiedad.length >= 2) cont.appendChild(seccionAnsiedad(ansiedad));
+  cont.appendChild(seccionHistorial(evs));
+}
+
+function etiquetaNivel(n){
+  return el('div',{class:'etiqueta',style:'background:'+n.fondo+';color:'+n.color},
+    [ el('span',{'aria-hidden':'true',txt:n.icono}), document.createTextNode(n.lbl) ]);
+}
+
+function tarjetasResumen(id, evs, ultimaFecha){
+  const cajas = [];
+  const ci = evaluacionesDe(id,'ci').slice(-1)[0];
+  if (ci) {
+    const v = ci.invalida ? null : (ci.datos && ci.datos.ci);
+    const n = ci.invalida ? { lbl:'Prueba inválida', color:'var(--critico)', fondo:'rgba(208,59,59,.12)', icono:'▲' } : nivelCI(v);
+    cajas.push(tarjeta('Coeficiente intelectual', v != null ? String(v) : '—', fechaCorta(ci.fecha), n));
+  }
+  const temp = evaluacionesDe(id,'temperamento').slice(-1)[0];
+  if (temp && temp.datos && temp.datos.temperamento)
+    cajas.push(tarjeta('Temperamento', temp.datos.temperamento, fechaCorta(temp.fecha), null, 21));
+  const anx = evaluacionesDe(id,'ansiedad').slice(-1)[0];
+  if (anx && anx.datos && anx.datos.estado != null)
+    cajas.push(tarjeta('Ansiedad estado', String(anx.datos.estado), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.estado)));
+  if (anx && anx.datos && anx.datos.rasgo != null)
+    cajas.push(tarjeta('Ansiedad rasgo', String(anx.datos.rasgo), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.rasgo)));
+  cajas.push(tarjeta('Evaluaciones', String(evs.length), 'última: ' + fechaCorta(ultimaFecha)));
+  return el('div',{class:'tarjetas'}, cajas);
+}
+function tarjeta(lbl, num, pie, nivel, tam){
+  return el('div',{class:'tarjeta'},[
+    el('div',{class:'tarjeta-lbl',txt:lbl}),
+    el('div',{class:'tarjeta-num',txt:num, style: tam ? 'font-size:'+tam+'px' : ''}),
+    el('div',{class:'tarjeta-pie',txt:pie}),
+    nivel ? etiquetaNivel(nivel) : null
+  ]);
+}
+
+function puntajeCompuesto(ev, c){
+  const e = (ev.datos && ev.datos.escalas) || {};
+  return c.escalas.reduce((s,k) => s + (Number(e[k]) || 0), 0);
+}
+
+// ── Evolución del Loehr: una línea por compuesto, eje en % ───────────────
+function seccionEvolucionLoehr(loehr){
+  const series = COMPUESTOS.map(c => ({
+    lbl: c.lbl, color: c.color,
+    puntos: loehr.map(ev => {
+      const v = puntajeCompuesto(ev, c);
+      return { fecha: ev.fecha, valor: v, max: c.max, pct: (v / c.max) * 100 };
+    })
+  }));
+  const fechas = loehr.map(ev => ev.fecha);
+  // El eje arranca en 50 % cuando todos los puntajes son altos: con 0 % a 100 %
+  // las líneas se apelotonan arriba y no se ve la evolución. Si algún puntaje
+  // baja de 60 %, el eje vuelve a 0 % para no recortar nada.
+  const minPct = Math.min.apply(null, series.flatMap(s => s.puntos.map(p => p.pct)));
+  const desde = minPct < 60 ? 0 : 50;
+  const sec = el('div',{class:'seccion'});
+  const idTabla = 'tabla-loehr';
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Evolución del perfil Loehr'}),
+    el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)})
+  ]));
+  sec.appendChild(el('div',{class:'seccion-sub',
+    txt:'Cada área como porcentaje de su puntaje máximo, para poder compararlas en un mismo eje.'}));
+  sec.appendChild(leyenda(series));
+  sec.appendChild(graficoLineas(series, fechas, {
+    min:desde, max:100, sufijo:'%',
+    bandas:[
+      { desde:86.67, hasta:100,   color:'rgba(12,163,12,.07)',  lbl:'Excelente' },
+      { desde:66.67, hasta:86.67, color:'rgba(236,131,90,.07)', lbl:'Mejorar' },
+      { desde:0,     hasta:66.67, color:'rgba(208,59,59,.06)',  lbl:'Atención' }
+    ],
+    formatoTip: p => p.valor + ' / ' + p.max + '  (' + Math.round(p.pct) + '%)'
+  }));
+  sec.appendChild(tablaSeries(series, fechas, idTabla, p => p.valor + ' / ' + p.max));
+  return sec;
+}
+
+// ── Perfil Loehr actual: magnitud → un solo tono + estado con icono ──────
+function seccionLoehrActual(ev, cuantas){
+  const sec = el('div',{class:'seccion'});
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Perfil Loehr' + (cuantas > 1 ? ' más reciente' : '')})
+  ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Aplicado el ' + fechaCorta(ev.fecha) + ' · cada escala sobre 30 puntos'}));
+  const escalas = (ev.datos && ev.datos.escalas) || {};
+  ESCALAS.forEach(([k, nombre]) => {
+    const v = Number(escalas[k]) || 0, n = nivelDe(v/30);
+    sec.appendChild(el('div',{class:'barra-fila'},[
+      el('div',{class:'barra-nombre',txt:nombre}),
+      el('div',{class:'barra-pista'},[ el('div',{class:'barra-valor',style:'width:'+(v/30*100)+'%'}) ]),
+      el('div',{class:'barra-num',txt:String(v)}),
+      el('div',{class:'barra-nivel',style:'color:'+n.color},[
+        el('span',{'aria-hidden':'true',txt:n.icono+' '}), document.createTextNode(n.lbl)
+      ])
+    ]));
+  });
+  if (ev.interpretacion)
+    sec.appendChild(el('p',{style:'margin-top:14px;font-size:14.5px;color:var(--ink2)',txt:ev.interpretacion}));
+  return sec;
+}
+
+// ── Ansiedad ─────────────────────────────────────────────────────────────
+function seccionAnsiedad(evs){
+  const series = [
+    { lbl:'Estado', color:'var(--s1)', puntos: evs.map(e => ({ fecha:e.fecha, valor: e.datos && e.datos.estado != null ? Number(e.datos.estado) : null })) },
+    { lbl:'Rasgo',  color:'var(--s2)', puntos: evs.map(e => ({ fecha:e.fecha, valor: e.datos && e.datos.rasgo  != null ? Number(e.datos.rasgo)  : null })) }
+  ].filter(s => s.puntos.some(p => p.valor != null));
+  const sec = el('div',{class:'seccion'});
+  const idTabla = 'tabla-ansiedad';
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Ansiedad'}),
+    el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)})
+  ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.'}));
+  if (series.length > 1) sec.appendChild(leyenda(series));
+  sec.appendChild(graficoLineas(series, evs.map(e => e.fecha), {
+    min:20, max:80,
+    bandas:[
+      { desde:45, hasta:80, color:'rgba(208,59,59,.06)',  lbl:'Alto' },
+      { desde:30, hasta:45, color:'rgba(130,130,130,.07)',lbl:'Medio' },
+      { desde:20, hasta:30, color:'rgba(12,163,12,.07)',  lbl:'Bajo' }
+    ],
+    formatoTip: p => String(p.valor)
+  }));
+  sec.appendChild(tablaSeries(series, evs.map(e => e.fecha), idTabla, p => p.valor == null ? '—' : String(p.valor)));
+  return sec;
+}
+
+// ── Historial completo ───────────────────────────────────────────────────
+const NOMBRE_PRUEBA = { ci:'Coeficiente intelectual', temperamento:'Temperamento', ansiedad:'Ansiedad', loehr:'Inventario Loehr', prearranque:'Estado de prearranque' };
+function resumenEvaluacion(ev){
+  const d = ev.datos || {};
+  if (ev.invalida) return 'Prueba inválida';
+  if (ev.tipo === 'ci') return d.ci != null ? 'CI ' + d.ci + (d.diagnostico ? ' · ' + d.diagnostico : '') : (d.diagnostico || '—');
+  if (ev.tipo === 'temperamento') return d.temperamento || '—';
+  if (ev.tipo === 'ansiedad') return ['estado ' + (d.estado ?? '—'), 'rasgo ' + (d.rasgo ?? '—')].join(' · ');
+  if (ev.tipo === 'loehr') {
+    const e = d.escalas || {};
+    return COMPUESTOS.map(c => c.lbl + ' ' + c.escalas.reduce((s,k)=>s+(Number(e[k])||0),0) + '/' + c.max).join(' · ');
+  }
+  return JSON.stringify(d);
+}
+function seccionHistorial(evs){
+  const sec = el('div',{class:'seccion'});
+  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Historial completo'}) ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Todas las pruebas aplicadas, de la más reciente a la más antigua.'}));
+  const cuerpo = el('tbody');
+  evs.slice().sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'')).forEach(ev => {
+    cuerpo.appendChild(el('tr',null,[
+      el('td',{txt:fechaCorta(ev.fecha), style:'white-space:nowrap'}),
+      el('td',{txt:NOMBRE_PRUEBA[ev.tipo] || ev.tipo, style:'font-weight:700'}),
+      el('td',{txt:resumenEvaluacion(ev)})
+    ]));
+  });
+  sec.appendChild(el('table',{class:'tabla-datos'},[
+    el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}), el('th',{txt:'Prueba'}), el('th',{txt:'Resultado'}) ]) ]),
+    cuerpo
+  ]));
+  return sec;
+}
+
+// ── Gráfico de líneas con crosshair ──────────────────────────────────────
+function leyenda(series){
+  return el('div',{class:'leyenda'}, series.map(s =>
+    el('span',null,[ el('span',{class:'trazo',style:'background:'+s.color}), document.createTextNode(s.lbl) ])));
+}
+
+// El SVG se dibuja al ancho real del contenedor en vez de escalarse: si se
+// encoge para entrar en un celular, las etiquetas quedan ilegibles.
+function anchoDisponible(){
+  const c = document.getElementById('ficha');
+  return Math.max(300, Math.min(760, (c && c.clientWidth ? c.clientWidth : 760) - 40));
+}
+// Marcas del eje en números redondos: dividir el rango en partes iguales da
+// valores como 63 % u 88 %, que no se leen de un vistazo.
+function marcasEje(min, max, buscadas){
+  // Se elige un paso que además divida justo desde el mínimo, para que las
+  // marcas queden parejas y no aparezca una primera más pegada que el resto.
+  const paso = [1,2,5,10,20,25,50,100].find(p => (max-min)/p <= buscadas && min % p === 0) || (max-min);
+  const marcas = [];
+  for (let v = min; v <= max + 1e-9; v += paso) marcas.push(Math.round(v));
+  if (marcas[marcas.length-1] < max) marcas.push(max);
+  return marcas;
+}
+function graficoLineas(series, fechas, opc){
+  const W = anchoDisponible(), angosto = W < 520;
+  const H = angosto ? 250 : 300;
+  const mL = angosto ? 34 : 44, mR = angosto ? 46 : 124, mT = 14, mB = 34;
+  const ancho = W - mL - mR, alto = H - mT - mB;
+  const n = fechas.length;
+  const x = i => mL + (n === 1 ? ancho/2 : (i/(n-1)) * ancho);
+  const y = v => mT + alto - ((v - opc.min) / (opc.max - opc.min)) * alto;
+
+  const svg = svgEl('svg', { class:'grafico', viewBox:'0 0 '+W+' '+H, role:'img',
+    'aria-label':'Gráfico de evolución. Los valores están también en la tabla.' });
+
+  (opc.bandas || []).forEach(b => {
+    // Se recorta la banda al área visible: si el eje no arranca en cero, la
+    // banda más baja se dibujaría fuera del gráfico.
+    const arriba = Math.max(mT, y(Math.min(b.hasta, opc.max)));
+    const abajo  = Math.min(mT + alto, y(Math.max(b.desde, opc.min)));
+    if (abajo - arriba < 1) return;
+    svg.appendChild(svgEl('rect',{ x:mL, y:arriba, width:ancho, height:abajo-arriba, fill:b.color }));
+    // Las bandas se rotulan en su propia columna, más a la derecha que las
+    // etiquetas de fin de línea, para que nunca se pisen entre sí. En pantalla
+    // angosta no hay lugar: el color de la banda y el subtítulo las explican.
+    if (!angosto)
+      svg.appendChild(Object.assign(svgEl('text',{ x:mL+ancho+62, y:(arriba+abajo)/2+4,
+        'font-size':'11', 'font-weight':'700', fill:'var(--ink3)' }), { textContent:b.lbl }));
+  });
+
+  marcasEje(opc.min, opc.max, angosto ? 4 : 6).forEach(v => {
+    svg.appendChild(svgEl('line',{ x1:mL, x2:mL+ancho, y1:y(v), y2:y(v), stroke:'var(--linea)', 'stroke-width':1 }));
+    svg.appendChild(Object.assign(svgEl('text',{ x:mL-8, y:y(v)+4, 'text-anchor':'end',
+      'font-size':'11', fill:'var(--ink3)' }), { textContent: v + (opc.sufijo||'') }));
+  });
+  svg.appendChild(svgEl('line',{ x1:mL, x2:mL+ancho, y1:mT+alto, y2:mT+alto, stroke:'var(--eje)', 'stroke-width':1 }));
+  fechas.forEach((f,i) => {
+    svg.appendChild(Object.assign(svgEl('text',{ x:x(i), y:H-12, 'text-anchor': n===1?'middle':(i===0?'start':(i===n-1?'end':'middle')),
+      'font-size':'11', fill:'var(--ink3)' }), { textContent: fechaMini(f) }));
+  });
+
+  const cruz = svgEl('line',{ y1:mT, y2:mT+alto, stroke:'var(--eje)', 'stroke-width':1, opacity:0 });
+  svg.appendChild(cruz);
+
+  const finales = [];
+  series.forEach(s => {
+    const vis = s.puntos.map((p,i) => ({p,i})).filter(o => o.p.valor != null);
+    if (vis.length > 1) {
+      svg.appendChild(svgEl('path',{
+        d: vis.map((o,k) => (k?'L':'M') + x(o.i) + ' ' + y(valorGraf(o.p)) ).join(' '),
+        fill:'none', stroke:s.color, 'stroke-width':2, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+    }
+    vis.forEach(o => {
+      svg.appendChild(svgEl('circle',{ cx:x(o.i), cy:y(valorGraf(o.p)), r:4.5,
+        fill:s.color, stroke:'var(--superficie)', 'stroke-width':2 }));
+    });
+    const ult = vis[vis.length-1];
+    if (ult) finales.push({ x:x(ult.i)+9, y:y(valorGraf(ult.p)),
+      txt: Math.round(valorGraf(ult.p)) + (opc.sufijo||'') });
+  });
+  function valorGraf(p){ return p.pct != null ? p.pct : p.valor; }
+
+  // Las etiquetas de fin de línea se separan si quedarían encimadas: cuando dos
+  // series terminan en valores parecidos, los números se pisarían y no se leería ninguno.
+  const SEP = 14;
+  finales.sort((a,b) => a.y - b.y);
+  for (let i = 1; i < finales.length; i++)
+    if (finales[i].y - finales[i-1].y < SEP) finales[i].y = finales[i-1].y + SEP;
+  const exceso = finales.length ? finales[finales.length-1].y - (mT + alto) : 0;
+  if (exceso > 0) finales.forEach(f => { f.y -= exceso; });
+  for (let i = finales.length - 2; i >= 0; i--)
+    if (finales[i+1].y - finales[i].y < SEP) finales[i].y = finales[i+1].y - SEP;
+  finales.forEach(f => svg.appendChild(Object.assign(svgEl('text',{ x:f.x, y:f.y+4,
+    'font-size':'11.5', 'font-weight':'800', fill:'var(--ink2)' }), { textContent:f.txt })));
+
+  const capa = svgEl('rect',{ x:mL, y:mT, width:ancho, height:alto, fill:'transparent', style:'cursor:crosshair' });
+  svg.appendChild(capa);
+  function mover(ev){
+    const caja = svg.getBoundingClientRect();
+    const px = (ev.clientX - caja.left) / caja.width * W;
+    let i = 0, mejor = Infinity;
+    for (let k = 0; k < n; k++){ const d = Math.abs(x(k) - px); if (d < mejor) { mejor = d; i = k; } }
+    cruz.setAttribute('x1', x(i)); cruz.setAttribute('x2', x(i)); cruz.setAttribute('opacity', 1);
+    mostrarTip(ev, fechas[i], series.map(s => ({ s, p: s.puntos[i] })).filter(o => o.p && o.p.valor != null), opc.formatoTip);
+  }
+  capa.addEventListener('pointermove', mover);
+  capa.addEventListener('pointerdown', mover);
+  capa.addEventListener('pointerleave', () => { cruz.setAttribute('opacity', 0); ocultarTip(); });
+  return svg;
+}
+
+function mostrarTip(ev, fecha, filas, formato){
+  const t = document.getElementById('tip');
+  t.textContent = '';
+  t.appendChild(el('div',{class:'tip-fecha',txt:fechaCorta(fecha)}));
+  filas.forEach(o => {
+    t.appendChild(el('div',{class:'tip-fila'},[
+      el('span',{class:'trazo',style:'background:'+o.s.color}),
+      el('span',{class:'tip-val',txt:formato(o.p)}),
+      el('span',{class:'tip-nom',txt:o.s.lbl})
+    ]));
+  });
+  t.classList.add('ver');
+  const an = t.offsetWidth, al = t.offsetHeight;
+  let left = ev.clientX + 14, top = ev.clientY - al/2;
+  if (left + an > window.innerWidth - 8) left = ev.clientX - an - 14;
+  top = Math.max(8, Math.min(top, window.innerHeight - al - 8));
+  t.style.left = left + 'px'; t.style.top = top + 'px';
+}
+function ocultarTip(){ document.getElementById('tip').classList.remove('ver'); }
+
+function tablaSeries(series, fechas, id, formato){
+  const cuerpo = el('tbody');
+  fechas.forEach((f,i) => {
+    cuerpo.appendChild(el('tr',null,[ el('td',{txt:fechaCorta(f)}) ].concat(
+      series.map(s => el('td',{txt: s.puntos[i] && s.puntos[i].valor != null ? formato(s.puntos[i]) : '—'})))));
+  });
+  return el('table',{class:'tabla-datos oculto',id},[
+    el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}) ].concat(series.map(s => el('th',{txt:s.lbl})))) ]),
+    cuerpo
+  ]);
+}
+function alternarTabla(ev, id){
+  const t = document.getElementById(id);
+  const oculta = t.classList.toggle('oculto');
+  ev.target.textContent = oculta ? 'Ver tabla' : 'Ocultar tabla';
+}
+
+let temporizadorTamano = null;
+window.addEventListener('resize', () => {
+  clearTimeout(temporizadorTamano);
+  temporizadorTamano = setTimeout(() => { if (SELECCIONADO) abrirFicha(SELECCIONADO); }, 180);
+});
+
+// ── Sesión ───────────────────────────────────────────────────────────────
+(async function(){
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && sessionStorage.getItem('tds-auth') === 'ok') arrancar();
+})();
+</script>
+</body>
+</html>
