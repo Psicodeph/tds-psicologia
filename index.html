@@ -400,9 +400,11 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
           <option value="Colérico">Colérico (Extrovertido-Inestable)</option>
           <option value="Flemático">Flemático (Introvertido-Estable)</option>
           <option value="Melancólico">Melancólico (Introvertido-Inestable)</option>
-          <option value="__invalida__" style="color:var(--red);font-weight:700;">❌ Prueba Inválida</option>
         </select>
-        <input type="hidden" id="temp-invalida">
+        <label class="invalida-check">
+          <input type="checkbox" id="temp-invalida" onchange="fillTempDesc()">
+          Prueba inválida
+        </label>
       </div>
     </div>
     <div class="fields" style="margin-top:14px;">
@@ -429,13 +431,25 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
           <textarea id="inp-anx-desc" placeholder="Interpretación de los niveles de ansiedad…"></textarea>
         </div>
       </div>
+      <div class="fields">
+        <label class="invalida-check">
+          <input type="checkbox" id="anx-invalida" onchange="updateAnxBadge('ae');updateAnxBadge('ar');">
+          Prueba inválida (no se guardan los puntajes)
+        </label>
+      </div>
     </div>
   </div>
 
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <div class="card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Loehr IPRD</div>
-      <div class="counter pending" id="counter">0 / 42</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <label class="invalida-check" style="margin-top:0;">
+          <input type="checkbox" id="loehr-invalida" onchange="updateCounter()">
+          Prueba inválida
+        </label>
+        <div class="counter pending" id="counter">0 / 42</div>
+      </div>
     </div>
     <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:12px;">💡 Podés llenar los 42 ítems <strong>o</strong> escribir directamente las sumas por escala en las celdas de abajo.</div>
     <div class="scale-headers" id="scale-headers"></div>
@@ -662,6 +676,7 @@ function getLevel(score,max){
   return{label:"ATENCIÓN ESPECIAL",bg:"#ffebee",text:"#b71c1c",border:"#c62828"};
 }
 var CI_INVALIDA='PRUEBA INVÁLIDA';
+var INVALIDA=CI_INVALIDA;
 function ciDiag(v){
   if(v>=130)return{label:"MUY SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
   if(v>=120)return{label:"SUPERIOR",bg:"#e8f5e9",color:"#1b5e20"};
@@ -720,18 +735,29 @@ function toggleOther(){
 }
 function updateCiBadge(){
   const v=parseInt(document.getElementById('inp-ci').value),b=document.getElementById('ci-badge');
+  if(document.getElementById('ci-invalida').checked){
+    b.style.display='inline-block';b.textContent=INVALIDA;
+    b.style.background='#ffebee';b.style.color='#b71c1c';return;
+  }
   if(isNaN(v)){b.style.display='none';return;}
   const d=ciDiag(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
 }
 function updateAnxBadge(id){
   const v=parseInt(document.getElementById('inp-'+id).value),b=document.getElementById(id+'-badge');
+  var inv=document.getElementById('anx-invalida');
+  if(inv&&inv.checked){
+    b.style.display='inline-block';b.textContent=INVALIDA;
+    b.style.background='#ffebee';b.style.color='#b71c1c';return;
+  }
   if(isNaN(v)){b.style.display='none';return;}
   const d=anxLevel(v);b.style.display='inline-block';b.textContent=d.label;b.style.background=d.bg;b.style.color=d.color;
 }
 function fillTempDesc(){
   var key=document.getElementById('inp-temp').value;
+  if(document.getElementById('temp-invalida').checked){
+    document.getElementById('inp-temp-desc').value='';return;
+  }
   if(!key)return;
-  if(key==='__invalida__'){document.getElementById('inp-temp-desc').value='';return;}
   var ta=document.getElementById('inp-temp-desc');
   var isDefault=Object.values(TEMP_DEFS).some(function(d){return d===ta.value;});
   if(!ta.value||isDefault)ta.value=TEMP_DEFS[key]||'';
@@ -914,6 +940,14 @@ function onAnswer(item,val){
   updateSums();updateCounter();
 }
 function updateCounter(){
+  var invLoehr=document.getElementById('loehr-invalida');
+  if(invLoehr&&invLoehr.checked){
+    var c=document.getElementById('counter'),b=document.getElementById('btn-eval');
+    c.textContent='Prueba inválida';c.className='counter done';
+    b.disabled=false;b.className='btn-eval ready';
+    b.textContent=editandoId?'⚡ VER PERFIL':'⚡ VER PERFIL COMPLETO';
+    return;
+  }
   var filled=itemsCompletos();
   var sumsOk=filled===0&&allSumsManual();
   var ready=loehrListo();
@@ -992,9 +1026,15 @@ function showResults(){
     document.getElementById('pdf-temp-desc').textContent=tempDesc||'—';
   } else {document.getElementById('pdf-temp-name').textContent='—';document.getElementById('pdf-temp-desc').textContent='—';}
   document.getElementById('pdf-loehr-interp').textContent=document.getElementById('inp-loehr-interp').value.trim()||'';
-  var aeVal=parseInt(document.getElementById('inp-ae').value);
-  var arVal=parseInt(document.getElementById('inp-ar').value);
-  if(!isNaN(aeVal)){document.getElementById('pdf-ae').textContent=aeVal;applyTag(document.getElementById('pdf-ae-tag'),anxLevel(aeVal));}
+  var anxInv=document.getElementById('anx-invalida').checked;
+  var aeVal=anxInv?NaN:parseInt(document.getElementById('inp-ae').value);
+  var arVal=anxInv?NaN:parseInt(document.getElementById('inp-ar').value);
+  if(anxInv){
+    document.getElementById('pdf-ae').textContent='—';
+    applyTag(document.getElementById('pdf-ae-tag'),{label:INVALIDA,bg:'#ffebee',color:'#b71c1c'});
+    document.getElementById('pdf-ar').textContent='—';
+    applyTag(document.getElementById('pdf-ar-tag'),{label:INVALIDA,bg:'#ffebee',color:'#b71c1c'});
+  } else if(!isNaN(aeVal)){document.getElementById('pdf-ae').textContent=aeVal;applyTag(document.getElementById('pdf-ae-tag'),anxLevel(aeVal));}
   else{document.getElementById('pdf-ae').textContent='—';document.getElementById('pdf-ae-tag').textContent='No aplicado';}
   if(!isNaN(arVal)){document.getElementById('pdf-ar').textContent=arVal;applyTag(document.getElementById('pdf-ar-tag'),anxLevel(arVal));}
   else{document.getElementById('pdf-ar').textContent='—';document.getElementById('pdf-ar-tag').textContent='No aplicado';}
@@ -1049,12 +1089,23 @@ async function guardarPerfil(){
   var dob=document.getElementById('inp-dob').value;
   var date=document.getElementById('inp-date').value;
   var ciInvalida=document.getElementById('ci-invalida').checked;
+  var anxInvalida=document.getElementById('anx-invalida').checked;
+  var tempInvalida=document.getElementById('temp-invalida').checked;
+  var loehrInvalida=document.getElementById('loehr-invalida').checked;
+  var invalidas=[];
+  if(ciInvalida)invalidas.push('ci');
+  if(tempInvalida)invalidas.push('temperamento');
+  if(anxInvalida)invalidas.push('ansiedad');
+  if(loehrInvalida)invalidas.push('loehr');
   var ciVal=ciInvalida?NaN:parseInt(document.getElementById('inp-ci').value);
-  var aeVal=parseInt(document.getElementById('inp-ae').value);
-  var arVal=parseInt(document.getElementById('inp-ar').value);
-  var tempKey=document.getElementById('inp-temp').value;
-  var ac=scaleScore('AC'),en=scaleScore('EN'),cat2=scaleScore('CAT'),
-      cvi=scaleScore('CVI'),nm=scaleScore('NM'),ep=scaleScore('EP'),act=scaleScore('ACT');
+  var aeVal=anxInvalida?NaN:parseInt(document.getElementById('inp-ae').value);
+  var arVal=anxInvalida?NaN:parseInt(document.getElementById('inp-ar').value);
+  var tempKey=tempInvalida?'':document.getElementById('inp-temp').value;
+  var ac=0,en=0,cat2=0,cvi=0,nm=0,ep=0,act=0;
+  if(!loehrInvalida){
+    ac=scaleScore('AC');en=scaleScore('EN');cat2=scaleScore('CAT');
+    cvi=scaleScore('CVI');nm=scaleScore('NM');ep=scaleScore('EP');act=scaleScore('ACT');
+  }
   var perfil={
     nombre:document.getElementById('inp-name').value||'Sin nombre',
     categoria:cat,cft:document.getElementById('inp-cft').value,
@@ -1064,9 +1115,9 @@ async function guardarPerfil(){
     temperamento:tempKey||null,
     temperamento_resumen:document.getElementById('inp-temp-desc').value.trim()||null,
     ansiedad_estado:isNaN(aeVal)?null:aeVal,
-    ansiedad_estado_nivel:isNaN(aeVal)?null:anxLevel(aeVal).label,
+    ansiedad_estado_nivel:anxInvalida?INVALIDA:(isNaN(aeVal)?null:anxLevel(aeVal).label),
     ansiedad_rasgo:isNaN(arVal)?null:arVal,
-    ansiedad_rasgo_nivel:isNaN(arVal)?null:anxLevel(arVal).label,
+    ansiedad_rasgo_nivel:anxInvalida?INVALIDA:(isNaN(arVal)?null:anxLevel(arVal).label),
     ansiedad_interpretacion:document.getElementById('inp-anx-desc').value.trim()||null,
     loehr_ac:ac,loehr_en:en,loehr_cat:cat2,loehr_cvi:cvi,
     loehr_nm:nm,loehr_ep:ep,loehr_act:act,
@@ -1075,6 +1126,7 @@ async function guardarPerfil(){
     loehr_interpretacion:document.getElementById('inp-loehr-interp').value.trim()||null,
     conclusion:document.getElementById('inp-conclusion').value.trim()||null,
     recomendaciones:document.getElementById('inp-recomendaciones').value.trim()||null,
+    invalidas:invalidas.length?invalidas:null,
   };
   try{
     var result;
@@ -1195,9 +1247,13 @@ function verPerfil(id){
   document.getElementById('inp-dob').value=val(rec.fecha_nacimiento);
   document.getElementById('inp-date').value=val(rec.fecha_aplicacion);
   document.getElementById('edad-calc').value=val(rec.edad);
-  document.getElementById('ci-invalida').checked=rec.ci_diagnostico===CI_INVALIDA;
+  var inv=rec.invalidas||[];
+  document.getElementById('ci-invalida').checked=inv.indexOf('ci')!==-1||rec.ci_diagnostico===CI_INVALIDA;
+  document.getElementById('temp-invalida').checked=inv.indexOf('temperamento')!==-1||rec.temperamento==='__invalida__';
+  document.getElementById('anx-invalida').checked=inv.indexOf('ansiedad')!==-1;
+  document.getElementById('loehr-invalida').checked=inv.indexOf('loehr')!==-1;
   document.getElementById('inp-ci').value=val(rec.ci);updateCiBadge();
-  document.getElementById('inp-temp').value=val(rec.temperamento);
+  document.getElementById('inp-temp').value=rec.temperamento==='__invalida__'?'':val(rec.temperamento);
   document.getElementById('inp-temp-desc').value=val(rec.temperamento_resumen);
   document.getElementById('inp-ae').value=val(rec.ansiedad_estado);updateAnxBadge('ae');
   document.getElementById('inp-ar').value=val(rec.ansiedad_rasgo);updateAnxBadge('ar');
@@ -1477,8 +1533,9 @@ function resetAll(){
   ['ci-badge','ae-badge','ar-badge'].forEach(function(id){document.getElementById(id).style.display='none';});
   document.getElementById('inp-cat-other').classList.remove('visible');
   document.getElementById('edit-banner').classList.remove('visible');
-  if(document.getElementById('ci-invalida'))document.getElementById('ci-invalida').checked=false;
-  if(document.getElementById('temp-invalida'))document.getElementById('temp-invalida').checked=false;
+  ['ci-invalida','temp-invalida','anx-invalida','loehr-invalida'].forEach(function(id){
+    var c=document.getElementById(id);if(c)c.checked=false;
+  });
   Object.keys(SCALES).forEach(function(k){var el=document.getElementById('sumval-'+k);if(el)el.value='';});
   editandoId=null;perfilGuardado=false;
   clearDraft();
@@ -1507,6 +1564,8 @@ function autoSaveForm(){
     ciInvalida:g('ci-invalida')?g('ci-invalida').checked:false,
     temp:g('inp-temp')?g('inp-temp').value:'',
     tempInvalida:g('temp-invalida')?g('temp-invalida').checked:false,
+    anxInvalida:g('anx-invalida')?g('anx-invalida').checked:false,
+    loehrInvalida:g('loehr-invalida')?g('loehr-invalida').checked:false,
     tempDesc:g('inp-temp-desc')?g('inp-temp-desc').value:'',
     ae:g('inp-ae')?g('inp-ae').value:'',
     ar:g('inp-ar')?g('inp-ar').value:'',
@@ -1579,6 +1638,8 @@ function aplicarBorrador(){
     if(d.ciInvalida&&g('ci-invalida'))g('ci-invalida').checked=d.ciInvalida;
     if(d.temp&&g('inp-temp'))g('inp-temp').value=d.temp;
     if(d.tempInvalida&&g('temp-invalida'))g('temp-invalida').checked=d.tempInvalida;
+    if(d.anxInvalida&&g('anx-invalida'))g('anx-invalida').checked=d.anxInvalida;
+    if(d.loehrInvalida&&g('loehr-invalida'))g('loehr-invalida').checked=d.loehrInvalida;
     if(d.tempDesc&&g('inp-temp-desc'))g('inp-temp-desc').value=d.tempDesc;
     if(d.ae&&g('inp-ae'))g('inp-ae').value=d.ae;
     if(d.ar&&g('inp-ar'))g('inp-ar').value=d.ar;
@@ -1620,7 +1681,7 @@ function hookAutosave(){
       el.addEventListener('input',autoSaveForm);
       el.addEventListener('change',autoSaveForm);
     });
-  ['ci-invalida','temp-invalida'].forEach(function(id){
+  ['ci-invalida','temp-invalida','anx-invalida','loehr-invalida'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.addEventListener('change',autoSaveForm);
   });

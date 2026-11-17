@@ -192,6 +192,7 @@ declare
   v_sesion_id  uuid;
   v_clave      text;
   v_tiene_loehr boolean;
+  v_invalidas  text[];
 begin
   -- 3.1 Crear un atleta por cada persona distinta.
   --     Solo se miran los perfiles que todavía no fueron migrados, así una
@@ -250,6 +251,15 @@ begin
     v_clave := public.nombre_clave(p.nombre);
     continue when v_clave is null;
 
+    -- Qué pruebas quedaron marcadas como inválidas en este perfil.
+    v_invalidas := coalesce(p.invalidas, '{}'::text[]);
+    if p.ci_diagnostico = 'PRUEBA INVÁLIDA' and not ('ci' = any(v_invalidas)) then
+      v_invalidas := v_invalidas || 'ci'::text;
+    end if;
+    if p.temperamento in ('__invalida__','PRUEBA INVÁLIDA') and not ('temperamento' = any(v_invalidas)) then
+      v_invalidas := v_invalidas || 'temperamento'::text;
+    end if;
+
     -- Si este perfil ya se migró, se respeta el atleta al que quedó asignado
     -- (puede haber cambiado por una unificación manual).
     select id, atleta_id into v_sesion_id, v_atleta_id
@@ -280,29 +290,39 @@ begin
         v_atleta_id, 'ci',
         coalesce(p.fecha_aplicacion, p.created_at::date), v_sesion_id,
         jsonb_strip_nulls(jsonb_build_object('ci', p.ci, 'diagnostico', p.ci_diagnostico)),
-        coalesce(p.ci_diagnostico, '') = 'PRUEBA INVÁLIDA',
-        case when coalesce(p.ci_diagnostico,'') = 'PRUEBA INVÁLIDA'
+        'ci' = any(v_invalidas),
+        case when 'ci' = any(v_invalidas)
              then 'Marcada como inválida en el registro original' end,
         p.id)
       on conflict do nothing;
     end if;
 
     -- Temperamento
-    if p.temperamento is not null or p.temperamento_resumen is not null then
+    if p.temperamento is not null or p.temperamento_resumen is not null
+       or 'temperamento' = any(v_invalidas) then
       insert into public.evaluaciones
-        (atleta_id, tipo, fecha, sesion_id, datos, interpretacion, origen_perfil_id)
+        (atleta_id, tipo, fecha, sesion_id, datos, interpretacion,
+         invalida, motivo_invalidez, origen_perfil_id)
       values (
         v_atleta_id, 'temperamento',
         coalesce(p.fecha_aplicacion, p.created_at::date), v_sesion_id,
-        jsonb_strip_nulls(jsonb_build_object('temperamento', p.temperamento)),
-        p.temperamento_resumen, p.id)
+        -- El valor interno "__invalida__" no se guarda: la marca va en `invalida`.
+        case when 'temperamento' = any(v_invalidas) then '{}'::jsonb
+             else jsonb_strip_nulls(jsonb_build_object('temperamento', p.temperamento)) end,
+        p.temperamento_resumen,
+        'temperamento' = any(v_invalidas),
+        case when 'temperamento' = any(v_invalidas)
+             then 'Marcada como inválida en el registro original' end,
+        p.id)
       on conflict do nothing;
     end if;
 
     -- Ansiedad (estado y/o rasgo, con su interpretación)
-    if p.ansiedad_estado is not null or p.ansiedad_rasgo is not null then
+    if p.ansiedad_estado is not null or p.ansiedad_rasgo is not null
+       or 'ansiedad' = any(v_invalidas) then
       insert into public.evaluaciones
-        (atleta_id, tipo, fecha, sesion_id, datos, interpretacion, origen_perfil_id)
+        (atleta_id, tipo, fecha, sesion_id, datos, interpretacion,
+         invalida, motivo_invalidez, origen_perfil_id)
       values (
         v_atleta_id, 'ansiedad',
         coalesce(p.fecha_aplicacion, p.created_at::date), v_sesion_id,
@@ -311,7 +331,11 @@ begin
           'estado_nivel', p.ansiedad_estado_nivel,
           'rasgo',        p.ansiedad_rasgo,
           'rasgo_nivel',  p.ansiedad_rasgo_nivel)),
-        p.ansiedad_interpretacion, p.id)
+        p.ansiedad_interpretacion,
+        'ansiedad' = any(v_invalidas),
+        case when 'ansiedad' = any(v_invalidas)
+             then 'Marcada como inválida en el registro original' end,
+        p.id)
       on conflict do nothing;
     end if;
 
@@ -320,9 +344,10 @@ begin
                    + coalesce(p.loehr_cat,0) + coalesce(p.loehr_cvi,0)
                    + coalesce(p.loehr_nm,0) + coalesce(p.loehr_ep,0)
                    + coalesce(p.loehr_act,0) > 0;
-    if v_tiene_loehr then
+    if v_tiene_loehr or 'loehr' = any(v_invalidas) then
       insert into public.evaluaciones
-        (atleta_id, tipo, fecha, sesion_id, datos, interpretacion, origen_perfil_id)
+        (atleta_id, tipo, fecha, sesion_id, datos, interpretacion,
+         invalida, motivo_invalidez, origen_perfil_id)
       values (
         v_atleta_id, 'loehr',
         coalesce(p.fecha_aplicacion, p.created_at::date), v_sesion_id,
@@ -332,7 +357,11 @@ begin
             'CAT', coalesce(p.loehr_cat,0), 'CVI', coalesce(p.loehr_cvi,0),
             'NM',  coalesce(p.loehr_nm,0),  'EP',  coalesce(p.loehr_ep,0),
             'ACT', coalesce(p.loehr_act,0))),
-        p.loehr_interpretacion, p.id)
+        p.loehr_interpretacion,
+        'loehr' = any(v_invalidas),
+        case when 'loehr' = any(v_invalidas)
+             then 'Marcada como inválida en el registro original' end,
+        p.id)
       on conflict do nothing;
     end if;
   end loop;

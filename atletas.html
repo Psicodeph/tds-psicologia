@@ -144,6 +144,7 @@ nav a.activo{background:var(--marca);color:#fff}
 .texto-titulo{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .texto-cuerpo{font-size:14.5px;color:var(--ink2);white-space:pre-wrap}
 .texto-vacio{font-size:14px;color:var(--ink3);font-style:italic}
+.nota-invalida{margin-top:14px;background:rgba(208,59,59,.08);border:1px solid rgba(208,59,59,.3);border-radius:9px;padding:10px 13px;font-size:13.5px;color:var(--ink2);font-weight:600}
 .nota{padding:14px 0;border-bottom:1px solid var(--linea)}
 .nota:last-child{border-bottom:none;padding-bottom:0}
 .nota-vieja{opacity:.75}
@@ -385,6 +386,14 @@ function evaluacionesDe(id, tipo){
     .filter(e => (!tipo || e.tipo === tipo) && enRango(e.fecha))
     .sort((a,b) => (a.fecha || '').localeCompare(b.fecha || ''));
 }
+function evaluacionesValidas(id, tipo){
+  return evaluacionesDe(id, tipo).filter(e => !e.invalida);
+}
+function hayInvalidas(id, tipo){
+  return evaluacionesDe(id, tipo).some(e => e.invalida);
+}
+const MARCA_INVALIDA = { lbl:'Prueba inválida', color:'var(--critico)', fondo:'rgba(208,59,59,.12)', icono:'▲' };
+
 function sesionesDe(id){
   return (SESIONES[id] || []).filter(se => enRango(se.fecha))
     .sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
@@ -489,15 +498,15 @@ function abrirFicha(id){
   }
 
   cont.appendChild(tarjetasResumen(id, evs, ultimaFecha));
-  const loehr = evaluacionesDe(id,'loehr');
+  const loehr = evaluacionesValidas(id,'loehr');
   // El resultado más reciente va primero: es lo que se mira siempre;
   // la evolución queda abajo, como contexto.
-  if (loehr.length)      cont.appendChild(seccionLoehrActual(loehr[loehr.length-1], loehr.length));
+  if (loehr.length)      cont.appendChild(seccionLoehrActual(loehr[loehr.length-1], loehr.length, hayInvalidas(id,'loehr')));
   if (loehr.length >= 2) cont.appendChild(seccionEvolucionLoehr(loehr));
-  const ansiedad = evaluacionesDe(id,'ansiedad');
-  if (ansiedad.length) cont.appendChild(seccionAnsiedad(ansiedad));
-  const temp = evaluacionesDe(id,'temperamento');
-  if (temp.length) cont.appendChild(seccionTemperamento(temp[temp.length-1]));
+  const ansiedad = evaluacionesValidas(id,'ansiedad');
+  if (ansiedad.length) cont.appendChild(seccionAnsiedad(ansiedad, hayInvalidas(id,'ansiedad')));
+  const temp = evaluacionesValidas(id,'temperamento');
+  if (temp.length) cont.appendChild(seccionTemperamento(temp[temp.length-1], hayInvalidas(id,'temperamento')));
   cont.appendChild(seccionConclusiones(id));
   cont.appendChild(seccionHistorial(evs));
 }
@@ -509,19 +518,25 @@ function etiquetaNivel(n){
 
 function tarjetasResumen(id, evs, ultimaFecha){
   const cajas = [];
-  const ci = evaluacionesDe(id,'ci').slice(-1)[0];
+  // Se toma el último resultado VÁLIDO de cada prueba. Si lo único que hay es
+  // una aplicación inválida, la tarjeta lo dice en vez de quedar vacía.
+  const ci = evaluacionesValidas(id,'ci').slice(-1)[0] || evaluacionesDe(id,'ci').slice(-1)[0];
   if (ci) {
     const v = ci.invalida ? null : (ci.datos && ci.datos.ci);
-    const n = ci.invalida ? { lbl:'Prueba inválida', color:'var(--critico)', fondo:'rgba(208,59,59,.12)', icono:'▲' } : nivelCI(v);
-    cajas.push(tarjeta('Coeficiente intelectual', v != null ? String(v) : '—', fechaCorta(ci.fecha), n));
+    cajas.push(tarjeta('Coeficiente intelectual', v != null ? String(v) : '—',
+      fechaCorta(ci.fecha), ci.invalida ? MARCA_INVALIDA : nivelCI(v)));
   }
-  const temp = evaluacionesDe(id,'temperamento').slice(-1)[0];
-  if (temp && temp.datos && temp.datos.temperamento)
-    cajas.push(tarjeta('Temperamento', temp.datos.temperamento, fechaCorta(temp.fecha), null, 21));
-  const anx = evaluacionesDe(id,'ansiedad').slice(-1)[0];
-  if (anx && anx.datos && anx.datos.estado != null)
+  const temp = evaluacionesValidas(id,'temperamento').slice(-1)[0] || evaluacionesDe(id,'temperamento').slice(-1)[0];
+  if (temp)
+    cajas.push(tarjeta('Temperamento',
+      temp.invalida ? '—' : ((temp.datos && temp.datos.temperamento) || '—'),
+      fechaCorta(temp.fecha), temp.invalida ? MARCA_INVALIDA : null, 21));
+  const anx = evaluacionesValidas(id,'ansiedad').slice(-1)[0] || evaluacionesDe(id,'ansiedad').slice(-1)[0];
+  if (anx && anx.invalida)
+    cajas.push(tarjeta('Ansiedad', '—', fechaCorta(anx.fecha), MARCA_INVALIDA));
+  if (anx && !anx.invalida && anx.datos && anx.datos.estado != null)
     cajas.push(tarjeta('Ansiedad estado', String(anx.datos.estado), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.estado)));
-  if (anx && anx.datos && anx.datos.rasgo != null)
+  if (anx && !anx.invalida && anx.datos && anx.datos.rasgo != null)
     cajas.push(tarjeta('Ansiedad rasgo', String(anx.datos.rasgo), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.rasgo)));
   cajas.push(tarjeta('Evaluaciones', String(evs.length), 'última: ' + fechaCorta(ultimaFecha)));
   return el('div',{class:'tarjetas'}, cajas);
@@ -578,7 +593,14 @@ function seccionEvolucionLoehr(loehr){
 }
 
 // ── Perfil Loehr actual: magnitud → un solo tono + estado con icono ──────
-function seccionLoehrActual(ev, cuantas){
+function avisoInvalidas(sec, hay){
+  if (!hay) return;
+  sec.appendChild(el('div',{class:'nota-invalida'},[
+    el('span',{'aria-hidden':'true',txt:'▲ '}),
+    document.createTextNode('Hay una aplicación marcada como prueba inválida en este período. No entra en los puntajes ni en los gráficos; figura en el historial.')
+  ]));
+}
+function seccionLoehrActual(ev, cuantas, hayInv){
   const sec = el('div',{class:'seccion'});
   sec.appendChild(el('div',{class:'seccion-cab'},[
     el('h2',{class:'seccion-titulo',txt:'Perfil Loehr' + (cuantas > 1 ? ' más reciente' : '')})
@@ -597,11 +619,12 @@ function seccionLoehrActual(ev, cuantas){
     ]));
   });
   sec.appendChild(bloqueTexto('Interpretación', ev.interpretacion));
+  avisoInvalidas(sec, hayInv);
   return sec;
 }
 
 // ── Ansiedad ─────────────────────────────────────────────────────────────
-function seccionAnsiedad(evs){
+function seccionAnsiedad(evs, hayInv){
   const series = [
     { lbl:'Estado', color:'var(--s1)', puntos: evs.map(e => ({ fecha:e.fecha, valor: e.datos && e.datos.estado != null ? Number(e.datos.estado) : null })) },
     { lbl:'Rasgo',  color:'var(--s2)', puntos: evs.map(e => ({ fecha:e.fecha, valor: e.datos && e.datos.rasgo  != null ? Number(e.datos.rasgo)  : null })) }
@@ -626,17 +649,19 @@ function seccionAnsiedad(evs){
   sec.appendChild(tablaSeries(series, evs.map(e => e.fecha), idTabla,
     p => p.valor == null ? '—' : String(p.valor), evs.length < 2));
   sec.appendChild(bloqueTexto('Interpretación', evs[evs.length-1].interpretacion));
+  avisoInvalidas(sec, hayInv);
   return sec;
 }
 
 // ── Temperamento ─────────────────────────────────────────────────────────
-function seccionTemperamento(ev){
+function seccionTemperamento(ev, hayInv){
   const sec = el('div',{class:'seccion'});
   const t = (ev.datos && ev.datos.temperamento) || '—';
   sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Temperamento'}) ]));
   sec.appendChild(el('div',{class:'seccion-sub',txt:'Evaluado el ' + fechaCorta(ev.fecha)}));
   sec.appendChild(el('div',{style:'font-size:22px;font-weight:800;margin-bottom:4px',txt:t}));
   sec.appendChild(bloqueTexto('Descripción', ev.interpretacion));
+  avisoInvalidas(sec, hayInv);
   return sec;
 }
 
@@ -926,7 +951,7 @@ function panelOpciones(){
 function construirHoja(id){
   const a = ATLETAS.find(x => x.id === id);
   const hoja = el('div',{class:'hoja',id:'hoja'});
-  const loehr = evaluacionesDe(id,'loehr');
+  const loehr = evaluacionesValidas(id,'loehr');
   const titulo = { reciente:'Reporte de perfil', primera:'Primera evaluación', evolucion:'Reporte de evolución' }[REPORTE.modo];
 
   const intro = el('div',{class:'hoja-intro'});
@@ -1052,8 +1077,21 @@ function colorPlano(c){
 }
 
 function hojaPrueba(hoja, id, tipo){
-  const evs = evaluacionesDe(id, tipo);
-  if (!evs.length) return;
+  const validas = evaluacionesValidas(id, tipo);
+  const todas = evaluacionesDe(id, tipo);
+  if (!todas.length) return;
+  // Si solo hubo aplicaciones inválidas, el informe lo dice en vez de callarlo.
+  if (!validas.length) {
+    const ultima = todas[todas.length-1];
+    const sec = seccionHoja({ ci:'Coeficiente intelectual', ansiedad:'Ansiedad', temperamento:'Temperamento' }[tipo] || tipo);
+    sec.appendChild(el('div',{style:'font-size:17px;font-weight:800;color:#b3261e',txt:'▲ Prueba inválida'}));
+    sec.appendChild(el('div',{class:'hoja-rol',txt:'Aplicada el ' + fechaCorta(ultima.fecha) +
+      (ultima.motivo_invalidez ? ' · ' + ultima.motivo_invalidez : '')}));
+    sec.appendChild(parrafoHoja('Interpretación', ultima.interpretacion));
+    hoja.appendChild(sec);
+    return;
+  }
+  const evs = validas;
   const ev = REPORTE.modo === 'primera' ? evs[0] : evs[evs.length-1];
   if (tipo === 'ansiedad') {
     const sec = seccionHoja('Ansiedad');
