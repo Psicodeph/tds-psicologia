@@ -25,6 +25,14 @@ body{background:var(--bg);font-family:'Nunito','Segoe UI',Arial,sans-serif;font-
 /* AUTOSAVE INDICATOR */
 .autosave-bar{position:fixed;bottom:0;left:0;right:0;background:#1a2340;color:#90caf9;font-size:12px;font-weight:700;padding:6px 20px;text-align:center;z-index:500;letter-spacing:1px;transition:opacity .3s;opacity:0;}
 .autosave-bar.show{opacity:1;}
+.draft-bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;background:#fff8e1;border:1.5px solid #f0c000;border-radius:12px;padding:14px 18px;margin-bottom:16px;}
+.draft-bar.show{display:flex;}
+.draft-txt{flex:1;min-width:220px;font-size:15px;color:#6b5200;line-height:1.45;}
+.draft-txt strong{display:block;font-size:16px;color:#5a4500;font-weight:900;}
+.draft-btn{background:#fff;border:1.5px solid #d9c483;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:15px;font-weight:800;color:#6b5200;cursor:pointer;white-space:nowrap;}
+.draft-btn:hover{background:#fffdf5;}
+.draft-btn-si{background:#f0a500;border-color:#f0a500;color:#fff;}
+.draft-btn-si:hover{background:#d99300;}
 /* PDF PAGE BREAKS */
 #pdf-capture .pdf-section{page-break-before:auto;}
 #pdf-capture .pdf-box-grid,#pdf-capture .anx-layout,#pdf-capture .pdf-composites,#pdf-capture .pdf-detail-card,#pdf-capture .pdf-narrative{page-break-inside:avoid;}
@@ -296,6 +304,16 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
 </div>
 
 <div class="container">
+
+<div class="draft-bar" id="draft-bar">
+  <div class="draft-txt">
+    <strong>Tenés un borrador sin guardar</strong>
+    <span id="draft-info"></span>
+  </div>
+  <button class="draft-btn draft-btn-si" onclick="aplicarBorrador()">Continuar con el borrador</button>
+  <button class="draft-btn" onclick="descartarBorrador()">Empezar en blanco</button>
+</div>
+
 
   <div class="edit-banner" id="edit-banner">
     <div class="edit-banner-text">✏️ Modo edición — <span id="edit-banner-name"></span></div>
@@ -1515,12 +1533,41 @@ function showAutosaveBar(){
   autosaveTimer=setTimeout(function(){bar.classList.remove('show');},2500);
 }
 
+// El borrador NO se vuelca solo en el formulario: ver datos ya cargados al
+// entrar hace creer que el perfil quedó guardado, y es justo al revés. Se
+// ofrece, y solo se aplica si la psicóloga lo pide.
 function restoreDraft(){
   try{
     var raw=localStorage.getItem(DRAFT_KEY);
     if(!raw)return;
     var d=JSON.parse(raw);
-    if(!d.nombre&&!d.ci&&!d.ae)return; // empty draft
+    if(!d.nombre&&!d.ci&&!d.ae){clearDraft();return;} // borrador vacío
+    var partes=[];
+    if(d.nombre)partes.push(d.nombre);
+    if(d.date)partes.push('evaluación del '+formatDate(d.date));
+    var info=g('draft-info');
+    if(info)info.textContent=partes.length
+      ? partes.join(' · ')+'. No está guardado en la base de datos.'
+      : 'No está guardado en la base de datos.';
+    var bar=g('draft-bar');
+    if(bar)bar.classList.add('show');
+  }catch(e){console.log('Restore error',e);}
+}
+
+function descartarBorrador(){
+  clearDraft();
+  var bar=g('draft-bar');
+  if(bar)bar.classList.remove('show');
+  toast('Borrador descartado','');
+}
+
+function aplicarBorrador(){
+  var bar=g('draft-bar');
+  if(bar)bar.classList.remove('show');
+  try{
+    var raw=localStorage.getItem(DRAFT_KEY);
+    if(!raw)return;
+    var d=JSON.parse(raw);
     if(d.nombre&&g('inp-name'))g('inp-name').value=d.nombre;
     if(d.cat&&g('inp-cat'))g('inp-cat').value=d.cat;
     if(d.catOther&&g('inp-cat-other')){g('inp-cat-other').value=d.catOther;if(d.cat==='__otro__')g('inp-cat-other').classList.add('visible');}
@@ -1552,11 +1599,16 @@ function restoreDraft(){
       }
     });
     updateCiBadge();updateAnxBadge('ae');updateAnxBadge('ar');updateSums();updateCounter();
+    window.scrollTo({top:0,behavior:'smooth'});
     toast('Borrador restaurado — podés continuar donde lo dejaste','success');
   }catch(e){console.log('Restore error',e);}
 }
 
-function clearDraft(){try{localStorage.removeItem(DRAFT_KEY);}catch(e){}}
+function clearDraft(){
+  try{localStorage.removeItem(DRAFT_KEY);}catch(e){}
+  var bar=document.getElementById('draft-bar');
+  if(bar)bar.classList.remove('show');
+}
 
 function hookAutosave(){
   ['inp-name','inp-cat','inp-cat-other','inp-cft','inp-dob','inp-date',
