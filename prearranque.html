@@ -104,6 +104,7 @@ table.carga tr:last-child td{border-bottom:none}
 .bt.on{background:var(--marca);border-color:var(--marca);color:#fff}
 .sel-dif{background:var(--plano);border:1.5px solid var(--borde);border-radius:8px;padding:6px 8px;font-family:inherit;font-size:13.5px;color:var(--ink);outline:none;color-scheme:inherit}
 .chapa{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.sin-perfil{font-size:11px;color:var(--fie-t);font-weight:800}
 .alerta{display:inline-block;margin-left:5px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:800;background:var(--alerta-f);color:var(--alerta-t);border:1px solid var(--alerta-b);white-space:nowrap}
 
 /* Panel */
@@ -133,6 +134,16 @@ table.rejilla td{text-align:center;font-size:13px}
 .celda-r{width:46px;height:40px;border-radius:7px;font-weight:800}
 .eje-lbl{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.3px;font-weight:800;padding:4px}
 .vacio{color:var(--ink3);text-align:center;padding:26px 14px;font-size:14.5px}
+.nota{width:100%;background:var(--plano);border:1.5px solid var(--borde);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);outline:none;resize:vertical;min-height:72px;color-scheme:inherit}
+.nota:focus{border-color:var(--marca)}
+.bt-nota{border-radius:8px;border:1.5px solid var(--borde);background:var(--plano);cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:800;color:var(--ink3);padding:5px 10px;white-space:nowrap}
+.bt-nota:hover{border-color:var(--marca);color:var(--marca-fuerte)}
+.bt-nota.con{background:var(--marca-suave);border-color:var(--marca);color:var(--marca-fuerte)}
+tr.fila-nota td{padding-top:0}
+.anotacion{padding:11px 0;border-bottom:1px solid var(--linea)}
+.anotacion:last-child{border-bottom:none}
+.anotacion-txt{font-size:14px;color:var(--ink2);line-height:1.6;white-space:pre-wrap;margin-top:3px}
+.nota-grupo{font-size:14.5px;color:var(--ink2);line-height:1.65;white-space:pre-wrap}
 details.ref{margin-bottom:16px}
 details.ref summary{cursor:pointer;color:var(--marca-fuerte);font-weight:700;font-size:14px}
 .ref-grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:12px}
@@ -275,6 +286,8 @@ const REFERENCIA = [
 
 let ATLETAS = [], COMPETENCIAS = [], APLICACIONES = [], MEDICIONES = [];
 let COMP = null, APL = null, SECCION = 'carga';
+// Qué notas por atleta están desplegadas; se abren solas si ya tienen texto.
+let NOTAS_ABIERTAS = {};
 
 function g(id){ return document.getElementById(id); }
 function el(tag, props, hijos){
@@ -399,7 +412,8 @@ function medicionDe(atletaId, aplicacionId){
 function valoresDe(atletaId, aplicacionId){
   const m = medicionDe(atletaId, aplicacionId);
   const d = (m && m.datos) || {};
-  return { e: Number(d.energia) || 0, c: Number(d.control) || 0, dif: Number(d.dificultad) || 0 };
+  return { e: Number(d.energia) || 0, c: Number(d.control) || 0, dif: Number(d.dificultad) || 0,
+           nota: (m && m.interpretacion) || '' };
 }
 
 // ── Estructura de la página ───────────────────────────────────────────────
@@ -437,21 +451,28 @@ function tarjetaPlantel(){
     el('div',{class:'contador',txt: equipo.length + (equipo.length === 1 ? ' atleta' : ' atletas')})
   ]));
   t.appendChild(el('div',{class:'ayuda',
-    txt:'Elegí los atletas de esta competencia. Quedan guardados, así no hay que volver a elegirlos en cada medición.'}));
+    txt:'Elegí los atletas de esta competencia. Quedan guardados, así no hay que volver a elegirlos en cada medición. Si alguno todavía no está en el sistema, escribí su nombre y creálo: cuando después le hagas el perfil, el prearranque ya va a estar en su ficha.'}));
 
   const barra = el('div',{class:'sub-barra',style:'border-top:none;padding-top:0;margin-top:0'});
   const buscar = el('input',{type:'text',id:'buscar-atleta',placeholder:'Buscar atleta para agregar…',autocomplete:'off'});
   const lista = el('div',{class:'fichas',style:'margin-top:10px'});
   function sugerir(){
-    const q = buscar.value.trim().toLowerCase();
+    const q = buscar.value.trim();
     lista.textContent = '';
     if (q.length < 2) return;
     const ids = (COMP.plantel || []);
-    ATLETAS.filter(a => !ids.includes(a.id) && (a.nombre || '').toLowerCase().includes(q))
-      .slice(0, 8)
-      .forEach(a => lista.appendChild(el('button',{class:'ficha',txt:a.nombre + (a.categoria ? ' · ' + a.categoria : ''),
-        onclick:() => agregarAlPlantel(a.id)})));
-    if (!lista.children.length) lista.appendChild(el('span',{class:'ayuda',style:'margin:0',txt:'Sin resultados.'}));
+    const hallados = ATLETAS.filter(a => !ids.includes(a.id) &&
+      (a.nombre || '').toLowerCase().includes(q.toLowerCase())).slice(0, 8);
+    hallados.forEach(a => lista.appendChild(el('button',{class:'ficha',
+      txt:a.nombre + (a.categoria ? ' · ' + a.categoria : ''),
+      onclick:() => agregarAlPlantel(a.id)})));
+    // No hace falta tener el perfil hecho para medir el prearranque: se crea
+    // el atleta con el nombre y después, al evaluarlo, se completa.
+    const yaEsta = ATLETAS.some(a => nombreIgual(a.nombre, q));
+    if (!yaEsta) lista.appendChild(el('button',{class:'ficha nueva',
+      txt:'+ Crear «' + q + '»', onclick:() => crearAtleta(q)}));
+    if (hallados.length) lista.appendChild(el('span',{class:'ayuda',
+      style:'margin:0;align-self:center',txt:'Si es otra persona con nombre parecido, creala.'}));
   }
   buscar.addEventListener('input', sugerir);
   barra.appendChild(buscar);
@@ -472,6 +493,28 @@ function tarjetaPlantel(){
     t.appendChild(actuales);
   }
   return t;
+}
+
+function nombreIgual(a, b){
+  const limpiar = t => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+  return limpiar(a) === limpiar(b);
+}
+function sinPerfil(a){
+  return !a.fecha_nacimiento && !a.categoria && !a.deporte && !a.sexo;
+}
+async function crearAtleta(nombre){
+  const limpio = nombre.trim();
+  if (limpio.length < 2) return;
+  const r = await sb.from('atletas').insert([{ nombre: limpio, organizacion: COMP.organizacion || null }])
+    .select().single();
+  if (r.error) { avisar('No se pudo crear el atleta.', true); console.error(r.error); return; }
+  ATLETAS.push(r.data);
+  ATLETAS.sort((x,y) => (x.nombre || '').localeCompare(y.nombre || '', 'es'));
+  if (await guardarPlantel((COMP.plantel || []).concat([r.data.id]))) {
+    pintarContenido();
+    avisar(limpio + ' creado y agregado');
+  }
 }
 
 async function guardarPlantel(ids){
@@ -596,7 +639,9 @@ function tarjetaCarga(){
     fila.appendChild(el('td',{style:'color:var(--ink3);font-size:12px',txt:String(i+1)}));
     fila.appendChild(el('td',null,[
       el('div',{class:'nom-atleta',txt:a.nombre}),
-      a.posicion ? el('div',{class:'pos-atleta',txt:a.posicion}) : null
+      a.posicion ? el('div',{class:'pos-atleta',txt:a.posicion}) : null,
+      sinPerfil(a) ? el('div',{class:'sin-perfil',
+        title:'Todavía no tiene evaluación de perfil cargada',txt:'sin perfil'}) : null
     ]));
     fila.appendChild(el('td',null,[ botonera(a.id, 'energia', v.e) ]));
     fila.appendChild(el('td',null,[ botonera(a.id, 'control', v.c) ]));
@@ -608,15 +653,35 @@ function tarjetaCarga(){
       if (tieneAlerta(est, v.dif)) celda.appendChild(el('span',{class:'alerta',txt:'optimismo'}));
     } else celda.appendChild(el('span',{style:'color:var(--ink3)',txt:'—'}));
     fila.appendChild(celda);
+
+    const abierta = NOTAS_ABIERTAS[a.id] || !!v.nota;
+    fila.appendChild(el('td',{class:'no-imprimir'},[ el('button',{
+      class:'bt-nota' + (v.nota ? ' con' : ''), type:'button',
+      title:'Observación sobre ' + a.nombre + ' en esta medición',
+      txt: v.nota ? '✎ nota' : '+ nota',
+      onclick:() => { NOTAS_ABIERTAS[a.id] = !abierta; pintarContenido();
+        if (!abierta) { const c = document.getElementById('nota-' + a.id); if (c) c.focus(); } }
+    }) ]));
     cuerpo.appendChild(fila);
+
+    if (abierta) {
+      const caja = el('textarea',{ class:'nota', id:'nota-' + a.id,
+        placeholder:'Qué observaste en ' + a.nombre.split(' ')[0] + ': cómo llegó, qué dijo, qué se hizo…' });
+      caja.value = v.nota;
+      caja.addEventListener('change', () => guardarNota(a.id, caja.value));
+      cuerpo.appendChild(el('tr',{class:'fila-nota'},[
+        el('td'), el('td',{colspan:'6'},[ caja ])
+      ]));
+    }
   });
 
+  t.appendChild(tarjetaObservacion());
   t.appendChild(el('div',{class:'tabla-scroll'},[
     el('table',{class:'carga'},[
       el('thead',null,[ el('tr',null,[
         el('th',{txt:'#'}), el('th',{txt:'Atleta'}),
         el('th',{txt:'Energía'}), el('th',{txt:'Control'}),
-        el('th',{txt:'Dific.'}), el('th',{txt:'Estado'})
+        el('th',{txt:'Dific.'}), el('th',{txt:'Estado'}), el('th',{class:'no-imprimir',txt:'Nota'})
       ]) ]),
       cuerpo
     ])
@@ -663,23 +728,61 @@ function guardarValor(atletaId, campo, valor){
 async function persistir(atletaId, aplicacionId){
   const local = MEDICIONES.find(x => x.atleta_id === atletaId && x.aplicacion_id === aplicacionId);
   if (!local) return;
-  const vacio = !Object.keys(local.datos || {}).length;
+  // Una medición con sola nota y sin puntajes igual se guarda: la
+  // observación es información.
+  const vacio = !Object.keys(local.datos || {}).length && !(local.interpretacion || '').trim();
   try {
     if (local.id && vacio) {
       await sb.from('evaluaciones').delete().eq('id', local.id);
       MEDICIONES = MEDICIONES.filter(x => x !== local);
     } else if (local.id) {
-      const r = await sb.from('evaluaciones').update({ datos: local.datos }).eq('id', local.id);
+      const r = await sb.from('evaluaciones')
+        .update({ datos: local.datos, interpretacion: local.interpretacion || null }).eq('id', local.id);
       if (r.error) throw r.error;
     } else if (!vacio) {
       const r = await sb.from('evaluaciones').insert([{
         atleta_id: atletaId, tipo:'prearranque', fecha: local.fecha,
-        aplicacion_id: aplicacionId, contexto: COMP.nombre, datos: local.datos
+        aplicacion_id: aplicacionId, contexto: COMP.nombre, datos: local.datos,
+        interpretacion: local.interpretacion || null
       }]).select('id').single();
       if (r.error) throw r.error;
       local.id = r.data.id;
     }
   } catch(e) { avisar('No se pudo guardar. Revisá la conexión.', true); console.error(e); }
+}
+
+// Lo que no entra en un número: el clima del grupo, el contexto del día,
+// lo que se decidió hacer.
+function tarjetaObservacion(){
+  const caja = el('textarea',{ class:'nota', id:'nota-medicion',
+    placeholder:'Observaciones de esta medición: clima del grupo, contexto del día, qué se trabajó…' });
+  caja.value = APL.notas || '';
+  caja.addEventListener('change', () => guardarObservacion(caja.value));
+  return el('div',{style:'margin:4px 0 18px'},[
+    el('h2',{style:'margin-bottom:8px',txt:'Observaciones de la medición'}), caja
+  ]);
+}
+async function guardarObservacion(v){
+  const notas = (v || '').trim() || null;
+  const r = await sb.from('aplicaciones').update({ notas }).eq('id', APL.id);
+  if (r.error) { avisar('No se pudo guardar la observación.', true); console.error(r.error); return; }
+  APL.notas = notas;
+  avisar('Observación guardada');
+}
+
+// La nota del atleta se guarda en la interpretación de esa medición, igual
+// que en el resto de las pruebas, así aparece en su ficha.
+function guardarNota(atletaId, texto){
+  const t = (texto || '').trim();
+  const m = medicionDe(atletaId, APL.id);
+  if (m) m.interpretacion = t;
+  else if (t) MEDICIONES.push({ id:null, atleta_id:atletaId, aplicacion_id:APL.id, tipo:'prearranque',
+                                fecha:APL.fecha || hoyLocal(), datos:{}, interpretacion:t });
+  else return;
+  NOTAS_ABIERTAS[atletaId] = true;
+  pintarContenido();
+  const clave = atletaId + '|' + APL.id;
+  colas[clave] = (colas[clave] || Promise.resolve()).then(() => persistir(atletaId, APL.id));
 }
 
 // ── Análisis ──────────────────────────────────────────────────────────────
@@ -757,6 +860,7 @@ function tarjetasAnalisis(){
 
   salida.push(tarjetaIntervenir());
   salida.push(tarjetaRejilla());
+  salida.push(tarjetaAnotaciones());
   return salida;
 }
 
@@ -789,6 +893,36 @@ function tarjetaIntervenir(){
     ]),
     el('div',{class:'accion-proto',txt:it.proto})
   ])));
+  return t;
+}
+
+function tarjetaAnotaciones(){
+  const t = el('div',{class:'tarjeta'});
+  t.appendChild(el('div',{class:'tarjeta-cab'},[ el('h2',{txt:'Anotaciones'}) ]));
+  let algo = false;
+  if ((APL.notas || '').trim()) {
+    algo = true;
+    t.appendChild(el('div',{class:'anotacion'},[
+      el('div',{class:'metrica-lbl',txt:'De la medición'}),
+      el('div',{class:'nota-grupo',txt:APL.notas})
+    ]));
+  }
+  plantel().forEach(a => {
+    const v = valoresDe(a.id, APL.id);
+    if (!v.nota) return;
+    algo = true;
+    const est = estadoDe(v.e, v.c);
+    t.appendChild(el('div',{class:'anotacion'},[
+      el('div',{style:'display:flex;gap:8px;align-items:center;flex-wrap:wrap'},[
+        el('span',{class:'nom-atleta',txt:a.nombre}),
+        est ? el('span',{class:'chapa',
+          style:'background:'+est.f+';color:'+est.t+';border:1px solid '+est.b,txt:est.lbl}) : null
+      ]),
+      el('div',{class:'anotacion-txt',txt:v.nota})
+    ]));
+  });
+  if (!algo) t.appendChild(el('div',{class:'vacio',
+    txt:'Sin anotaciones todavía. Se escriben en la pestaña Cargar.'}));
   return t;
 }
 
@@ -908,6 +1042,9 @@ function tarjetaCotejo(){
       celda.appendChild(el('span',{class:'chapa',style:'background:'+eb.f+';color:'+eb.t+';border:1px solid '+eb.b,txt:eb.lbl}));
       if (tieneAlerta(eb, vb.dif)) celda.appendChild(el('span',{class:'alerta',txt:'optimismo'}));
     } else celda.appendChild(el('span',{style:'color:var(--ink3)',txt:'—'}));
+    if (vb.nota) celda.appendChild(el('span',{class:'alerta',
+      style:'background:var(--marca-suave);color:var(--marca-fuerte);border-color:var(--marca)',
+      title:vb.nota, txt:'con nota'}));
     fila.appendChild(celda);
     cuerpo.appendChild(fila);
   });
