@@ -1,7 +1,17 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/perfiles", "destination": "/perfiles.html" },
-    { "source": "/atletas", "destination": "/atletas.html" }
+    {
+      "source": "/perfiles",
+      "destination": "/perfiles.html"
+    },
+    {
+      "source": "/atletas",
+      "destination": "/atletas.html"
+    },
+    {
+      "source": "/evaluar",
+      "destination": "/evaluar.html"
+    }
   ]
 }
