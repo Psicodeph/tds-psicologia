@@ -16,6 +16,10 @@
     {
       "source": "/clasico",
       "destination": "/clasico.html"
+    },
+    {
+      "source": "/consultas",
+      "destination": "/consultas.html"
     }
   ]
 }
