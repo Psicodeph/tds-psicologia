@@ -186,7 +186,8 @@ const SUGERIDAS = [
   '¿Qué atletas tienen ansiedad alta y conviene priorizar?',
   'Compará los centros de formación entre sí',
   '¿Qué atletas mejoraron más desde su primera evaluación?',
-  'Hacé un resumen del perfil del grupo Sub-15'
+  'Hacé un resumen del perfil del grupo Sub-15',
+  '¿Qué me dicen las pruebas que resultaron inválidas?'
 ];
 
 let ATLETAS = [], EVALUACIONES = [], SESIONES = [], CONTEXTO = '';
@@ -250,11 +251,16 @@ async function arrancar(){
 }
 
 // Se arma un resumen compacto: la IA necesita los datos, no la base entera.
-// Las evaluaciones inválidas se omiten porque no tienen puntaje real.
+// Los puntajes de una prueba inválida no existen y no pueden promediarse,
+// pero que una prueba haya resultado inválida sí es un dato clínico y va
+// aparte, con su fecha y su motivo.
+const NOMBRE_PRUEBA = { ci:'coeficiente intelectual', temperamento:'temperamento',
+                        ansiedad:'ansiedad', loehr:'inventario Loehr', prearranque:'prearranque' };
 function armarContexto(){
-  const porAtleta = {};
-  EVALUACIONES.filter(e => !e.invalida).forEach(e => {
-    (porAtleta[e.atleta_id] = porAtleta[e.atleta_id] || []).push(e);
+  const porAtleta = {}, invalidasPorAtleta = {};
+  EVALUACIONES.forEach(e => {
+    if (e.invalida) (invalidasPorAtleta[e.atleta_id] = invalidasPorAtleta[e.atleta_id] || []).push(e);
+    else (porAtleta[e.atleta_id] = porAtleta[e.atleta_id] || []).push(e);
   });
 
   const filas = ATLETAS.map(a => {
@@ -293,6 +299,15 @@ function armarContexto(){
         f.loehr_primero_fecha = loehrP.fecha;
       }
     }
+    const inv = invalidasPorAtleta[a.id] || [];
+    if (inv.length) {
+      f.pruebas_invalidas = inv.map(e => ({
+        prueba: NOMBRE_PRUEBA[e.tipo] || e.tipo,
+        fecha: e.fecha,
+        motivo: e.motivo_invalidez || null,
+        nota: e.interpretacion || null
+      }));
+    }
     const ses = SESIONES.filter(x => x.atleta_id === a.id).slice(-1)[0];
     if (ses) {
       if (ses.conclusion) f.conclusion = ses.conclusion;
@@ -301,9 +316,11 @@ function armarContexto(){
     return f;
   });
   CONTEXTO = JSON.stringify(filas);
+  const cuantasInv = EVALUACIONES.filter(e => e.invalida).length;
   g('ayuda-alcance').textContent =
     'Las preguntas se responden con los ' + ATLETAS.length + ' atletas cargados y sus ' +
-    EVALUACIONES.length + ' evaluaciones. Las pruebas marcadas inválidas quedan fuera.';
+    EVALUACIONES.length + ' evaluaciones' +
+    (cuantasInv ? ', incluidas ' + cuantasInv + ' marcadas como inválidas: sus puntajes no se promedian, pero el dato se tiene en cuenta en la interpretación.' : '.');
 }
 
 function pintarResumen(){
@@ -314,10 +331,11 @@ function pintarResumen(){
   validas.filter(e => e.tipo === 'loehr').forEach(e => { conLoehr[e.atleta_id] = e; });
   const autoconf = Object.values(conLoehr)
     .map(e => Number((e.datos && e.datos.escalas && e.datos.escalas.AC) || 0)).filter(Boolean);
+  const invalidas = EVALUACIONES.filter(e => e.invalida).length;
   const datos = [
     ['Atletas', ATLETAS.length],
-    ['Evaluaciones', validas.length],
-    ['Centros', new Set(ATLETAS.map(a => a.centro).filter(Boolean)).size],
+    ['Evaluaciones', EVALUACIONES.length],
+    ['Pruebas inválidas', invalidas],
     ['Prom. autoconfianza', autoconf.length ? Math.round(autoconf.reduce((a,b) => a+b, 0) / autoconf.length) + ' / 30' : '—']
   ];
   datos.forEach(([lbl, v]) => cont.appendChild(el('div',{class:'dato'},[
@@ -420,6 +438,13 @@ async function preguntar(){
     'Ansiedad (Spielberger, 20 a 80): hasta 29 bajo, de 30 a 44 medio, 45 o más alto.\n' +
     'CI: 130 o más muy superior, 120-129 superior, 110-119 alto, 90-109 normal, 80-89 normal bajo, ' +
     'menos de 80 bajo.\n\n' +
+    'Algunos atletas tienen pruebas en "pruebas_invalidas". Una prueba inválida NO tiene puntaje ' +
+    'y por eso no entra en promedios ni comparaciones numéricas, pero el hecho de que haya resultado ' +
+    'inválida SÍ es información clínica: puede hablar de dificultad de comprensión de la consigna, ' +
+    'de impulsividad al responder, de resistencia a la evaluación, de fatiga o de desconexión con el ' +
+    'proceso. Tomala en cuenta en la interpretación, nombrá al atleta y al tipo de prueba, y planteá ' +
+    'hipótesis prudentes sobre qué puede estar indicando, sin afirmarlas como hechos y señalando que ' +
+    'conviene reaplicar la prueba para confirmar.\n\n' +
     'Si la pregunta no se puede responder con estos datos, decilo claramente en vez de suponer. ' +
     'Nombrá a los atletas concretos cuando corresponda. Usá tablas de markdown si ayudan.\n\n' +
     'Atletas (' + ATLETAS.length + '):\n' + CONTEXTO + '\n\nPregunta: ' + pregunta;
