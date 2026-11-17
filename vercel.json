@@ -20,6 +20,10 @@
     {
       "source": "/consultas",
       "destination": "/consultas.html"
+    },
+    {
+      "source": "/prearranque",
+      "destination": "/prearranque.html"
     }
   ]
 }
