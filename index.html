@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="/assets/icono.png">
 <title>Perfil Psicológico Deportivo — TDS Honduras</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -551,8 +552,8 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
       <button class="btn-secondary" onclick="cargarPerfiles()">↻ Actualizar</button>
     </div>
     <div class="db-stats">
-      <div class="db-stat"><div class="db-stat-val" id="stat-total">—</div><div class="db-stat-lbl">Total perfiles</div></div>
-      <div class="db-stat"><div class="db-stat-val" id="stat-jugadores">—</div><div class="db-stat-lbl">Jugadores únicos</div></div>
+      <div class="db-stat"><div class="db-stat-val" id="stat-total">—</div><div class="db-stat-lbl">Evaluaciones guardadas</div></div>
+      <div class="db-stat"><div class="db-stat-val" id="stat-jugadores">—</div><div class="db-stat-lbl">Atletas</div></div>
       <div class="db-stat"><div class="db-stat-val" id="stat-centros">—</div><div class="db-stat-lbl">Centros</div></div>
       <div class="db-stat"><div class="db-stat-val" id="stat-avg">—</div><div class="db-stat-lbl">Prom. Autoconfianza</div></div>
     </div>
@@ -1329,7 +1330,7 @@ async function cargarPerfiles(){
 }
 
 function mostrarTodos(){
-  window.location.href='/perfiles';
+  window.location.href='/atletas';
 }
 
 function filtrarYRenderTabla(){
@@ -1350,7 +1351,7 @@ function renderTabla(data, showMoreLink){
   var tbody=document.getElementById('db-tbody');
   if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="8" class="db-empty">No se encontraron perfiles.</td></tr>';return;}
   var sorted=data.slice().sort(function(a,b){return(a.nombre||'').localeCompare(b.nombre||'','es');});
-  var extra=showMoreLink?'<tr><td colspan="8" style="text-align:center;padding:14px;"><button onclick="mostrarTodos()" style="background:none;border:none;color:var(--blue);font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline;">Ver todos los perfiles ('+perfilesBD.length+') →</button></td></tr>':'';
+  var extra=showMoreLink?'<tr><td colspan="8" style="text-align:center;padding:14px;"><button onclick="mostrarTodos()" style="background:none;border:none;color:var(--blue);font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;text-decoration:underline;">Ver las fichas de todos los atletas →</button></td></tr>':'';
   tbody.innerHTML=sorted.map(function(p){
     return '<tr>'+
       '<td class="name-cell">'+
@@ -1375,9 +1376,16 @@ function renderTabla(data, showMoreLink){
 }
 function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
-function renderStats(data){
+async function renderStats(data){
   document.getElementById('stat-total').textContent=data.length||0;
-  document.getElementById('stat-jugadores').textContent=new Set(data.map(function(p){return p.nombre;}).filter(Boolean)).size||0;
+  // El número de atletas sale de la tabla de atletas, no de contar nombres
+  // distintos: ahí un mismo jugador escrito de dos formas contaba doble.
+  var cuantos=new Set(data.map(function(p){return p.nombre;}).filter(Boolean)).size||0;
+  try{
+    var r=await sb.from('atletas').select('id',{count:'exact',head:true});
+    if(!r.error&&typeof r.count==='number')cuantos=r.count;
+  }catch(e){}
+  document.getElementById('stat-jugadores').textContent=cuantos;
   document.getElementById('stat-centros').textContent=new Set(data.map(function(p){return p.cft;}).filter(Boolean)).size||0;
   var vals=data.map(function(p){return p.loehr_autoconfianza;}).filter(function(v){return v!=null;});
   document.getElementById('stat-avg').textContent=vals.length?Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length):'—';
