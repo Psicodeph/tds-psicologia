@@ -47,10 +47,21 @@ borradas as (
 )
 select (select count(*) from borradas) as "registros quitados";
 
--- Verificación: no debe quedar ninguna prueba repetida el mismo día.
-select a.nombre, e.tipo, e.fecha, count(*) as "repetidas el mismo día"
+-- Verificación final: la primera columna debe decir "sin repeticiones",
+-- y abajo se listan los CI que quedaron marcados como prueba inválida.
+select coalesce(
+         (select string_agg(a.nombre || ' · ' || e.tipo || ' · ' || e.fecha, ' / ')
+            from (select atleta_id, tipo, fecha
+                    from public.evaluaciones
+                   group by atleta_id, tipo, fecha having count(*) > 1) d
+            join public.evaluaciones e
+              on e.atleta_id = d.atleta_id and e.tipo = d.tipo and e.fecha = d.fecha
+            join public.atletas a on a.id = d.atleta_id),
+         'sin repeticiones'
+       ) as "pruebas repetidas el mismo día";
+
+select a.nombre, e.fecha, e.motivo_invalidez as "CI marcado como prueba inválida"
   from public.evaluaciones e
   join public.atletas a on a.id = e.atleta_id
- group by a.nombre, e.tipo, e.fecha
-having count(*) > 1
- order by a.nombre, e.tipo;
+ where e.tipo = 'ci' and e.invalida
+ order by a.nombre;
