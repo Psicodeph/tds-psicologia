@@ -1006,12 +1006,9 @@ function showResults(){
   });
   document.getElementById('pdf-conclusion').textContent=document.getElementById('inp-conclusion').value.trim()||'';
   document.getElementById('pdf-recomendaciones').textContent=document.getElementById('inp-recomendaciones').value.trim()||'';
-  // El pie lleva la firma de la psicóloga a la izquierda. A la derecha van los
-  // datos del informe: fecha y, si corresponde, el programa al que pertenece el
-  // atleta. La federación es la organización del atleta, no la autora.
-  var pie='Emitido el '+formatDate(date);
-  if(cft) pie+='<br>'+escHtml(cft)+' · Sistema de Desarrollo del Talento (TDS)';
-  document.getElementById('pdf-footer-right').innerHTML=pie;
+  // El pie lleva la firma de la psicóloga a la izquierda y la fecha a la derecha.
+  // El centro y el programa del atleta ya figuran en sus datos, arriba.
+  document.getElementById('pdf-footer-right').textContent='Emitido el '+formatDate(date);
   perfilGuardado=false;
   var btnS=document.getElementById('btn-save');
   btnS.className='btn-save';btnS.disabled=false;
