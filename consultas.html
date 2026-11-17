@@ -340,6 +340,7 @@ function armarContexto(){
       edad_actual: edadEn(a.fecha_nacimiento, null),
       notas: recortar(a.notas) || undefined,
       evaluaciones: historial.length,
+      pruebas_aplicadas: (porAtleta[a.id] || []).length,
       historial
     };
   });
@@ -348,10 +349,11 @@ function armarContexto(){
   if (CONTEXTO.length > 320000)
     console.warn('El contexto enviado a la IA es grande (' + Math.round(CONTEXTO.length/1024) + ' KB).');
   const cuantasInv = EVALUACIONES.filter(e => e.invalida).length;
+  const encuentros = new Set(EVALUACIONES.map(e => e.atleta_id + '|' + e.fecha)).size;
   g('ayuda-alcance').textContent =
-    'Las preguntas se responden con los ' + ATLETAS.length + ' atletas cargados y sus ' +
-    EVALUACIONES.length + ' evaluaciones, con el historial completo de cada uno' +
-    (cuantasInv ? ', incluidas ' + cuantasInv + ' pruebas inválidas: sus puntajes no se promedian, pero el dato entra en la interpretación.' : '.');
+    'Las preguntas se responden con los ' + ATLETAS.length + ' atletas cargados, sus ' +
+    encuentros + ' evaluaciones y las ' + EVALUACIONES.length + ' pruebas aplicadas en ellas' +
+    (cuantasInv ? ', incluidas ' + cuantasInv + ' inválidas: sus puntajes no se promedian, pero el dato entra en la interpretación.' : '.');
 }
 
 function pintarResumen(){
@@ -363,9 +365,13 @@ function pintarResumen(){
   const autoconf = Object.values(conLoehr)
     .map(e => Number((e.datos && e.datos.escalas && e.datos.escalas.AC) || 0)).filter(Boolean);
   const invalidas = EVALUACIONES.filter(e => e.invalida).length;
+  // Una evaluación es un día de trabajo con el atleta; las pruebas son los
+  // instrumentos que se aplicaron ese día.
+  const encuentros = new Set(EVALUACIONES.map(e => e.atleta_id + '|' + e.fecha)).size;
   const datos = [
     ['Atletas', ATLETAS.length],
-    ['Evaluaciones', EVALUACIONES.length],
+    ['Evaluaciones', encuentros],
+    ['Pruebas aplicadas', EVALUACIONES.length],
     ['Pruebas inválidas', invalidas],
     ['Prom. autoconfianza', autoconf.length ? Math.round(autoconf.reduce((a,b) => a+b, 0) / autoconf.length) + ' / 30' : '—']
   ];

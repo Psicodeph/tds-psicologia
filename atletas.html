@@ -564,7 +564,10 @@ function pintarLista(){
   filtrados.forEach(a => {
     const evs = PORATLETA[a.id] || [];
     const ultima = evs.map(e => e.fecha).sort().pop();
-    const partes = [a.categoria, evs.length + (evs.length === 1 ? ' evaluación' : ' evaluaciones')].filter(Boolean);
+    // Se cuentan los encuentros, no los instrumentos: cuatro pruebas de un
+    // mismo día son una evaluación, no cuatro.
+    const cuantas = new Set(evs.map(e => e.fecha)).size;
+    const partes = [a.categoria, cuantas + (cuantas === 1 ? ' evaluación' : ' evaluaciones')].filter(Boolean);
     const falta = faltantes[a.id].length;
     lista.appendChild(el('button', {
       class:'item', 'aria-current': String(a.id === SELECCIONADO),
@@ -667,7 +670,9 @@ function tarjetasResumen(id, evs, ultimaFecha){
     cajas.push(tarjeta('Ansiedad estado', String(anx.datos.estado), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.estado)));
   if (anx && !anx.invalida && anx.datos && anx.datos.rasgo != null)
     cajas.push(tarjeta('Ansiedad rasgo', String(anx.datos.rasgo), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.rasgo)));
-  cajas.push(tarjeta('Evaluaciones', String(evs.length), 'última: ' + fechaCorta(ultimaFecha)));
+  const encuentros = new Set(evs.map(e => e.fecha)).size;
+  cajas.push(tarjeta('Evaluaciones', String(encuentros),
+    evs.length + (evs.length === 1 ? ' prueba' : ' pruebas') + ' · última: ' + fechaCorta(ultimaFecha)));
   return el('div',{class:'tarjetas'}, cajas);
 }
 function tarjeta(lbl, num, pie, nivel, tam){
@@ -858,7 +863,8 @@ function resumenEvaluacion(ev){
 function seccionHistorial(evs){
   const sec = el('div',{class:'seccion'});
   sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Historial completo'}) ]));
-  sec.appendChild(el('div',{class:'seccion-sub',txt:'Todas las pruebas aplicadas, de la más reciente a la más antigua.'}));
+  sec.appendChild(el('div',{class:'seccion-sub',
+    txt:'Todas las pruebas aplicadas, de la más reciente a la más antigua. Las de una misma fecha son una sola evaluación.'}));
   const cuerpo = el('tbody');
   evs.slice().sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'')).forEach(ev => {
     cuerpo.appendChild(el('tr',null,[
