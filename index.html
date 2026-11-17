@@ -507,7 +507,7 @@ input.sum-value:focus{background:rgba(255,255,255,.2);border-radius:4px;}
       <div class="pdf-narrative"><div class="pdf-narrative-text" id="pdf-recomendaciones" contenteditable="true" data-ph="Las recomendaciones aparecerán aquí…"></div></div>
       <div class="pdf-footer">
         <div class="pdf-footer-sig"><strong>Lic. Melany Ordóñez</strong>Máster en Psicología del Deporte</div>
-        <div class="pdf-footer-right" id="pdf-footer-right">Federación Nacional Autónoma de Fútbol de Honduras<br>Sistema de Desarrollo del Talento · TDS</div>
+        <div class="pdf-footer-right" id="pdf-footer-right">Federación de Fútbol de Honduras<br>Sistema de Desarrollo del Talento · TDS</div>
       </div>
     </div>
     <button class="btn-reset" onclick="resetAll()">↺ Nueva evaluación</button>
@@ -1006,7 +1006,7 @@ function showResults(){
   });
   document.getElementById('pdf-conclusion').textContent=document.getElementById('inp-conclusion').value.trim()||'';
   document.getElementById('pdf-recomendaciones').textContent=document.getElementById('inp-recomendaciones').value.trim()||'';
-  document.getElementById('pdf-footer-right').innerHTML=formatDate(date)+'<br>Federación Nacional Autónoma de Fútbol de Honduras<br>Sistema de Desarrollo del Talento · TDS';
+  document.getElementById('pdf-footer-right').innerHTML=formatDate(date)+'<br>Federación de Fútbol de Honduras<br>Sistema de Desarrollo del Talento · TDS';
   perfilGuardado=false;
   var btnS=document.getElementById('btn-save');
   btnS.className='btn-save';btnS.disabled=false;

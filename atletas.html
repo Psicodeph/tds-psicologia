@@ -129,6 +129,25 @@ nav a.activo{background:var(--marca);color:#fff}
 .tip-val{font-weight:800;font-variant-numeric:tabular-nums}
 .tip-nom{color:var(--ink2);font-size:12.5px}
 
+/* Filtro de período */
+.filtro{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+.chip{background:var(--superficie);border:1px solid var(--borde);border-radius:20px;padding:7px 14px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.chip:hover{background:var(--marca-suave)}
+.chip-on{background:var(--marca);border-color:var(--marca);color:#fff}
+.filtro-sep{font-size:13px;color:var(--ink3);font-weight:600}
+.fecha-in{background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:6px 9px;font-family:inherit;font-size:13.5px;color:var(--ink);color-scheme:inherit}
+
+/* Textos escritos por la psicóloga */
+.texto-bloque{margin-top:14px;padding-top:12px;border-top:1px solid var(--linea)}
+.texto-titulo{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.texto-cuerpo{font-size:14.5px;color:var(--ink2);white-space:pre-wrap}
+.texto-vacio{font-size:14px;color:var(--ink3);font-style:italic}
+.nota{padding:14px 0;border-bottom:1px solid var(--linea)}
+.nota:last-child{border-bottom:none;padding-bottom:0}
+.nota-vieja{opacity:.75}
+.nota-fecha{font-size:13px;font-weight:800;color:var(--marca-fuerte)}
+.nota .texto-bloque:first-of-type{border-top:none;padding-top:6px;margin-top:4px}
+
 .aviso{background:var(--marca-suave);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;color:var(--ink2);font-size:14.5px}
 </style>
 </head>
@@ -277,13 +296,15 @@ async function entrar(){
 }
 
 // ── Datos ────────────────────────────────────────────────────────────────
-let ATLETAS = [], PORATLETA = {}, SELECCIONADO = null;
+let ATLETAS = [], PORATLETA = {}, SESIONES = {}, SELECCIONADO = null;
+let FILTRO = { desde:'', hasta:'' };
 
 async function arrancar(){
   document.getElementById('acceso').style.display = 'none';
-  const [ra, re] = await Promise.all([
+  const [ra, re, rs] = await Promise.all([
     sb.from('atletas').select('*').order('nombre'),
-    sb.from('evaluaciones').select('*').order('fecha', { ascending: true })
+    sb.from('evaluaciones').select('*').order('fecha', { ascending: true }),
+    sb.from('sesiones').select('*').order('fecha', { ascending: true })
   ]);
   if (ra.error || re.error) {
     document.getElementById('lista').innerHTML = '';
@@ -294,13 +315,66 @@ async function arrancar(){
   ATLETAS = ra.data || [];
   PORATLETA = {};
   (re.data || []).forEach(ev => { (PORATLETA[ev.atleta_id] = PORATLETA[ev.atleta_id] || []).push(ev); });
+  SESIONES = {};
+  ((rs && rs.data) || []).forEach(se => { (SESIONES[se.atleta_id] = SESIONES[se.atleta_id] || []).push(se); });
   document.getElementById('contador').textContent = '(' + ATLETAS.length + ')';
   pintarLista();
 }
 
+function enRango(f){
+  if (!f) return false;
+  const d = f.substring(0,10);
+  if (FILTRO.desde && d < FILTRO.desde) return false;
+  if (FILTRO.hasta && d > FILTRO.hasta) return false;
+  return true;
+}
 function evaluacionesDe(id, tipo){
-  return (PORATLETA[id] || []).filter(e => !tipo || e.tipo === tipo)
+  return (PORATLETA[id] || [])
+    .filter(e => (!tipo || e.tipo === tipo) && enRango(e.fecha))
     .sort((a,b) => (a.fecha || '').localeCompare(b.fecha || ''));
+}
+function sesionesDe(id){
+  return (SESIONES[id] || []).filter(se => enRango(se.fecha))
+    .sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+
+// El período acota todo lo de abajo: tarjetas, gráficos, tablas e historial,
+// así los números de la página siempre concuerdan entre sí.
+function filaFiltro(id){
+  const todas = (PORATLETA[id] || []).map(e => e.fecha).filter(Boolean).sort();
+  const primera = todas[0], ultima = todas[todas.length-1];
+  const fila = el('div',{class:'filtro'});
+  const presets = [
+    ['Todo el historial', ''],
+    ['Último año', 365],
+    ['Últimos 2 años', 730]
+  ];
+  presets.forEach(([lbl, dias]) => {
+    const activo = dias === '' ? (!FILTRO.desde && !FILTRO.hasta) : esPreset(dias);
+    fila.appendChild(el('button',{
+      class:'chip' + (activo ? ' chip-on' : ''), txt:lbl,
+      onclick: () => {
+        if (dias === '') FILTRO = { desde:'', hasta:'' };
+        else {
+          const d = new Date(); d.setDate(d.getDate() - dias);
+          FILTRO = { desde: d.toISOString().substring(0,10), hasta:'' };
+        }
+        abrirFicha(id);
+      }
+    }));
+  });
+  fila.appendChild(el('span',{class:'filtro-sep',txt:'o entre'}));
+  fila.appendChild(el('input',{type:'date',class:'fecha-in',value:FILTRO.desde || (primera||''),
+    'aria-label':'Desde', onchange:e => { FILTRO.desde = e.target.value; abrirFicha(id); }}));
+  fila.appendChild(el('span',{class:'filtro-sep',txt:'y'}));
+  fila.appendChild(el('input',{type:'date',class:'fecha-in',value:FILTRO.hasta || (ultima||''),
+    'aria-label':'Hasta', onchange:e => { FILTRO.hasta = e.target.value; abrirFicha(id); }}));
+  return fila;
+}
+function esPreset(dias){
+  if (!FILTRO.desde || FILTRO.hasta) return false;
+  const d = new Date(); d.setDate(d.getDate() - dias);
+  return FILTRO.desde === d.toISOString().substring(0,10);
 }
 
 // ── Lista ────────────────────────────────────────────────────────────────
@@ -349,14 +423,25 @@ function abrirFicha(id){
       el('div',{class:'dato'},[ el('b',{txt:d[0]}), document.createTextNode(d[1]) ])))
   ]));
 
-  if (!evs.length) { cont.appendChild(el('div',{class:'aviso',txt:'Este atleta todavía no tiene evaluaciones cargadas.'})); return; }
+  if ((PORATLETA[id] || []).length) cont.appendChild(filaFiltro(id));
+  if (!evs.length) {
+    cont.appendChild(el('div',{class:'aviso',txt:
+      (PORATLETA[id] || []).length ? 'No hay evaluaciones en el período elegido.'
+                                   : 'Este atleta todavía no tiene evaluaciones cargadas.'}));
+    return;
+  }
 
   cont.appendChild(tarjetasResumen(id, evs, ultimaFecha));
   const loehr = evaluacionesDe(id,'loehr');
-  if (loehr.length >= 2) cont.appendChild(seccionEvolucionLoehr(loehr));
+  // El resultado más reciente va primero: es lo que se mira siempre;
+  // la evolución queda abajo, como contexto.
   if (loehr.length)      cont.appendChild(seccionLoehrActual(loehr[loehr.length-1], loehr.length));
+  if (loehr.length >= 2) cont.appendChild(seccionEvolucionLoehr(loehr));
   const ansiedad = evaluacionesDe(id,'ansiedad');
-  if (ansiedad.length >= 2) cont.appendChild(seccionAnsiedad(ansiedad));
+  if (ansiedad.length) cont.appendChild(seccionAnsiedad(ansiedad));
+  const temp = evaluacionesDe(id,'temperamento');
+  if (temp.length) cont.appendChild(seccionTemperamento(temp[temp.length-1]));
+  cont.appendChild(seccionConclusiones(id));
   cont.appendChild(seccionHistorial(evs));
 }
 
@@ -454,8 +539,7 @@ function seccionLoehrActual(ev, cuantas){
       ])
     ]));
   });
-  if (ev.interpretacion)
-    sec.appendChild(el('p',{style:'margin-top:14px;font-size:14.5px;color:var(--ink2)',txt:ev.interpretacion}));
+  sec.appendChild(bloqueTexto('Interpretación', ev.interpretacion));
   return sec;
 }
 
@@ -469,11 +553,11 @@ function seccionAnsiedad(evs){
   const idTabla = 'tabla-ansiedad';
   sec.appendChild(el('div',{class:'seccion-cab'},[
     el('h2',{class:'seccion-titulo',txt:'Ansiedad'}),
-    el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)})
+    evs.length >= 2 ? el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)}) : null
   ]));
   sec.appendChild(el('div',{class:'seccion-sub',txt:'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.'}));
   if (series.length > 1) sec.appendChild(leyenda(series));
-  sec.appendChild(graficoLineas(series, evs.map(e => e.fecha), {
+  if (evs.length >= 2) sec.appendChild(graficoLineas(series, evs.map(e => e.fecha), {
     min:20, max:80,
     bandas:[
       { desde:45, hasta:80, color:'rgba(208,59,59,.06)',  lbl:'Alto' },
@@ -482,8 +566,53 @@ function seccionAnsiedad(evs){
     ],
     formatoTip: p => String(p.valor)
   }));
-  sec.appendChild(tablaSeries(series, evs.map(e => e.fecha), idTabla, p => p.valor == null ? '—' : String(p.valor)));
+  sec.appendChild(tablaSeries(series, evs.map(e => e.fecha), idTabla,
+    p => p.valor == null ? '—' : String(p.valor), evs.length < 2));
+  sec.appendChild(bloqueTexto('Interpretación', evs[evs.length-1].interpretacion));
   return sec;
+}
+
+// ── Temperamento ─────────────────────────────────────────────────────────
+function seccionTemperamento(ev){
+  const sec = el('div',{class:'seccion'});
+  const t = (ev.datos && ev.datos.temperamento) || '—';
+  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Temperamento'}) ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Evaluado el ' + fechaCorta(ev.fecha)}));
+  sec.appendChild(el('div',{style:'font-size:22px;font-weight:800;margin-bottom:4px',txt:t}));
+  sec.appendChild(bloqueTexto('Descripción', ev.interpretacion));
+  return sec;
+}
+
+// ── Conclusiones y recomendaciones de cada sesión ────────────────────────
+function seccionConclusiones(id){
+  const ses = sesionesDe(id).filter(se => se.conclusion || se.recomendaciones);
+  const sec = el('div',{class:'seccion'});
+  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Conclusiones y recomendaciones'}) ]));
+  if (!ses.length) {
+    sec.appendChild(el('div',{class:'seccion-sub',txt:'Todavía no hay conclusiones escritas para este período.'}));
+    return sec;
+  }
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'De la evaluación más reciente a la más antigua.'}));
+  ses.forEach((se, i) => {
+    sec.appendChild(el('div',{class:'nota' + (i ? ' nota-vieja' : '')},[
+      el('div',{class:'nota-fecha',txt:fechaCorta(se.fecha) + (se.contexto ? ' · ' + se.contexto : '')}),
+      bloqueTexto('Conclusión', se.conclusion),
+      bloqueTexto('Recomendaciones', se.recomendaciones)
+    ]));
+  });
+  return sec;
+}
+
+// Un bloque de texto escrito por la psicóloga. Si está vacío lo dice, para que
+// se vea que falta redactarlo en vez de desaparecer de la página.
+function bloqueTexto(titulo, texto){
+  const caja = el('div',{class:'texto-bloque'});
+  caja.appendChild(el('div',{class:'texto-titulo',txt:titulo}));
+  if (texto && String(texto).trim())
+    caja.appendChild(el('p',{class:'texto-cuerpo',txt:String(texto).trim()}));
+  else
+    caja.appendChild(el('p',{class:'texto-vacio',txt:'Sin redactar'}));
+  return caja;
 }
 
 // ── Historial completo ───────────────────────────────────────────────────
@@ -650,13 +779,13 @@ function mostrarTip(ev, fecha, filas, formato){
 }
 function ocultarTip(){ document.getElementById('tip').classList.remove('ver'); }
 
-function tablaSeries(series, fechas, id, formato){
+function tablaSeries(series, fechas, id, formato, visible){
   const cuerpo = el('tbody');
   fechas.forEach((f,i) => {
     cuerpo.appendChild(el('tr',null,[ el('td',{txt:fechaCorta(f)}) ].concat(
       series.map(s => el('td',{txt: s.puntos[i] && s.puntos[i].valor != null ? formato(s.puntos[i]) : '—'})))));
   });
-  return el('table',{class:'tabla-datos oculto',id},[
+  return el('table',{class:'tabla-datos' + (visible ? '' : ' oculto'),id},[
     el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}) ].concat(series.map(s => el('th',{txt:s.lbl})))) ]),
     cuerpo
   ]);

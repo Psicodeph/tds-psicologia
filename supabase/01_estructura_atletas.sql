@@ -27,7 +27,7 @@ create table if not exists public.atletas (
   sexo              text,              -- 'Masculino' | 'Femenino' | otro
   fecha_nacimiento  date,
   deporte           text,              -- 'Fútbol', 'Atletismo', ...
-  organizacion      text,              -- 'TDS - FENAFUTH', club, 'Particular'
+  organizacion      text,              -- 'TDS - FFH', club, 'Particular'
   categoria         text,              -- 'Sub-15', 'Mayor', libre según deporte
   posicion          text,
   centro            text,              -- centro de formación / sede
@@ -221,7 +221,7 @@ begin
           when p.categoria ilike '%masculino%' then 'Masculino'
         end,
         'Fútbol',
-        'TDS - FENAFUTH',
+        'TDS - FFH',
         nullif(btrim(regexp_replace(coalesce(p.categoria,''), '(?i)\s*(masculino|femenino)\s*', '', 'g')), ''),
         p.cft
       );
