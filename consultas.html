@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultas — Melany Ordóñez</title>
+<link rel="icon" href="/assets/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --marca:#1aa8e0; --marca-fuerte:#0b7fae; --marca-suave:#e8f6fd;
+  --plano:#f9f9f7; --superficie:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --ink3:#898781;
+  --linea:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  --critico:#b3261e; --radio:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+    --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+    --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d; --critico:#e05a52;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+  --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d; --critico:#e05a52;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plano);color:var(--ink);font-family:'Nunito','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+#acceso{position:fixed;inset:0;background:var(--marca);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.acceso-caja{background:var(--superficie);border-radius:20px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.acceso-caja img{width:110px;margin-bottom:14px}
+.acceso-sub{font-size:14px;color:var(--ink2);margin-bottom:22px}
+.campo{width:100%;background:var(--plano);border:1.5px solid var(--eje);border-radius:10px;padding:12px 14px;font-size:16px;font-weight:600;color:var(--ink);font-family:inherit;outline:none;margin-bottom:10px;color-scheme:inherit}
+.campo:focus{border-color:var(--marca)}
+.boton{width:100%;background:var(--marca);color:#fff;border:none;border-radius:10px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.boton:hover{background:var(--marca-fuerte)}
+.error{color:var(--critico);font-size:14px;font-weight:700;margin-top:10px;display:none}
+
+header{background:var(--superficie);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:100}
+.header-in{max-width:1000px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px;margin-right:auto}
+.marca img{width:30px}
+.marca-nombre{font-size:17px;font-weight:900;line-height:1.15}
+.marca-rol{font-size:12px;color:var(--ink2);font-weight:600}
+nav{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
+nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+nav a.activo{background:var(--marca);color:#fff}
+.btn-tema{background:none;border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-tema:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+
+.envoltura{max-width:1000px;margin:0 auto;padding:20px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:20px;margin-bottom:16px}
+h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.ayuda{font-size:13.5px;color:var(--ink2);margin-bottom:16px}
+
+.resumen{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.dato{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:14px}
+.dato-num{font-size:28px;font-weight:800;line-height:1.1}
+.dato-lbl{font-size:12.5px;color:var(--ink2);font-weight:700}
+
+.fila-pregunta{display:flex;gap:10px;flex-wrap:wrap}
+.fila-pregunta input{flex:1;min-width:240px;background:var(--plano);border:1.5px solid var(--borde);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:16px;color:var(--ink);outline:none}
+.fila-pregunta input:focus{border-color:var(--marca)}
+.btn-preguntar{background:var(--marca);color:#fff;border:none;border-radius:10px;padding:13px 24px;font-family:inherit;font-size:16px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn-preguntar:hover{background:var(--marca-fuerte)}
+.btn-preguntar:disabled{opacity:.6;cursor:default}
+.sugeridas{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sugerida{background:var(--plano);border:1px solid var(--borde);border-radius:20px;padding:8px 14px;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink2);cursor:pointer;text-align:left}
+.sugerida:hover{background:var(--marca-suave);color:var(--marca-fuerte);border-color:var(--marca)}
+
+.respuesta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:22px;margin-bottom:16px}
+.respuesta-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.respuesta-preg{font-size:17px;font-weight:800;flex:1;min-width:200px}
+.btn-chico{background:none;border:1px solid var(--borde);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-chico:hover{background:var(--marca-suave);color:var(--marca-fuerte);border-color:var(--marca)}
+.cuerpo{font-size:15.5px;line-height:1.7;color:var(--ink2)}
+.cuerpo h3{font-size:16px;color:var(--ink);margin:16px 0 6px}
+.cuerpo strong{color:var(--ink)}
+.cuerpo li{margin-left:20px;margin-bottom:4px}
+.tabla-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0}
+.cuerpo table{width:100%;border-collapse:collapse;font-size:14px;min-width:360px}
+.cuerpo th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:7px 8px;border-bottom:1px solid var(--linea)}
+.cuerpo td{padding:7px 8px;border-bottom:1px solid var(--linea)}
+.pensando{color:var(--ink3);font-style:italic}
+.nota-ia{font-size:12.5px;color:var(--ink3);margin-top:14px;padding-top:12px;border-top:1px solid var(--linea)}
+.vacio{color:var(--ink3);text-align:center;padding:30px 16px;font-size:15px}
+</style>
+</head>
+<body>
+
+<div id="acceso">
+  <div class="acceso-caja">
+    <img src="/assets/logo.png" alt="Logo de Melany Ordóñez">
+    <div class="acceso-sub">Psicología del Deporte</div>
+    <input type="text" class="campo" id="usuario" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')entrar()">
+    <input type="password" class="campo" id="clave" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="boton" onclick="entrar()">Ingresar</button>
+    <div class="error" id="acceso-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-in">
+    <div class="marca">
+      <img src="/assets/icono.png" alt="">
+      <div>
+        <div class="marca-nombre">Melany Ordóñez</div>
+        <div class="marca-rol">Psicología del Deporte</div>
+      </div>
+    </div>
+    <nav>
+      <a href="/">Evaluar</a>
+      <a href="/atletas">Atletas</a>
+      <a href="/consultas" class="activo">Consultas</a>
+      <button class="btn-tema" id="btn-tema" onclick="rotarTema()" title="Cambiar entre claro y oscuro"></button>
+    </nav>
+  </div>
+</header>
+
+<div class="envoltura">
+  <div class="resumen" id="resumen"></div>
+
+  <div class="tarjeta">
+    <h2>Preguntá sobre tus atletas</h2>
+    <div class="ayuda" id="ayuda-alcance">Cargando datos…</div>
+    <div class="fila-pregunta">
+      <input type="text" id="pregunta" placeholder="Ej. ¿Qué jugadores de Sub-15 tienen la concentración más baja?" onkeydown="if(event.key==='Enter')preguntar()">
+      <button class="btn-preguntar" id="btn-preguntar" onclick="preguntar()">Consultar</button>
+    </div>
+    <div class="sugeridas" id="sugeridas"></div>
+  </div>
+
+  <div id="respuestas"></div>
+</div>
+
+<script>
+const TEMAS = [
+  { v:'auto',  lbl:'Automático' },
+  { v:'light', lbl:'Claro' },
+  { v:'dark',  lbl:'Oscuro' }
+];
+function temaGuardado(){
+  try { return localStorage.getItem('tds-tema') || 'auto'; } catch(e) { return 'auto'; }
+}
+function aplicarTema(v){
+  if (v === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', v);
+  try { localStorage.setItem('tds-tema', v); } catch(e) {}
+  const b = document.getElementById('btn-tema');
+  if (b) {
+    const t = TEMAS.find(x => x.v === v);
+    b.textContent = (v === 'dark' ? '🌙 ' : v === 'light' ? '☀️ ' : '🖥️ ') + t.lbl;
+  }
+}
+function rotarTema(){
+  const i = TEMAS.findIndex(x => x.v === temaGuardado());
+  aplicarTema(TEMAS[(i + 1) % TEMAS.length].v);
+}
+aplicarTema(temaGuardado());
+
+const { createClient } = supabase;
+const sb = createClient(
+  'https://esbmtenfcjbrrocrnfep.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  { auth: { storage: window.sessionStorage } }
+);
+const DOMINIO = 'tds.example.com';
+const COMPUESTOS = [
+  { lbl:'autoconfianza',     escalas:['AC'],        max:30 },
+  { lbl:'control_emocional', escalas:['EP','EN'],   max:60 },
+  { lbl:'concentracion',     escalas:['CAT','CVI'], max:60 },
+  { lbl:'motivacion',        escalas:['NM'],        max:30 }
+];
+const SUGERIDAS = [
+  '¿Quiénes tienen la concentración más baja y qué les recomendarías?',
+  '¿Cómo evolucionó el grupo entre la primera y la última evaluación?',
+  '¿Qué atletas tienen ansiedad alta y conviene priorizar?',
+  'Compará los centros de formación entre sí',
+  '¿Qué atletas mejoraron más desde su primera evaluación?',
+  'Hacé un resumen del perfil del grupo Sub-15'
+];
+
+let ATLETAS = [], EVALUACIONES = [], SESIONES = [], CONTEXTO = '';
+
+function g(id){ return document.getElementById(id); }
+function el(tag, props, hijos){
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'txt') n.textContent = props[k];
+    else if (k === 'style') n.setAttribute('style', props[k]);
+    else if (k.startsWith('on')) n.addEventListener(k.substring(2), props[k]);
+    else n.setAttribute(k, props[k]);
+  }
+  (hijos || []).forEach(h => h && n.appendChild(h));
+  return n;
+}
+function hoyLocal(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso){
+  if (!iso) return '—';
+  const p = iso.substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+
+async function entrar(){
+  const u = (g('usuario').value || '').trim().toLowerCase();
+  const c = g('clave').value;
+  const err = g('acceso-error');
+  err.style.display = 'none';
+  if (!u || !c) { err.textContent = 'Ingresá tu usuario y contraseña.'; err.style.display = 'block'; return; }
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: u.includes('@') ? u : u + '@' + DOMINIO, password: c });
+    if (!error) { sessionStorage.setItem('tds-auth','ok'); sessionStorage.setItem('tds-auth-time', Date.now()); arrancar(); return; }
+    if (error.status === 400) { err.textContent = 'Usuario o contraseña incorrectos.'; g('clave').value = ''; }
+    else throw error;
+  } catch(e) { err.textContent = 'Error de conexión. Intentá de nuevo.'; }
+  err.style.display = 'block';
+}
+
+async function arrancar(){
+  g('acceso').style.display = 'none';
+  const [ra, re, rs] = await Promise.all([
+    sb.from('atletas').select('*').order('nombre'),
+    sb.from('evaluaciones').select('*').order('fecha', { ascending: true }),
+    sb.from('sesiones').select('*').order('fecha', { ascending: true })
+  ]);
+  if (ra.error || re.error) {
+    g('ayuda-alcance').textContent = 'No se pudieron cargar los datos.';
+    console.error(ra.error || re.error);
+    return;
+  }
+  ATLETAS = ra.data || [];
+  EVALUACIONES = re.data || [];
+  SESIONES = (rs && rs.data) || [];
+  armarContexto();
+  pintarResumen();
+  pintarSugeridas();
+}
+
+// Se arma un resumen compacto: la IA necesita los datos, no la base entera.
+// Las evaluaciones inválidas se omiten porque no tienen puntaje real.
+function armarContexto(){
+  const porAtleta = {};
+  EVALUACIONES.filter(e => !e.invalida).forEach(e => {
+    (porAtleta[e.atleta_id] = porAtleta[e.atleta_id] || []).push(e);
+  });
+
+  const filas = ATLETAS.map(a => {
+    const evs = (porAtleta[a.id] || []).slice().sort((x,y) => (x.fecha||'').localeCompare(y.fecha||''));
+    const ultima = t => evs.filter(e => e.tipo === t).slice(-1)[0];
+    const primera = t => evs.filter(e => e.tipo === t)[0];
+    const loehrU = ultima('loehr'), loehrP = primera('loehr');
+    const anx = ultima('ansiedad'), ci = ultima('ci'), temp = ultima('temperamento');
+    const compuestos = ev => {
+      if (!ev) return null;
+      const esc = (ev.datos && ev.datos.escalas) || {};
+      const o = {};
+      COMPUESTOS.forEach(c => { o[c.lbl] = c.escalas.reduce((s,k) => s + (Number(esc[k]) || 0), 0) + '/' + c.max; });
+      return o;
+    };
+    const f = {
+      nombre: a.nombre,
+      categoria: a.categoria, sexo: a.sexo, deporte: a.deporte,
+      organizacion: a.organizacion, centro: a.centro, posicion: a.posicion,
+      anio_nacimiento: a.fecha_nacimiento ? a.fecha_nacimiento.substring(0,4) : null,
+      evaluaciones: evs.length,
+      primera_evaluacion: evs.length ? evs[0].fecha : null,
+      ultima_evaluacion: evs.length ? evs[evs.length-1].fecha : null
+    };
+    if (ci && ci.datos && ci.datos.ci != null) f.ci = ci.datos.ci;
+    if (temp && temp.datos && temp.datos.temperamento) f.temperamento = temp.datos.temperamento;
+    if (anx && anx.datos) {
+      if (anx.datos.estado != null) f.ansiedad_estado = anx.datos.estado;
+      if (anx.datos.rasgo != null) f.ansiedad_rasgo = anx.datos.rasgo;
+    }
+    if (loehrU) {
+      f.loehr_ultimo = compuestos(loehrU);
+      f.loehr_escalas = (loehrU.datos && loehrU.datos.escalas) || null;
+      if (loehrP && loehrP.id !== loehrU.id) {
+        f.loehr_primero = compuestos(loehrP);
+        f.loehr_primero_fecha = loehrP.fecha;
+      }
+    }
+    const ses = SESIONES.filter(x => x.atleta_id === a.id).slice(-1)[0];
+    if (ses) {
+      if (ses.conclusion) f.conclusion = ses.conclusion;
+      if (ses.recomendaciones) f.recomendaciones = ses.recomendaciones;
+    }
+    return f;
+  });
+  CONTEXTO = JSON.stringify(filas);
+  g('ayuda-alcance').textContent =
+    'Las preguntas se responden con los ' + ATLETAS.length + ' atletas cargados y sus ' +
+    EVALUACIONES.length + ' evaluaciones. Las pruebas marcadas inválidas quedan fuera.';
+}
+
+function pintarResumen(){
+  const cont = g('resumen');
+  cont.textContent = '';
+  const validas = EVALUACIONES.filter(e => !e.invalida);
+  const conLoehr = {};
+  validas.filter(e => e.tipo === 'loehr').forEach(e => { conLoehr[e.atleta_id] = e; });
+  const autoconf = Object.values(conLoehr)
+    .map(e => Number((e.datos && e.datos.escalas && e.datos.escalas.AC) || 0)).filter(Boolean);
+  const datos = [
+    ['Atletas', ATLETAS.length],
+    ['Evaluaciones', validas.length],
+    ['Centros', new Set(ATLETAS.map(a => a.centro).filter(Boolean)).size],
+    ['Prom. autoconfianza', autoconf.length ? Math.round(autoconf.reduce((a,b) => a+b, 0) / autoconf.length) + ' / 30' : '—']
+  ];
+  datos.forEach(([lbl, v]) => cont.appendChild(el('div',{class:'dato'},[
+    el('div',{class:'dato-num',txt:String(v)}),
+    el('div',{class:'dato-lbl',txt:lbl})
+  ])));
+}
+
+function pintarSugeridas(){
+  const cont = g('sugeridas');
+  cont.textContent = '';
+  SUGERIDAS.forEach(t => cont.appendChild(el('button',{class:'sugerida',type:'button',txt:t,
+    onclick:() => { g('pregunta').value = t; preguntar(); }})));
+}
+
+// Convierte el texto de la respuesta a HTML. Se arma nodo por nodo en vez de
+// pegar cadenas: lo que vuelve de la IA es texto, no marcado de confianza.
+function renderRespuesta(texto){
+  const caja = el('div',{class:'cuerpo'});
+  const lineas = String(texto).split('\n');
+  let lista = null, tabla = null;
+  const cerrar = () => { lista = null; tabla = null; };
+
+  function conNegritas(t){
+    const frag = document.createDocumentFragment();
+    String(t).split(/(\*\*[^*]+\*\*)/).forEach(p => {
+      if (p.startsWith('**') && p.endsWith('**') && p.length > 4)
+        frag.appendChild(el('strong',{txt:p.slice(2,-2)}));
+      else if (p) frag.appendChild(document.createTextNode(p));
+    });
+    return frag;
+  }
+
+  lineas.forEach(linea => {
+    const l = linea.trim();
+    if (!l) { cerrar(); return; }
+
+    const enc = l.match(/^(#{1,4})\s+(.*)$/);
+    if (enc) { cerrar(); caja.appendChild(el('h3',{txt:enc[2]})); return; }
+
+    if (/^\|.*\|$/.test(l)) {
+      const celdas = l.split('|').slice(1,-1).map(c => c.trim());
+      if (celdas.every(c => /^:?-{2,}:?$/.test(c))) return;   // separador
+      if (!tabla) {
+        tabla = el('table');
+        tabla.appendChild(el('thead',null,[ el('tr',null, celdas.map(c => el('th',{txt:c}))) ]));
+        tabla.appendChild(el('tbody'));
+        // La tabla se desplaza dentro de su caja en vez de empujar la página
+        // en un celular.
+        caja.appendChild(el('div',{class:'tabla-scroll'},[ tabla ]));
+      } else {
+        tabla.querySelector('tbody').appendChild(el('tr',null, celdas.map(c => {
+          const td = el('td'); td.appendChild(conNegritas(c)); return td;
+        })));
+      }
+      return;
+    }
+    tabla = null;
+
+    const item = l.match(/^[-*•]\s+(.*)$/) || l.match(/^\d+[.)]\s+(.*)$/);
+    if (item) {
+      if (!lista) { lista = el('ul'); caja.appendChild(lista); }
+      const li = el('li'); li.appendChild(conNegritas(item[1])); lista.appendChild(li);
+      return;
+    }
+    lista = null;
+
+    const p = el('p',{style:'margin-bottom:10px'});
+    p.appendChild(conNegritas(l));
+    caja.appendChild(p);
+  });
+  return caja;
+}
+
+let ULTIMA = null;
+
+async function preguntar(){
+  const pregunta = g('pregunta').value.trim();
+  if (!pregunta) return;
+  if (!ATLETAS.length) { alert('Todavía no se cargaron los datos.'); return; }
+
+  const btn = g('btn-preguntar');
+  btn.disabled = true; btn.textContent = 'Analizando…';
+
+  const caja = el('div',{class:'respuesta'});
+  caja.appendChild(el('div',{class:'respuesta-cab'},[ el('div',{class:'respuesta-preg',txt:pregunta}) ]));
+  const cuerpo = el('div',{class:'cuerpo pensando',txt:'Analizando los datos…'});
+  caja.appendChild(cuerpo);
+  g('respuestas').prepend(caja);
+
+  const instrucciones =
+    'Sos asistente de Melany Ordóñez, psicóloga del deporte. Respondé en español rioplatense, ' +
+    'de forma concreta y profesional, usando SOLO los datos que siguen.\n\n' +
+    'Escalas del Inventario Loehr, cada una sobre 30: AC autoconfianza, EN control de la energía ' +
+    'negativa, CAT control atencional, CVI control de visualización, NM nivel motivacional, ' +
+    'EP energía positiva, ACT control de actitudes. Áreas compuestas: autoconfianza (AC, /30), ' +
+    'control emocional (EP+EN, /60), concentración (CAT+CVI, /60), motivación (NM, /30). ' +
+    'A partir del 86 % del máximo la habilidad es excelente; entre 66 % y 86 % hay que mejorar y ' +
+    'perfeccionar; por debajo requiere atención especial.\n' +
+    'Ansiedad (Spielberger, 20 a 80): hasta 29 bajo, de 30 a 44 medio, 45 o más alto.\n' +
+    'CI: 130 o más muy superior, 120-129 superior, 110-119 alto, 90-109 normal, 80-89 normal bajo, ' +
+    'menos de 80 bajo.\n\n' +
+    'Si la pregunta no se puede responder con estos datos, decilo claramente en vez de suponer. ' +
+    'Nombrá a los atletas concretos cuando corresponda. Usá tablas de markdown si ayudan.\n\n' +
+    'Atletas (' + ATLETAS.length + '):\n' + CONTEXTO + '\n\nPregunta: ' + pregunta;
+
+  try {
+    const ses = await sb.auth.getSession();
+    const token = ses.data && ses.data.session ? ses.data.session.access_token : '';
+    const r = await fetch('/api/consulta', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+      body: JSON.stringify({ prompt: instrucciones })
+    });
+    const data = await r.json();
+    if (r.status === 401) throw { msg:'Tu sesión venció. Recargá la página e ingresá de nuevo.' };
+    if (!r.ok) throw { msg: data.error || 'La IA no pudo responder.' };
+    const texto = (data.content && data.content[0] && data.content[0].text) || 'No se obtuvo respuesta.';
+    ULTIMA = { pregunta, texto, fecha: hoyLocal() };
+    cuerpo.replaceWith(renderRespuesta(texto));
+    caja.querySelector('.respuesta-cab').appendChild(
+      el('button',{class:'btn-chico',txt:'Descargar PDF',onclick:() => descargarPDF(pregunta, texto)}));
+    caja.appendChild(el('div',{class:'nota-ia',
+      txt:'Respuesta generada por IA a partir de ' + ATLETAS.length + ' atletas. Revisala antes de usarla en un informe.'}));
+  } catch(e) {
+    cuerpo.className = 'cuerpo';
+    cuerpo.textContent = (e && e.msg) || 'Error al conectar con la IA.';
+    cuerpo.style.color = 'var(--critico)';
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = 'Consultar';
+  g('pregunta').value = '';
+}
+
+function descargarPDF(pregunta, texto){
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const ancho = pdf.internal.pageSize.getWidth();
+    const alto  = pdf.internal.pageSize.getHeight();
+    const m = 18;
+
+    pdf.setFillColor(26, 168, 224);
+    pdf.rect(0, 0, ancho, 26, 'F');
+    pdf.setTextColor(255,255,255); pdf.setFont(undefined,'bold'); pdf.setFontSize(13);
+    pdf.text('Melany Ordóñez · Psicología del Deporte', m, 16);
+
+    let y = 40;
+    pdf.setTextColor(11,11,11); pdf.setFontSize(13); pdf.setFont(undefined,'bold');
+    pdf.splitTextToSize(pregunta, ancho - m*2).forEach(l => { pdf.text(l, m, y); y += 7; });
+    y += 4;
+
+    pdf.setFontSize(11); pdf.setFont(undefined,'normal'); pdf.setTextColor(40,40,40);
+    const limpio = String(texto)
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/^#{1,4}\s+/gm, '')
+      .replace(/^[-*•]\s+/gm, '• ')
+      .replace(/\|/g, '  ');
+    pdf.splitTextToSize(limpio, ancho - m*2).forEach(l => {
+      if (y > alto - m - 10) { pdf.addPage(); y = m; }
+      pdf.text(l, m, y); y += 6;
+    });
+
+    pdf.setFontSize(9); pdf.setTextColor(120,120,120);
+    pdf.text('Generado el ' + fechaCorta(hoyLocal()) + ' · respuesta de IA, revisar antes de usar', m, alto - 10);
+    pdf.save('Consulta_' + hoyLocal() + '.pdf');
+  } catch(e) {
+    alert('No se pudo generar el PDF.');
+    console.error(e);
+  }
+}
+
+(async function(){
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && sessionStorage.getItem('tds-auth') === 'ok') arrancar();
+})();
+</script>
+</body>
+</html>
