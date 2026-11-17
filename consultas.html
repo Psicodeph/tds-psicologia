@@ -181,13 +181,13 @@ const COMPUESTOS = [
   { lbl:'motivacion',        escalas:['NM'],        max:30 }
 ];
 const SUGERIDAS = [
-  '¿Quiénes tienen la concentración más baja y qué les recomendarías?',
+  '¿Qué atletas conviene priorizar y por qué? Mirá el perfil completo, no un solo puntaje',
   '¿Cómo evolucionó el grupo entre la primera y la última evaluación?',
-  '¿Qué atletas tienen ansiedad alta y conviene priorizar?',
+  'Analizá los casos donde la ansiedad y el control atencional se sostienen entre sí',
   'Compará los centros de formación entre sí',
-  '¿Qué atletas mejoraron más desde su primera evaluación?',
-  'Hacé un resumen del perfil del grupo Sub-15',
-  '¿Qué me dicen las pruebas que resultaron inválidas?'
+  '¿Qué atletas mejoraron más y en qué áreas?',
+  '¿Qué lectura hacés de las pruebas que resultaron inválidas, junto con el resto del perfil?',
+  'Hacé un resumen del perfil del grupo Sub-15'
 ];
 
 let ATLETAS = [], EVALUACIONES = [], SESIONES = [], CONTEXTO = '';
@@ -203,6 +203,14 @@ function el(tag, props, hijos){
   }
   (hijos || []).forEach(h => h && n.appendChild(h));
   return n;
+}
+function edadEn(nacimiento, hasta){
+  if (!nacimiento) return null;
+  const n = nacimiento.substring(0,10).split('-').map(Number);
+  const h = (hasta || hoyLocal()).substring(0,10).split('-').map(Number);
+  let e = h[0] - n[0];
+  if (h[1] < n[1] || (h[1] === n[1] && h[2] < n[2])) e--;
+  return (e >= 0 && e <= 100) ? e : null;
 }
 function hoyLocal(){
   const d = new Date();
@@ -250,77 +258,100 @@ async function arrancar(){
   pintarSugeridas();
 }
 
-// Se arma un resumen compacto: la IA necesita los datos, no la base entera.
-// Los puntajes de una prueba inválida no existen y no pueden promediarse,
-// pero que una prueba haya resultado inválida sí es un dato clínico y va
-// aparte, con su fecha y su motivo.
+// El contexto se arma por SESIÓN de evaluación, no por prueba suelta: un
+// criterio clínico sale de mirar el perfil completo de un día y cómo cambió
+// en el tiempo, no un número aislado. Los puntajes de una prueba inválida no
+// existen y no se promedian, pero la invalidez va registrada en su sesión.
 const NOMBRE_PRUEBA = { ci:'coeficiente intelectual', temperamento:'temperamento',
                         ansiedad:'ansiedad', loehr:'inventario Loehr', prearranque:'prearranque' };
-function armarContexto(){
-  const porAtleta = {}, invalidasPorAtleta = {};
-  EVALUACIONES.forEach(e => {
-    if (e.invalida) (invalidasPorAtleta[e.atleta_id] = invalidasPorAtleta[e.atleta_id] || []).push(e);
-    else (porAtleta[e.atleta_id] = porAtleta[e.atleta_id] || []).push(e);
+
+// Los textos van completos salvo que sean muy largos: con 51 atletas y su
+// historial, un par de interpretaciones extensas pueden pasarse del tamaño
+// que acepta el endpoint. 800 caracteres cubren un párrafo largo.
+function recortar(t){
+  if (!t) return null;
+  const v = String(t).trim();
+  return v.length <= 800 ? v : v.substring(0, 800) + '… [texto recortado]';
+}
+function compuestosDe(ev){
+  const esc = (ev.datos && ev.datos.escalas) || {};
+  const o = { escalas: {} };
+  Object.keys(esc).forEach(k => { o.escalas[k] = esc[k] + '/30'; });
+  COMPUESTOS.forEach(c => {
+    const v = c.escalas.reduce((s,k) => s + (Number(esc[k]) || 0), 0);
+    o[c.lbl] = v + '/' + c.max + ' (' + Math.round(v / c.max * 100) + '%)';
   });
+  return o;
+}
+
+function armarContexto(){
+  const porAtleta = {};
+  EVALUACIONES.forEach(e => { (porAtleta[e.atleta_id] = porAtleta[e.atleta_id] || []).push(e); });
 
   const filas = ATLETAS.map(a => {
     const evs = (porAtleta[a.id] || []).slice().sort((x,y) => (x.fecha||'').localeCompare(y.fecha||''));
-    const ultima = t => evs.filter(e => e.tipo === t).slice(-1)[0];
-    const primera = t => evs.filter(e => e.tipo === t)[0];
-    const loehrU = ultima('loehr'), loehrP = primera('loehr');
-    const anx = ultima('ansiedad'), ci = ultima('ci'), temp = ultima('temperamento');
-    const compuestos = ev => {
-      if (!ev) return null;
-      const esc = (ev.datos && ev.datos.escalas) || {};
-      const o = {};
-      COMPUESTOS.forEach(c => { o[c.lbl] = c.escalas.reduce((s,k) => s + (Number(esc[k]) || 0), 0) + '/' + c.max; });
-      return o;
-    };
-    const f = {
+    const sesiones = SESIONES.filter(x => x.atleta_id === a.id);
+
+    // Las evaluaciones de una misma fecha son una sola toma: así se leen.
+    const porFecha = {};
+    evs.forEach(e => { (porFecha[e.fecha] = porFecha[e.fecha] || []).push(e); });
+
+    const historial = Object.keys(porFecha).sort().map(fecha => {
+      const delDia = porFecha[fecha];
+      const bloque = { fecha, edad_al_evaluar: edadEn(a.fecha_nacimiento, fecha) };
+      delDia.forEach(e => {
+        if (e.invalida) {
+          (bloque.pruebas_invalidas = bloque.pruebas_invalidas || []).push({
+            prueba: NOMBRE_PRUEBA[e.tipo] || e.tipo,
+            motivo: e.motivo_invalidez || null,
+            observacion: recortar(e.interpretacion)
+          });
+          return;
+        }
+        const d = e.datos || {};
+        if (e.tipo === 'ci' && d.ci != null) bloque.ci = d.ci + (d.diagnostico ? ' (' + d.diagnostico + ')' : '');
+        else if (e.tipo === 'temperamento' && d.temperamento) bloque.temperamento = d.temperamento;
+        else if (e.tipo === 'ansiedad') {
+          bloque.ansiedad = {};
+          if (d.estado != null) bloque.ansiedad.estado = d.estado + (d.estado_nivel ? ' (' + d.estado_nivel + ')' : '');
+          if (d.rasgo  != null) bloque.ansiedad.rasgo  = d.rasgo  + (d.rasgo_nivel  ? ' (' + d.rasgo_nivel  + ')' : '');
+        }
+        else if (e.tipo === 'loehr') bloque.loehr = compuestosDe(e);
+        else bloque[e.tipo] = d;
+        if (e.interpretacion) {
+          bloque.interpretaciones = bloque.interpretaciones || {};
+          bloque.interpretaciones[NOMBRE_PRUEBA[e.tipo] || e.tipo] = recortar(e.interpretacion);
+        }
+      });
+      const ses = sesiones.find(x => x.fecha === fecha);
+      if (ses) {
+        if (ses.contexto) bloque.contexto = ses.contexto;
+        if (ses.conclusion) bloque.conclusion = recortar(ses.conclusion);
+        if (ses.recomendaciones) bloque.recomendaciones = recortar(ses.recomendaciones);
+      }
+      return bloque;
+    });
+
+    return {
       nombre: a.nombre,
-      categoria: a.categoria, sexo: a.sexo, deporte: a.deporte,
+      sexo: a.sexo, categoria: a.categoria, deporte: a.deporte,
       organizacion: a.organizacion, centro: a.centro, posicion: a.posicion,
       anio_nacimiento: a.fecha_nacimiento ? a.fecha_nacimiento.substring(0,4) : null,
-      evaluaciones: evs.length,
-      primera_evaluacion: evs.length ? evs[0].fecha : null,
-      ultima_evaluacion: evs.length ? evs[evs.length-1].fecha : null
+      edad_actual: edadEn(a.fecha_nacimiento, null),
+      notas: recortar(a.notas) || undefined,
+      evaluaciones: historial.length,
+      historial
     };
-    if (ci && ci.datos && ci.datos.ci != null) f.ci = ci.datos.ci;
-    if (temp && temp.datos && temp.datos.temperamento) f.temperamento = temp.datos.temperamento;
-    if (anx && anx.datos) {
-      if (anx.datos.estado != null) f.ansiedad_estado = anx.datos.estado;
-      if (anx.datos.rasgo != null) f.ansiedad_rasgo = anx.datos.rasgo;
-    }
-    if (loehrU) {
-      f.loehr_ultimo = compuestos(loehrU);
-      f.loehr_escalas = (loehrU.datos && loehrU.datos.escalas) || null;
-      if (loehrP && loehrP.id !== loehrU.id) {
-        f.loehr_primero = compuestos(loehrP);
-        f.loehr_primero_fecha = loehrP.fecha;
-      }
-    }
-    const inv = invalidasPorAtleta[a.id] || [];
-    if (inv.length) {
-      f.pruebas_invalidas = inv.map(e => ({
-        prueba: NOMBRE_PRUEBA[e.tipo] || e.tipo,
-        fecha: e.fecha,
-        motivo: e.motivo_invalidez || null,
-        nota: e.interpretacion || null
-      }));
-    }
-    const ses = SESIONES.filter(x => x.atleta_id === a.id).slice(-1)[0];
-    if (ses) {
-      if (ses.conclusion) f.conclusion = ses.conclusion;
-      if (ses.recomendaciones) f.recomendaciones = ses.recomendaciones;
-    }
-    return f;
   });
+
   CONTEXTO = JSON.stringify(filas);
+  if (CONTEXTO.length > 320000)
+    console.warn('El contexto enviado a la IA es grande (' + Math.round(CONTEXTO.length/1024) + ' KB).');
   const cuantasInv = EVALUACIONES.filter(e => e.invalida).length;
   g('ayuda-alcance').textContent =
     'Las preguntas se responden con los ' + ATLETAS.length + ' atletas cargados y sus ' +
-    EVALUACIONES.length + ' evaluaciones' +
-    (cuantasInv ? ', incluidas ' + cuantasInv + ' marcadas como inválidas: sus puntajes no se promedian, pero el dato se tiene en cuenta en la interpretación.' : '.');
+    EVALUACIONES.length + ' evaluaciones, con el historial completo de cada uno' +
+    (cuantasInv ? ', incluidas ' + cuantasInv + ' pruebas inválidas: sus puntajes no se promedian, pero el dato entra en la interpretación.' : '.');
 }
 
 function pintarResumen(){
@@ -426,27 +457,52 @@ async function preguntar(){
   caja.appendChild(cuerpo);
   g('respuestas').prepend(caja);
 
+  // Un criterio clínico no sale de un número: sale de leer el perfil completo,
+  // su trayectoria y cómo se sostienen o se contradicen las medidas entre sí.
+  // Las instrucciones piden eso explícitamente.
   const instrucciones =
     'Sos asistente de Melany Ordóñez, psicóloga del deporte. Respondé en español rioplatense, ' +
     'de forma concreta y profesional, usando SOLO los datos que siguen.\n\n' +
-    'Escalas del Inventario Loehr, cada una sobre 30: AC autoconfianza, EN control de la energía ' +
-    'negativa, CAT control atencional, CVI control de visualización, NM nivel motivacional, ' +
-    'EP energía positiva, ACT control de actitudes. Áreas compuestas: autoconfianza (AC, /30), ' +
-    'control emocional (EP+EN, /60), concentración (CAT+CVI, /60), motivación (NM, /30). ' +
-    'A partir del 86 % del máximo la habilidad es excelente; entre 66 % y 86 % hay que mejorar y ' +
-    'perfeccionar; por debajo requiere atención especial.\n' +
-    'Ansiedad (Spielberger, 20 a 80): hasta 29 bajo, de 30 a 44 medio, 45 o más alto.\n' +
+
+    'CÓMO RAZONAR\n' +
+    'Ningún dato aislado sostiene una conclusión. Antes de afirmar algo sobre un atleta:\n' +
+    '1. Mirá su perfil completo más reciente: las cuatro áreas del Loehr juntas, la ansiedad, el ' +
+    'temperamento y el CI si están. Un puntaje bajo pesa distinto según cómo esté el resto.\n' +
+    '2. Mirá la trayectoria: compará las tomas del historial entre sí. Una medida baja que viene ' +
+    'subiendo no es lo mismo que una que viene cayendo, ni que una única toma sin comparación.\n' +
+    '3. Cruzá las medidas: buscá si se sostienen entre sí o se contradicen. Por ejemplo, ansiedad ' +
+    'alta junto a control atencional bajo y una prueba invalidada apuntan en la misma dirección; ' +
+    'un puntaje bajo que no se acompaña de nada más puede ser ruido de esa toma.\n' +
+    '4. Leé lo que ya escribió la psicóloga en las interpretaciones, conclusiones y recomendaciones ' +
+    'de cada toma: es parte de la evidencia y suele explicar lo que los números no muestran.\n' +
+    '5. Tené en cuenta la edad al evaluar, la categoría y el contexto de cada toma.\n' +
+    'Recién después formulá tu lectura, diciendo en qué te apoyás. Si los datos no alcanzan o se ' +
+    'contradicen, decilo en vez de forzar una conclusión. Hablá de hipótesis, no de diagnósticos: ' +
+    'la lectura clínica final es de la psicóloga.\n\n' +
+
+    'CÓMO LEER LOS DATOS\n' +
+    'Cada atleta tiene un "historial": una entrada por fecha de evaluación, con las pruebas de ese ' +
+    'día. Están ordenadas de la más antigua a la más reciente.\n' +
+    'Inventario Loehr, cada escala sobre 30: AC autoconfianza, EN control de la energía negativa, ' +
+    'CAT control atencional, CVI control de visualización, NM nivel motivacional, EP energía ' +
+    'positiva, ACT control de actitudes. Áreas compuestas: autoconfianza (AC, /30), control ' +
+    'emocional (EP+EN, /60), concentración (CAT+CVI, /60), motivación (NM, /30). Desde el 86 % del ' +
+    'máximo la habilidad es excelente; entre 66 % y 86 % hay que mejorar y perfeccionar; por debajo ' +
+    'requiere atención especial.\n' +
+    'Ansiedad (Spielberger, 20 a 80): hasta 29 bajo, de 30 a 44 medio, 45 o más alto. La ansiedad ' +
+    'estado cambia con el momento; la de rasgo es más estable.\n' +
     'CI: 130 o más muy superior, 120-129 superior, 110-119 alto, 90-109 normal, 80-89 normal bajo, ' +
     'menos de 80 bajo.\n\n' +
-    'Algunos atletas tienen pruebas en "pruebas_invalidas". Una prueba inválida NO tiene puntaje ' +
-    'y por eso no entra en promedios ni comparaciones numéricas, pero el hecho de que haya resultado ' +
-    'inválida SÍ es información clínica: puede hablar de dificultad de comprensión de la consigna, ' +
-    'de impulsividad al responder, de resistencia a la evaluación, de fatiga o de desconexión con el ' +
-    'proceso. Tomala en cuenta en la interpretación, nombrá al atleta y al tipo de prueba, y planteá ' +
-    'hipótesis prudentes sobre qué puede estar indicando, sin afirmarlas como hechos y señalando que ' +
-    'conviene reaplicar la prueba para confirmar.\n\n' +
-    'Si la pregunta no se puede responder con estos datos, decilo claramente en vez de suponer. ' +
-    'Nombrá a los atletas concretos cuando corresponda. Usá tablas de markdown si ayudan.\n\n' +
+
+    'PRUEBAS INVÁLIDAS\n' +
+    'Una prueba en "pruebas_invalidas" no tiene puntaje y no entra en promedios ni comparaciones ' +
+    'numéricas. Pero que haya resultado inválida es información clínica y se interpreta junto con ' +
+    'el resto del perfil: puede hablar de dificultad para comprender la consigna, de impulsividad ' +
+    'al responder, de resistencia a la evaluación, de fatiga o de desconexión con el proceso. Cuál ' +
+    'de esas lecturas corresponde se decide mirando el perfil completo y su historial, no la ' +
+    'invalidez sola, y conviene reaplicar la prueba antes de concluir.\n\n' +
+
+    'Nombrá a los atletas concretos cuando corresponda. Usá tablas de markdown si ayudan a comparar.\n\n' +
     'Atletas (' + ATLETAS.length + '):\n' + CONTEXTO + '\n\nPregunta: ' + pregunta;
 
   try {
