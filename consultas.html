@@ -66,6 +66,10 @@ h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:upper
 .dato{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:14px}
 .dato-num{font-size:28px;font-weight:800;line-height:1.1}
 .dato-lbl{font-size:12.5px;color:var(--ink2);font-weight:700}
+.dato-pie{font-size:11.5px;color:var(--ink3);font-weight:600;margin-top:1px}
+.dato-nivel{font-size:11.5px;font-weight:800;margin-top:5px}
+.grupo{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}
+.grupo .dato{background:var(--plano)}
 
 .fila-pregunta{display:flex;gap:10px;flex-wrap:wrap}
 .fila-pregunta input{flex:1;min-width:240px;background:var(--plano);border:1.5px solid var(--borde);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:16px;color:var(--ink);outline:none}
@@ -128,6 +132,13 @@ h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:upper
 
 <div class="envoltura">
   <div class="resumen" id="resumen"></div>
+
+  <div class="tarjeta">
+    <h2>Perfil del grupo</h2>
+    <div class="ayuda">Las cuatro áreas del Inventario Loehr, promediando la última medición válida de cada atleta.
+      El control emocional es energía positiva más control de la energía negativa.</div>
+    <div class="grupo" id="perfil-grupo"></div>
+  </div>
 
   <div class="tarjeta">
     <h2>Preguntá sobre tus atletas</h2>
@@ -356,28 +367,77 @@ function armarContexto(){
     (cuantasInv ? ', incluidas ' + cuantasInv + ' inválidas: sus puntajes no se promedian, pero el dato entra en la interpretación.' : '.');
 }
 
+const NIVELES_LOEHR = [
+  { min:26/30, lbl:'Habilidad excelente',    color:'var(--bien)',    icono:'●' },
+  { min:20/30, lbl:'Mejorar y perfeccionar', color:'var(--serio)',   icono:'◆' },
+  { min:0,     lbl:'Atención especial',      color:'var(--critico)', icono:'▲' }
+];
+function nivelLoehr(p){ return NIVELES_LOEHR.find(n => p >= n.min); }
+function nivelAnsiedad(v){
+  if (v <= 29) return { lbl:'Bajo',  color:'var(--bien)',    icono:'●' };
+  if (v <= 44) return { lbl:'Medio', color:'var(--ink2)',    icono:'◆' };
+  return         { lbl:'Alto',  color:'var(--critico)', icono:'▲' };
+}
+
+// Se toma la última medición VÁLIDA de cada atleta: promediar todas sus tomas
+// mezclaría el punto de partida con el estado actual.
+function ultimaValidaPorAtleta(tipo){
+  const ultima = {};
+  EVALUACIONES.filter(e => e.tipo === tipo && !e.invalida)
+    .sort((a,b) => (a.fecha||'').localeCompare(b.fecha||''))
+    .forEach(e => { ultima[e.atleta_id] = e; });
+  return Object.values(ultima);
+}
+
 function pintarResumen(){
   const cont = g('resumen');
   cont.textContent = '';
-  const validas = EVALUACIONES.filter(e => !e.invalida);
-  const conLoehr = {};
-  validas.filter(e => e.tipo === 'loehr').forEach(e => { conLoehr[e.atleta_id] = e; });
-  const autoconf = Object.values(conLoehr)
-    .map(e => Number((e.datos && e.datos.escalas && e.datos.escalas.AC) || 0)).filter(Boolean);
   const invalidas = EVALUACIONES.filter(e => e.invalida).length;
-  // Una evaluación es un día de trabajo con el atleta; las pruebas son los
-  // instrumentos que se aplicaron ese día.
   const encuentros = new Set(EVALUACIONES.map(e => e.atleta_id + '|' + e.fecha)).size;
-  const datos = [
-    ['Atletas', ATLETAS.length],
-    ['Evaluaciones', encuentros],
-    ['Pruebas aplicadas', EVALUACIONES.length],
-    ['Pruebas inválidas', invalidas],
-    ['Prom. autoconfianza', autoconf.length ? Math.round(autoconf.reduce((a,b) => a+b, 0) / autoconf.length) + ' / 30' : '—']
-  ];
-  datos.forEach(([lbl, v]) => cont.appendChild(el('div',{class:'dato'},[
+  [['Atletas', ATLETAS.length],
+   ['Evaluaciones', encuentros],
+   ['Pruebas aplicadas', EVALUACIONES.length],
+   ['Pruebas inválidas', invalidas]
+  ].forEach(([lbl, v]) => cont.appendChild(el('div',{class:'dato'},[
     el('div',{class:'dato-num',txt:String(v)}),
     el('div',{class:'dato-lbl',txt:lbl})
+  ])));
+  pintarPerfilGrupo();
+}
+
+function pintarPerfilGrupo(){
+  const caja = g('perfil-grupo');
+  caja.textContent = '';
+  const loehr = ultimaValidaPorAtleta('loehr');
+
+  const tiles = [];
+  COMPUESTOS.forEach(c => {
+    const vals = loehr.map(e => {
+      const esc = (e.datos && e.datos.escalas) || {};
+      return c.escalas.reduce((s,k) => s + (Number(esc[k]) || 0), 0);
+    }).filter(v => v > 0);
+    if (!vals.length) return;
+    const prom = vals.reduce((a,b) => a+b, 0) / vals.length;
+    const n = nivelLoehr(prom / c.max);
+    tiles.push({
+      lbl: c.lbl === 'control_emocional' ? 'Control emocional'
+         : c.lbl === 'concentracion'     ? 'Concentración'
+         : c.lbl === 'motivacion'        ? 'Motivación' : 'Autoconfianza',
+      num: Math.round(prom) + ' / ' + c.max,
+      pie: Math.round(prom / c.max * 100) + '% · ' + vals.length + ' atletas',
+      nivel: n
+    });
+  });
+
+  if (!tiles.length) { caja.appendChild(el('div',{class:'vacio',txt:'Todavía no hay mediciones válidas.'})); return; }
+  tiles.forEach(t => caja.appendChild(el('div',{class:'dato'},[
+    el('div',{class:'dato-lbl',txt:t.lbl}),
+    el('div',{class:'dato-num',txt:String(t.num)}),
+    el('div',{class:'dato-pie',txt:t.pie}),
+    el('div',{class:'dato-nivel',style:'color:'+t.nivel.color},[
+      el('span',{'aria-hidden':'true',txt:t.nivel.icono + ' '}),
+      document.createTextNode(t.nivel.lbl)
+    ])
   ])));
 }
 
