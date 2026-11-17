@@ -68,7 +68,8 @@ nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
 nav a.activo{background:var(--marca);color:#fff}
 
 .envoltura{max-width:1240px;margin:0 auto;padding:20px}
-.columnas{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+.columnas{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
+.columnas>*{min-width:0}
 @media(max-width:900px){.columnas{grid-template-columns:1fr}}
 
 /* ── Lista de atletas ─────────────────────────────────────── */
@@ -114,6 +115,8 @@ nav a.activo{background:var(--marca);color:#fff}
 .trazo{width:16px;height:2px;border-radius:1px}
 
 .grafico{width:100%;overflow:visible;touch-action:pan-y}
+.tabla-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabla-scroll .tabla-datos{min-width:520px}
 .tabla-datos{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
 .tabla-datos th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:7px 8px;border-bottom:1px solid var(--linea);font-weight:800}
 .tabla-datos td{padding:7px 8px;border-bottom:1px solid var(--linea);font-variant-numeric:tabular-nums}
@@ -206,6 +209,31 @@ nav a.activo{background:var(--marca);color:#fff}
   .hoja-fila .hoja-delta{grid-column:1/-1;padding-left:100px}
 }
 
+/* Editor */
+#editor{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;overflow-y:auto;padding:20px;display:none}
+#editor.ver{display:block}
+.ed-caja{max-width:620px;margin:0 auto;background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:22px}
+.ed-titulo{font-size:19px;font-weight:900;margin-bottom:3px}
+.ed-sub{font-size:13.5px;color:var(--ink2);margin-bottom:16px}
+.ed-campo{margin-bottom:13px}
+.ed-campo label{display:block;font-size:11.5px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.ed-campo input,.ed-campo select,.ed-campo textarea{width:100%;background:var(--plano);border:1.5px solid var(--borde);border-radius:9px;padding:10px 12px;font-family:inherit;font-size:15px;color:var(--ink);outline:none;color-scheme:inherit}
+.ed-campo input:focus,.ed-campo select:focus,.ed-campo textarea:focus{border-color:var(--marca)}
+.ed-campo textarea{min-height:110px;resize:vertical;line-height:1.5}
+.ed-grilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.ed-inv{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--critico);cursor:pointer;margin:4px 0 14px}
+.ed-inv input{width:17px;height:17px;accent-color:var(--critico);cursor:pointer}
+.ed-acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--linea)}
+.ed-guardar{background:var(--marca);color:#fff;border:none;border-radius:9px;padding:11px 18px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.ed-guardar:hover{background:var(--marca-fuerte)}
+.ed-guardar:disabled{opacity:.6;cursor:default}
+.ed-borrar{margin-left:auto;background:none;border:1.5px solid rgba(208,59,59,.5);color:var(--critico);border-radius:9px;padding:11px 16px;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.ed-borrar:hover{background:rgba(208,59,59,.1)}
+.ed-error{color:var(--critico);font-size:13.5px;font-weight:700;margin-top:10px;display:none}
+.btn-editar{background:none;border:1px solid var(--borde);border-radius:8px;padding:5px 11px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap}
+.btn-editar:hover{background:var(--marca-suave);color:var(--marca-fuerte);border-color:var(--marca)}
+.fila-acc{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+
 .aviso{background:var(--marca-suave);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;color:var(--ink2);font-size:14.5px}
 </style>
 </head>
@@ -254,6 +282,7 @@ nav a.activo{background:var(--marca);color:#fff}
   </div>
 </div>
 
+<div id="editor" role="dialog" aria-label="Editar"><div class="ed-caja" id="ed-caja"></div></div>
 <div id="reporte" role="dialog" aria-label="Reporte"><div class="rep-caja" id="rep-caja"></div></div>
 <div id="tip" role="status" aria-live="polite"></div>
 
@@ -537,9 +566,12 @@ function abrirFicha(id){
   cont.appendChild(el('div',{class:'ficha-cab'},[
     el('div',{class:'ficha-cab-fila'},[
       el('div',{class:'ficha-nombre',txt:a.nombre}),
-      (PORATLETA[id] || []).length
-        ? el('button',{class:'boton-reporte',txt:'Generar reporte',onclick:() => abrirReporte(id)})
-        : null
+      el('div',{class:'fila-acc',style:'margin-left:auto'},[
+        el('button',{class:'btn-editar',txt:'Editar datos',onclick:() => abrirEditor('atleta', id, id)}),
+        (PORATLETA[id] || []).length
+          ? el('button',{class:'boton-reporte',style:'margin-left:0',txt:'Generar reporte',onclick:() => abrirReporte(id)})
+          : null
+      ])
     ]),
     el('div',{class:'ficha-datos'}, datos.map(d =>
       el('div',{class:'dato'},[ el('b',{txt:d[0]}), document.createTextNode(d[1]) ])))
@@ -664,7 +696,8 @@ function avisoInvalidas(sec, hay){
 function seccionLoehrActual(ev, cuantas, hayInv){
   const sec = el('div',{class:'seccion'});
   sec.appendChild(el('div',{class:'seccion-cab'},[
-    el('h2',{class:'seccion-titulo',txt:'Perfil Loehr' + (cuantas > 1 ? ' más reciente' : '')})
+    el('h2',{class:'seccion-titulo',txt:'Perfil Loehr' + (cuantas > 1 ? ' más reciente' : '')}),
+    el('button',{class:'btn-editar',txt:'Editar',onclick:() => abrirEditor('evaluacion', ev.id)})
   ]));
   sec.appendChild(el('div',{class:'seccion-sub',txt:'Aplicado el ' + fechaCorta(ev.fecha) + ' · cada escala sobre 30 puntos'}));
   const escalas = (ev.datos && ev.datos.escalas) || {};
@@ -695,7 +728,10 @@ function seccionAnsiedad(evs, hayInv){
   const idTabla = 'tabla-ansiedad';
   sec.appendChild(el('div',{class:'seccion-cab'},[
     el('h2',{class:'seccion-titulo',txt:'Ansiedad'}),
-    evs.length >= 2 ? el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)}) : null
+    el('div',{class:'fila-acc'},[
+      evs.length >= 2 ? el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)}) : null,
+      el('button',{class:'btn-editar',txt:'Editar',onclick:() => abrirEditor('evaluacion', evs[evs.length-1].id)})
+    ])
   ]));
   sec.appendChild(el('div',{class:'seccion-sub',txt:'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.'}));
   if (series.length > 1 && evs.length >= 2) sec.appendChild(leyenda(series));
@@ -719,7 +755,10 @@ function seccionAnsiedad(evs, hayInv){
 function seccionTemperamento(ev, hayInv){
   const sec = el('div',{class:'seccion'});
   const t = (ev.datos && ev.datos.temperamento) || '—';
-  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Temperamento'}) ]));
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Temperamento'}),
+    el('button',{class:'btn-editar',txt:'Editar',onclick:() => abrirEditor('evaluacion', ev.id)})
+  ]));
   sec.appendChild(el('div',{class:'seccion-sub',txt:'Evaluado el ' + fechaCorta(ev.fecha)}));
   sec.appendChild(el('div',{style:'font-size:22px;font-weight:800;margin-bottom:4px',txt:t}));
   sec.appendChild(bloqueTexto('Descripción', ev.interpretacion));
@@ -729,17 +768,24 @@ function seccionTemperamento(ev, hayInv){
 
 // ── Conclusiones y recomendaciones de cada sesión ────────────────────────
 function seccionConclusiones(id){
-  const ses = sesionesDe(id).filter(se => se.conclusion || se.recomendaciones);
+  // Se listan todas las sesiones, también las que están sin redactar: si no
+  // aparecieran, no habría desde dónde escribirlas.
+  const ses = sesionesDe(id);
   const sec = el('div',{class:'seccion'});
   sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Conclusiones y recomendaciones'}) ]));
   if (!ses.length) {
-    sec.appendChild(el('div',{class:'seccion-sub',txt:'Todavía no hay conclusiones escritas para este período.'}));
+    sec.appendChild(el('div',{class:'seccion-sub',txt:'Todavía no hay evaluaciones en este período.'}));
     return sec;
   }
   sec.appendChild(el('div',{class:'seccion-sub',txt:'De la evaluación más reciente a la más antigua.'}));
   ses.forEach((se, i) => {
     sec.appendChild(el('div',{class:'nota' + (i ? ' nota-vieja' : '')},[
-      el('div',{class:'nota-fecha',txt:fechaCorta(se.fecha) + (se.contexto ? ' · ' + se.contexto : '')}),
+      el('div',{class:'seccion-cab',style:'margin-bottom:0'},[
+        el('div',{class:'nota-fecha',txt:fechaCorta(se.fecha) + (se.contexto ? ' · ' + se.contexto : '')}),
+        el('button',{class:'btn-editar',
+          txt:(se.conclusion || se.recomendaciones) ? 'Editar' : 'Escribir',
+          onclick:() => abrirEditor('sesion', se.id)})
+      ]),
       bloqueTexto('Conclusión', se.conclusion),
       bloqueTexto('Recomendaciones', se.recomendaciones)
     ]));
@@ -782,12 +828,18 @@ function seccionHistorial(evs){
     cuerpo.appendChild(el('tr',null,[
       el('td',{txt:fechaCorta(ev.fecha), style:'white-space:nowrap'}),
       el('td',{txt:NOMBRE_PRUEBA[ev.tipo] || ev.tipo, style:'font-weight:700'}),
-      el('td',{txt:resumenEvaluacion(ev)})
+      el('td',{txt:resumenEvaluacion(ev)}),
+      el('td',null,[ el('div',{class:'fila-acc'},[
+        el('button',{class:'btn-editar',txt:'Editar',onclick:() => abrirEditor('evaluacion', ev.id)})
+      ]) ])
     ]));
   });
-  sec.appendChild(el('table',{class:'tabla-datos'},[
-    el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}), el('th',{txt:'Prueba'}), el('th',{txt:'Resultado'}) ]) ]),
-    cuerpo
+  sec.appendChild(el('div',{class:'tabla-scroll'},[
+    el('table',{class:'tabla-datos'},[
+      el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}), el('th',{txt:'Prueba'}),
+        el('th',{txt:'Resultado'}), el('th',{txt:''}) ]) ]),
+      cuerpo
+    ])
   ]));
   return sec;
 }
@@ -939,6 +991,244 @@ function alternarTabla(ev, id){
   const oculta = t.classList.toggle('oculto');
   ev.target.textContent = oculta ? 'Ver tabla' : 'Ocultar tabla';
 }
+
+// ── Editar lo que quedó mal cargado ──────────────────────────────────────
+// Todo se corrige desde acá: un error de dedo no debería obligar a tocar la
+// base de datos a mano.
+const TEMPERAMENTOS = ['Sanguíneo','Colérico','Flemático','Melancólico'];
+const CAMPOS_ATLETA = [
+  { k:'nombre',           lbl:'Nombre completo', tipo:'text', req:true },
+  { k:'sexo',             lbl:'Sexo',            tipo:'select', opciones:['','Masculino','Femenino'] },
+  { k:'fecha_nacimiento', lbl:'Fecha de nacimiento', tipo:'date' },
+  { k:'categoria',        lbl:'Categoría',       tipo:'text' },
+  { k:'deporte',          lbl:'Deporte',         tipo:'text' },
+  { k:'organizacion',     lbl:'Organización',    tipo:'text' },
+  { k:'centro',           lbl:'Centro de formación', tipo:'text' },
+  { k:'posicion',         lbl:'Posición',        tipo:'text' },
+  { k:'notas',            lbl:'Notas',           tipo:'textarea' }
+];
+
+let EDICION = null;
+
+function abrirEditor(que, id, atleta){
+  EDICION = { que, id, atleta: atleta || SELECCIONADO };
+  document.getElementById('editor').classList.add('ver');
+  document.body.style.overflow = 'hidden';
+  pintarEditor();
+}
+function cerrarEditor(){
+  EDICION = null;
+  document.getElementById('editor').classList.remove('ver');
+  document.body.style.overflow = '';
+}
+
+function campo(lbl, control){
+  return el('div',{class:'ed-campo'},[ el('label',{txt:lbl}), control ]);
+}
+function entrada(id, valor, tipo, extra){
+  const n = el('input', Object.assign({ type: tipo || 'text', id }, extra || {}));
+  n.value = valor == null ? '' : valor;
+  return n;
+}
+function area(id, valor){
+  const n = el('textarea',{id});
+  n.value = valor == null ? '' : valor;
+  return n;
+}
+function seleccion(id, valor, opciones){
+  const n = el('select',{id});
+  opciones.forEach(o => {
+    const op = el('option',{value:o, txt:o || '—'});
+    n.appendChild(op);
+  });
+  n.value = valor == null ? '' : valor;
+  return n;
+}
+function casillaInvalida(marcada){
+  const c = el('input',{type:'checkbox',id:'ed-invalida'});
+  c.checked = !!marcada;
+  return el('label',{class:'ed-inv'},[ c, document.createTextNode('Prueba inválida (no se conservan los puntajes)') ]);
+}
+
+function pintarEditor(){
+  const caja = document.getElementById('ed-caja');
+  caja.textContent = '';
+  if (!EDICION) return;
+
+  if (EDICION.que === 'atleta') {
+    const a = ATLETAS.find(x => x.id === EDICION.id);
+    if (!a) return;
+    caja.appendChild(el('div',{class:'ed-titulo',txt:'Datos del atleta'}));
+    caja.appendChild(el('div',{class:'ed-sub',txt:'Corregí lo que esté mal escrito. El historial no se toca.'}));
+    CAMPOS_ATLETA.forEach(c => {
+      const control = c.tipo === 'textarea' ? area('ed-' + c.k, a[c.k])
+                    : c.tipo === 'select'   ? seleccion('ed-' + c.k, a[c.k], c.opciones)
+                    : entrada('ed-' + c.k, a[c.k], c.tipo);
+      caja.appendChild(campo(c.lbl, control));
+    });
+  }
+
+  else if (EDICION.que === 'evaluacion') {
+    const ev = (PORATLETA[EDICION.atleta] || []).find(e => e.id === EDICION.id);
+    if (!ev) return;
+    caja.appendChild(el('div',{class:'ed-titulo',txt:(NOMBRE_PRUEBA[ev.tipo] || ev.tipo)}));
+    caja.appendChild(el('div',{class:'ed-sub',txt:'Aplicada el ' + fechaCorta(ev.fecha)}));
+    caja.appendChild(campo('Fecha de aplicación', entrada('ed-fecha', (ev.fecha||'').substring(0,10), 'date')));
+    caja.appendChild(casillaInvalida(ev.invalida));
+
+    const d = ev.datos || {};
+    if (ev.tipo === 'ci')
+      caja.appendChild(campo('Coeficiente intelectual', entrada('ed-ci', d.ci, 'number', {min:0,max:200})));
+    else if (ev.tipo === 'temperamento')
+      caja.appendChild(campo('Temperamento', seleccion('ed-temperamento', d.temperamento, [''].concat(TEMPERAMENTOS))));
+    else if (ev.tipo === 'ansiedad') {
+      const g = el('div',{class:'ed-grilla'},[
+        campo('Ansiedad estado', entrada('ed-estado', d.estado, 'number', {min:20,max:80})),
+        campo('Ansiedad rasgo',  entrada('ed-rasgo',  d.rasgo,  'number', {min:20,max:80}))
+      ]);
+      caja.appendChild(g);
+    }
+    else if (ev.tipo === 'loehr') {
+      const esc = d.escalas || {};
+      caja.appendChild(el('div',{class:'ed-grilla'},
+        ESCALAS.map(([k,nombre]) => campo(nombre, entrada('ed-esc-' + k, esc[k], 'number', {min:6,max:30})))));
+    }
+    caja.appendChild(campo(ev.tipo === 'temperamento' ? 'Descripción' : 'Interpretación', area('ed-interp', ev.interpretacion)));
+  }
+
+  else if (EDICION.que === 'sesion') {
+    const se = (SESIONES[EDICION.atleta] || []).find(x => x.id === EDICION.id);
+    if (!se) return;
+    caja.appendChild(el('div',{class:'ed-titulo',txt:'Conclusiones y recomendaciones'}));
+    caja.appendChild(el('div',{class:'ed-sub',txt:'Evaluación del ' + fechaCorta(se.fecha)}));
+    caja.appendChild(campo('Conclusión', area('ed-conclusion', se.conclusion)));
+    caja.appendChild(campo('Recomendaciones', area('ed-recomendaciones', se.recomendaciones)));
+  }
+
+  const acciones = el('div',{class:'ed-acciones'},[
+    el('button',{class:'ed-guardar',id:'ed-btn',txt:'Guardar cambios',onclick:guardarEdicion}),
+    el('button',{class:'chip',txt:'Cancelar',onclick:cerrarEditor})
+  ]);
+  if (EDICION.que === 'evaluacion')
+    acciones.appendChild(el('button',{class:'ed-borrar',txt:'Borrar esta evaluación',onclick:borrarEvaluacion}));
+  caja.appendChild(acciones);
+  caja.appendChild(el('div',{class:'ed-error',id:'ed-error'}));
+}
+
+function valor(id){
+  const n = document.getElementById(id);
+  if (!n) return null;
+  const v = n.value.trim();
+  return v === '' ? null : v;
+}
+function numero(id){
+  const v = valor(id);
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+async function guardarEdicion(){
+  const btn = document.getElementById('ed-btn');
+  const err = document.getElementById('ed-error');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    let r;
+    if (EDICION.que === 'atleta') {
+      const datos = {};
+      CAMPOS_ATLETA.forEach(c => { datos[c.k] = valor('ed-' + c.k); });
+      if (!datos.nombre) throw new Error('El nombre no puede quedar vacío.');
+      r = await sb.from('atletas').update(datos).eq('id', EDICION.id);
+    }
+
+    else if (EDICION.que === 'evaluacion') {
+      const ev = (PORATLETA[EDICION.atleta] || []).find(e => e.id === EDICION.id);
+      const invalida = document.getElementById('ed-invalida').checked;
+      const fecha = valor('ed-fecha');
+      if (!fecha) throw new Error('La fecha no puede quedar vacía.');
+      // Una prueba inválida no conserva puntajes: dejarlos sería darlos por buenos.
+      let datos = {};
+      if (!invalida) {
+        if (ev.tipo === 'ci') {
+          const ci = numero('ed-ci');
+          if (ci != null) { datos.ci = ci; datos.diagnostico = nivelCI(ci).lbl.toUpperCase(); }
+        } else if (ev.tipo === 'temperamento') {
+          const t = valor('ed-temperamento');
+          if (t) datos.temperamento = t;
+        } else if (ev.tipo === 'ansiedad') {
+          const e2 = numero('ed-estado'), ra = numero('ed-rasgo');
+          if (e2 != null) { datos.estado = e2; datos.estado_nivel = nivelAnsiedad(e2).lbl.toUpperCase(); }
+          if (ra != null) { datos.rasgo  = ra; datos.rasgo_nivel  = nivelAnsiedad(ra).lbl.toUpperCase(); }
+        } else if (ev.tipo === 'loehr') {
+          const esc = {};
+          let faltan = [];
+          ESCALAS.forEach(([k,nombre]) => {
+            const v = numero('ed-esc-' + k);
+            if (v == null) faltan.push(nombre);
+            else if (v < 6 || v > 30) faltan.push(nombre + ' (debe estar entre 6 y 30)');
+            else esc[k] = v;
+          });
+          if (faltan.length) throw new Error('Revisá: ' + faltan.join(', ') + '.');
+          datos.escalas = esc;
+        } else datos = ev.datos || {};
+      } else if (ev.tipo === 'ci') datos = { diagnostico: 'PRUEBA INVÁLIDA' };
+
+      r = await sb.from('evaluaciones').update({
+        fecha, datos, invalida,
+        motivo_invalidez: invalida ? (ev.motivo_invalidez || 'Marcada como inválida') : null,
+        interpretacion: valor('ed-interp')
+      }).eq('id', EDICION.id);
+    }
+
+    else if (EDICION.que === 'sesion') {
+      r = await sb.from('sesiones').update({
+        conclusion: valor('ed-conclusion'),
+        recomendaciones: valor('ed-recomendaciones')
+      }).eq('id', EDICION.id);
+    }
+
+    if (r && r.error) throw r.error;
+    const volverA = EDICION.que === 'atleta' ? EDICION.id : EDICION.atleta;
+    cerrarEditor();
+    await recargar(volverA);
+    avisar('Cambios guardados');
+  } catch(e) {
+    err.textContent = e && e.message ? e.message : 'No se pudo guardar. Probá de nuevo.';
+    err.style.display = 'block';
+    console.error(e);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar cambios'; }
+}
+
+async function borrarEvaluacion(){
+  const ev = (PORATLETA[EDICION.atleta] || []).find(e => e.id === EDICION.id);
+  if (!ev) return;
+  if (!confirm('¿Borrar la ' + (NOMBRE_PRUEBA[ev.tipo] || ev.tipo).toLowerCase() +
+               ' del ' + fechaCorta(ev.fecha) + '? Esta acción no se puede deshacer.')) return;
+  const atleta = EDICION.atleta;
+  const r = await sb.from('evaluaciones').delete().eq('id', EDICION.id);
+  if (r.error) { alert('No se pudo borrar.'); console.error(r.error); return; }
+  cerrarEditor();
+  await recargar(atleta);
+  avisar('Evaluación borrada');
+}
+
+async function recargar(abrirId){
+  await arrancar();
+  if (abrirId) abrirFicha(abrirId);
+}
+
+function avisar(texto){
+  const t = document.getElementById('tip');
+  t.textContent = '';
+  t.appendChild(el('div',{class:'tip-val',txt:texto}));
+  t.classList.add('ver');
+  t.style.left = '50%'; t.style.top = '16px'; t.style.transform = 'translateX(-50%)';
+  setTimeout(() => { t.classList.remove('ver'); t.style.transform = ''; }, 2200);
+}
+
+document.getElementById('editor').addEventListener('click', e => { if (e.target.id === 'editor') cerrarEditor(); });
 
 // ── Reporte para el atleta o el entrenador ───────────────────────────────
 // El CI viene desmarcado a propósito: es el dato más sensible del perfil y
@@ -1273,7 +1563,10 @@ async function descargarPDF(){
 }
 
 document.getElementById('reporte').addEventListener('click', e => { if (e.target.id === 'reporte') cerrarReporte(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarReporte(); });
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (EDICION) cerrarEditor(); else cerrarReporte();
+});
 
 let temporizadorTamano = null;
 window.addEventListener('resize', () => {
