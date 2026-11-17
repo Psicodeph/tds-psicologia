@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atletas — Melany Ordóñez</title>
+<link rel="icon" href="/assets/icono.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  /* Marca */
+  --marca:#1aa8e0; --marca-fuerte:#0b7fae; --marca-suave:#e8f6fd;
+  /* Superficies e ink (palette.md) */
+  --plano:#f9f9f7; --superficie:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --ink3:#898781;
+  --linea:#e1e0d9; --eje:#c3c2b7; --borde:rgba(11,11,11,.10);
+  /* Series validadas: slots 1-4 */
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  /* Estados */
+  --bien:#0ca30c; --aviso:#fab219; --serio:#ec835a; --critico:#d03b3b;
+  --radio:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme: dark;
+    --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+    --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plano:#0d0d0d; --superficie:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --ink3:#898781;
+  --linea:#2c2c2a; --eje:#383835; --borde:rgba(255,255,255,.10);
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+  --marca:#4FC3F0; --marca-fuerte:#7fd4f5; --marca-suave:#10303d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plano);color:var(--ink);font-family:'Nunito','Segoe UI',system-ui,sans-serif;font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+
+/* ── Acceso ───────────────────────────────────────────────── */
+#acceso{position:fixed;inset:0;background:var(--marca);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+.acceso-caja{background:var(--superficie);border-radius:20px;padding:40px 32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.acceso-caja img{width:54px;margin-bottom:14px}
+.acceso-nombre{font-size:22px;font-weight:900}
+.acceso-sub{font-size:14px;color:var(--ink2);margin-bottom:22px}
+.campo{width:100%;background:var(--plano);border:1.5px solid var(--eje);border-radius:10px;padding:13px 15px;font-size:17px;font-weight:600;color:var(--ink);font-family:inherit;outline:none;margin-bottom:10px}
+.campo:focus{border-color:var(--marca)}
+.boton{width:100%;background:var(--marca);color:#fff;border:none;border-radius:10px;padding:14px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+.boton:hover{background:var(--marca-fuerte)}
+.error{color:var(--critico);font-size:14px;font-weight:700;margin-top:10px;display:none}
+
+/* ── Encabezado ───────────────────────────────────────────── */
+header{background:var(--superficie);border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:100}
+.header-in{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:11px;margin-right:auto}
+.marca img{width:30px}
+.marca-nombre{font-size:17px;font-weight:900;line-height:1.15}
+.marca-rol{font-size:12px;color:var(--ink2);font-weight:600}
+nav{display:flex;gap:4px}
+nav a{color:var(--ink2);text-decoration:none;font-size:15px;font-weight:700;padding:7px 13px;border-radius:8px}
+nav a:hover{background:var(--marca-suave);color:var(--marca-fuerte)}
+nav a.activo{background:var(--marca);color:#fff}
+
+.envoltura{max-width:1240px;margin:0 auto;padding:20px}
+.columnas{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.columnas{grid-template-columns:1fr}}
+
+/* ── Lista de atletas ─────────────────────────────────────── */
+.panel{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:16px}
+.panel-titulo{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+#lista{max-height:min(68vh,620px);overflow-y:auto;margin:0 -8px}
+.item{display:block;width:100%;text-align:left;background:none;border:none;border-radius:9px;padding:10px 12px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.item:hover{background:var(--marca-suave)}
+.item[aria-current="true"]{background:var(--marca);color:#fff}
+.item[aria-current="true"] .item-sub{color:rgba(255,255,255,.85)}
+.item-nombre{font-size:15px;font-weight:700;line-height:1.3}
+.item-sub{font-size:12.5px;color:var(--ink2);font-weight:600}
+.vacio{color:var(--ink3);font-size:14px;padding:20px 12px;text-align:center}
+
+/* ── Ficha ────────────────────────────────────────────────── */
+.ficha-cab{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:20px;margin-bottom:16px}
+.ficha-nombre{font-size:26px;font-weight:900;line-height:1.15}
+.ficha-datos{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.dato{background:var(--plano);border:1px solid var(--borde);border-radius:8px;padding:6px 11px;font-size:13.5px}
+.dato b{display:block;font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-weight:800}
+
+.tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.tarjeta{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:15px}
+.tarjeta-lbl{font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:3px}
+.tarjeta-num{font-size:30px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.tarjeta-pie{font-size:12px;color:var(--ink3);font-weight:600;margin-top:3px}
+.etiqueta{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:20px;margin-top:6px}
+
+.seccion{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:18px;margin-bottom:16px}
+.seccion-cab{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.seccion-titulo{font-size:17px;font-weight:800}
+.seccion-sub{font-size:13.5px;color:var(--ink2);margin-bottom:16px}
+.enlace-tabla{background:none;border:none;color:var(--marca-fuerte);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
+
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px}
+.leyenda span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);font-weight:600}
+.trazo{width:16px;height:2px;border-radius:1px}
+
+.grafico{width:100%;overflow:visible;touch-action:pan-y}
+.tabla-datos{width:100%;border-collapse:collapse;margin-top:14px;font-size:13.5px}
+.tabla-datos th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);padding:7px 8px;border-bottom:1px solid var(--linea);font-weight:800}
+.tabla-datos td{padding:7px 8px;border-bottom:1px solid var(--linea);font-variant-numeric:tabular-nums}
+.tabla-datos tr:last-child td{border-bottom:none}
+.oculto{display:none}
+
+/* Barras del Loehr */
+.barra-fila{display:grid;grid-template-columns:150px 1fr 44px 150px;gap:10px;align-items:center;padding:5px 0}
+@media(max-width:700px){.barra-fila{grid-template-columns:110px 1fr 40px;}.barra-fila .barra-nivel{grid-column:1/-1;padding-left:110px}}
+.barra-nombre{font-size:13.5px;font-weight:700}
+.barra-pista{background:var(--plano);border-radius:4px;height:14px;position:relative;overflow:hidden}
+.barra-valor{height:100%;background:var(--s1);border-radius:0 4px 4px 0}
+.barra-num{font-size:14px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.barra-nivel{font-size:11.5px;font-weight:800}
+
+/* Tooltip */
+#tip{position:fixed;pointer-events:none;z-index:500;background:var(--superficie);border:1px solid var(--borde);border-radius:9px;padding:9px 11px;box-shadow:0 8px 26px rgba(0,0,0,.18);font-size:13px;opacity:0;transition:opacity .1s}
+#tip.ver{opacity:1}
+.tip-fecha{font-size:11px;color:var(--ink3);font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.tip-fila{display:flex;align-items:center;gap:7px;margin-top:3px}
+.tip-val{font-weight:800;font-variant-numeric:tabular-nums}
+.tip-nom{color:var(--ink2);font-size:12.5px}
+
+/* Filtro de período */
+.filtro{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+.chip{background:var(--superficie);border:1px solid var(--borde);border-radius:20px;padding:7px 14px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.chip:hover{background:var(--marca-suave)}
+.chip-on{background:var(--marca);border-color:var(--marca);color:#fff}
+.filtro-sep{font-size:13px;color:var(--ink3);font-weight:600}
+.fecha-in{background:var(--superficie);border:1px solid var(--borde);border-radius:8px;padding:6px 9px;font-family:inherit;font-size:13.5px;color:var(--ink);color-scheme:inherit}
+
+/* Textos escritos por la psicóloga */
+.texto-bloque{margin-top:14px;padding-top:12px;border-top:1px solid var(--linea)}
+.texto-titulo{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.texto-cuerpo{font-size:14.5px;color:var(--ink2);white-space:pre-wrap}
+.texto-vacio{font-size:14px;color:var(--ink3);font-style:italic}
+.nota-invalida{margin-top:14px;background:rgba(208,59,59,.08);border:1px solid rgba(208,59,59,.3);border-radius:9px;padding:10px 13px;font-size:13.5px;color:var(--ink2);font-weight:600}
+.nota{padding:14px 0;border-bottom:1px solid var(--linea)}
+.nota:last-child{border-bottom:none;padding-bottom:0}
+.nota-vieja{opacity:.75}
+.nota-fecha{font-size:13px;font-weight:800;color:var(--marca-fuerte)}
+.nota .texto-bloque:first-of-type{border-top:none;padding-top:6px;margin-top:4px}
+
+
+/* ── Reporte ──────────────────────────────────────────────────────────── */
+.ficha-cab-fila{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.boton-reporte{margin-left:auto;background:var(--marca);color:#fff;border:none;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.boton-reporte:hover{background:var(--marca-fuerte)}
+
+#reporte{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;overflow-y:auto;padding:20px;display:none}
+#reporte.ver{display:block}
+.rep-caja{max-width:900px;margin:0 auto}
+.rep-barra{background:var(--superficie);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;margin-bottom:16px}
+.rep-grupo{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+.rep-grupo:last-child{margin-bottom:0}
+.rep-lbl{font-size:11px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;width:100%;margin-bottom:2px}
+.rep-check{display:inline-flex;align-items:center;gap:7px;background:var(--plano);border:1px solid var(--borde);border-radius:20px;padding:7px 13px;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer}
+.rep-check input{width:16px;height:16px;accent-color:var(--marca);cursor:pointer}
+.rep-check.sensible{border-color:var(--serio)}
+.rep-nota{font-size:12.5px;color:var(--ink3);width:100%;margin-top:2px}
+.rep-acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--linea)}
+
+/* La hoja del reporte: fondo claro siempre, porque se imprime */
+.hoja{background:#fff;color:#1a1a1a;border-radius:var(--radio);padding:40px;box-shadow:0 14px 50px rgba(0,0,0,.3)}
+.hoja-cab{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1aa8e0;padding-bottom:16px;margin-bottom:6px}
+.hoja-cab img{width:46px}
+.hoja-marca{font-size:19px;font-weight:900;line-height:1.2;color:#0b0b0b}
+.hoja-rol{font-size:13px;color:#52514e;font-weight:600}
+.hoja-tipo{margin-left:auto;text-align:right;font-size:12px;color:#52514e;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.hoja-atleta{font-size:27px;font-weight:900;margin-top:18px;color:#0b0b0b}
+.hoja-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;margin-bottom:8px}
+.hoja-meta span{background:#f2f6f9;border-radius:7px;padding:5px 10px;font-size:12.5px;color:#52514e;font-weight:600}
+.hoja-sec{margin-top:26px}
+.hoja-sec h3{font-size:15px;font-weight:900;color:#0b7fae;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #dde4ea;padding-bottom:5px;margin-bottom:12px}
+.hoja-p{font-size:14.5px;line-height:1.65;color:#2b2b2b;white-space:pre-wrap}
+.hoja-vacio{font-size:14px;color:#8a8a8a;font-style:italic}
+.hoja-par{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.hoja-caja{background:#f7fafc;border:1px solid #e3eaf0;border-radius:9px;padding:12px}
+.hoja-caja-lbl{font-size:12px;color:#52514e;font-weight:700}
+.hoja-caja-num{font-size:26px;font-weight:800;color:#0b0b0b;line-height:1.2}
+.hoja-caja-pie{font-size:11.5px;color:#767676;font-weight:600}
+.hoja-fila{display:grid;grid-template-columns:148px 1fr 40px 142px;gap:9px;align-items:center;padding:4px 0;font-size:13px}
+.hoja-pista{background:#eef2f6;border-radius:4px;height:13px;overflow:hidden}
+.hoja-llena{height:100%;background:#2a78d6;border-radius:0 4px 4px 0}
+.hoja-delta{font-size:12.5px;font-weight:800}
+.hoja-pie{margin-top:32px;padding-top:14px;border-top:1px solid #dde4ea;font-size:11.5px;color:#767676;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:640px){
+  .hoja{padding:22px}
+  .hoja-fila{grid-template-columns:100px 1fr 34px}
+  .hoja-fila .hoja-delta{grid-column:1/-1;padding-left:100px}
+}
+
+.aviso{background:var(--marca-suave);border:1px solid var(--borde);border-radius:var(--radio);padding:16px;color:var(--ink2);font-size:14.5px}
+</style>
+</head>
+<body>
+
+<div id="acceso">
+  <div class="acceso-caja">
+    <img src="/assets/icono.png" alt="">
+    <div class="acceso-nombre">Melany Ordóñez</div>
+    <div class="acceso-sub">Psicología del Deporte</div>
+    <input type="text" class="campo" id="usuario" placeholder="Usuario" autocomplete="username" autocapitalize="none" spellcheck="false" onkeydown="if(event.key==='Enter')entrar()">
+    <input type="password" class="campo" id="clave" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="boton" onclick="entrar()">Ingresar</button>
+    <div class="error" id="acceso-error"></div>
+  </div>
+</div>
+
+<header>
+  <div class="header-in">
+    <div class="marca">
+      <img src="/assets/icono.png" alt="">
+      <div>
+        <div class="marca-nombre">Melany Ordóñez</div>
+        <div class="marca-rol">Psicología del Deporte</div>
+      </div>
+    </div>
+    <nav>
+      <a href="/">Evaluar</a>
+      <a href="/atletas" class="activo">Atletas</a>
+    </nav>
+  </div>
+</header>
+
+<div class="envoltura">
+  <div class="columnas">
+    <div class="panel">
+      <div class="panel-titulo">Atletas <span id="contador"></span></div>
+      <input type="search" class="campo" id="buscar" placeholder="Buscar por nombre…" oninput="pintarLista()" style="margin-bottom:8px;font-size:15px;padding:10px 12px">
+      <div id="lista"><div class="vacio">Cargando…</div></div>
+    </div>
+    <div id="ficha"><div class="aviso">Elegí un atleta de la lista para ver su ficha y su historial.</div></div>
+  </div>
+</div>
+
+<div id="reporte" role="dialog" aria-label="Reporte"><div class="rep-caja" id="rep-caja"></div></div>
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://esbmtenfcjbrrocrnfep.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzYm10ZW5mY2picnJvY3JuZmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1MTIxNjcsImV4cCI6MjA5NjA4ODE2N30.9N-xdmGwcuUF3EBYsjB4bEMeWbXVjmWZbizIeUudEkA',
+  { auth: { storage: window.sessionStorage } }
+);
+const DOMINIO = 'tds.example.com';
+
+// ── Definición de las pruebas ────────────────────────────────────────────
+const ESCALAS = [
+  ['AC','Autoconfianza'], ['EN','Energía Negativa'], ['CAT','Control Atencional'],
+  ['CVI','Control Visualización'], ['NM','Nivel Motivacional'], ['EP','Energía Positiva'],
+  ['ACT','Control de Actitudes']
+];
+// Los compuestos tienen máximos distintos (30 y 60), así que la evolución se
+// grafica en porcentaje: un solo eje, y los umbrales de Loehr quedan fijos.
+const COMPUESTOS = [
+  { lbl:'Autoconfianza',    escalas:['AC'],       max:30, color:'var(--s1)' },
+  { lbl:'Control Emocional',escalas:['EP','EN'],  max:60, color:'var(--s2)' },
+  { lbl:'Concentración',    escalas:['CAT','CVI'],max:60, color:'var(--s3)' },
+  { lbl:'Motivación',       escalas:['NM'],       max:30, color:'var(--s4)' }
+];
+const NIVELES = [
+  { min:26/30, lbl:'Habilidad excelente',   color:'var(--bien)',    fondo:'rgba(12,163,12,.12)',  icono:'●' },
+  { min:20/30, lbl:'Mejorar y perfeccionar',color:'var(--serio)',   fondo:'rgba(236,131,90,.14)', icono:'◆' },
+  { min:0,     lbl:'Atención especial',     color:'var(--critico)', fondo:'rgba(208,59,59,.12)',  icono:'▲' }
+];
+function nivelDe(p){ return NIVELES.find(n => p >= n.min); }
+function nivelAnsiedad(v){
+  if (v == null) return null;
+  if (v <= 29) return { lbl:'Bajo',  color:'var(--bien)',    fondo:'rgba(12,163,12,.12)',  icono:'●' };
+  if (v <= 44) return { lbl:'Medio', color:'var(--ink2)',    fondo:'rgba(130,130,130,.14)',icono:'◆' };
+  return         { lbl:'Alto',  color:'var(--critico)', fondo:'rgba(208,59,59,.12)',  icono:'▲' };
+}
+function nivelCI(v){
+  if (v == null) return null;
+  if (v >= 130) return { lbl:'Muy superior', color:'var(--bien)' };
+  if (v >= 120) return { lbl:'Superior',     color:'var(--bien)' };
+  if (v >= 110) return { lbl:'Alto',         color:'var(--bien)' };
+  if (v >= 90)  return { lbl:'Normal',       color:'var(--ink2)' };
+  if (v >= 80)  return { lbl:'Normal bajo',  color:'var(--serio)' };
+  return          { lbl:'Bajo',         color:'var(--critico)' };
+}
+
+// ── Utilidades ───────────────────────────────────────────────────────────
+const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fechaCorta(iso){
+  if (!iso) return '—';
+  const p = iso.substring(0,10).split('-');
+  return parseInt(p[2],10) + ' ' + MESES[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+function fechaMini(iso){
+  if (!iso) return '';
+  const p = iso.substring(0,10).split('-');
+  return MESES[parseInt(p[1],10)-1] + ' ' + p[0].substring(2);
+}
+function edadEn(nacimiento, hasta){
+  if (!nacimiento) return null;
+  const n = nacimiento.substring(0,10).split('-').map(Number);
+  const h = hasta ? hasta.substring(0,10).split('-').map(Number)
+                  : (d => [d.getFullYear(), d.getMonth()+1, d.getDate()])(new Date());
+  let e = h[0] - n[0];
+  if (h[1] < n[1] || (h[1] === n[1] && h[2] < n[2])) e--;
+  return (e >= 0 && e <= 100) ? e : null;
+}
+function el(tag, props, hijos){
+  const n = document.createElement(tag);
+  if (props) for (const k in props) {
+    if (k === 'txt') n.textContent = props[k];          // datos: nunca innerHTML
+    else if (k === 'html') n.innerHTML = props[k];      // solo marcado propio
+    else if (k === 'style') n.setAttribute('style', props[k]);
+    else if (k.startsWith('on')) n.addEventListener(k.substring(2), props[k]);
+    else n.setAttribute(k, props[k]);
+  }
+  (hijos || []).forEach(h => h && n.appendChild(h));
+  return n;
+}
+function svgEl(tag, props){
+  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in props) n.setAttribute(k, props[k]);
+  return n;
+}
+
+// ── Acceso ───────────────────────────────────────────────────────────────
+async function entrar(){
+  const u = document.getElementById('usuario').value.trim().toLowerCase();
+  const c = document.getElementById('clave').value;
+  const err = document.getElementById('acceso-error');
+  err.style.display = 'none';
+  if (!u || !c) { err.textContent = 'Ingresá tu usuario y contraseña.'; err.style.display='block'; return; }
+  const email = u.includes('@') ? u : u + '@' + DOMINIO;
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email, password: c });
+    if (!error) { sessionStorage.setItem('tds-auth','ok'); sessionStorage.setItem('tds-auth-time', Date.now()); arrancar(); return; }
+    if (error.status === 400) { err.textContent = 'Usuario o contraseña incorrectos.'; document.getElementById('clave').value=''; }
+    else throw error;
+  } catch(e) { err.textContent = 'Error de conexión. Intentá de nuevo.'; }
+  err.style.display = 'block';
+}
+
+// ── Datos ────────────────────────────────────────────────────────────────
+let ATLETAS = [], PORATLETA = {}, SESIONES = {}, SELECCIONADO = null;
+let FILTRO = { desde:'', hasta:'' };
+
+async function arrancar(){
+  document.getElementById('acceso').style.display = 'none';
+  const [ra, re, rs] = await Promise.all([
+    sb.from('atletas').select('*').order('nombre'),
+    sb.from('evaluaciones').select('*').order('fecha', { ascending: true }),
+    sb.from('sesiones').select('*').order('fecha', { ascending: true })
+  ]);
+  if (ra.error || re.error) {
+    document.getElementById('lista').innerHTML = '';
+    document.getElementById('lista').appendChild(el('div',{class:'vacio',txt:'No se pudieron cargar los datos.'}));
+    console.error(ra.error || re.error);
+    return;
+  }
+  ATLETAS = ra.data || [];
+  PORATLETA = {};
+  (re.data || []).forEach(ev => { (PORATLETA[ev.atleta_id] = PORATLETA[ev.atleta_id] || []).push(ev); });
+  SESIONES = {};
+  ((rs && rs.data) || []).forEach(se => { (SESIONES[se.atleta_id] = SESIONES[se.atleta_id] || []).push(se); });
+  document.getElementById('contador').textContent = '(' + ATLETAS.length + ')';
+  pintarLista();
+}
+
+function enRango(f){
+  if (!f) return false;
+  const d = f.substring(0,10);
+  if (FILTRO.desde && d < FILTRO.desde) return false;
+  if (FILTRO.hasta && d > FILTRO.hasta) return false;
+  return true;
+}
+function evaluacionesDe(id, tipo){
+  return (PORATLETA[id] || [])
+    .filter(e => (!tipo || e.tipo === tipo) && enRango(e.fecha))
+    .sort((a,b) => (a.fecha || '').localeCompare(b.fecha || ''));
+}
+function evaluacionesValidas(id, tipo){
+  return evaluacionesDe(id, tipo).filter(e => !e.invalida);
+}
+function hayInvalidas(id, tipo){
+  return evaluacionesDe(id, tipo).some(e => e.invalida);
+}
+const MARCA_INVALIDA = { lbl:'Prueba inválida', color:'var(--critico)', fondo:'rgba(208,59,59,.12)', icono:'▲' };
+
+function sesionesDe(id){
+  return (SESIONES[id] || []).filter(se => enRango(se.fecha))
+    .sort((a,b) => (b.fecha || '').localeCompare(a.fecha || ''));
+}
+
+// El período acota todo lo de abajo: tarjetas, gráficos, tablas e historial,
+// así los números de la página siempre concuerdan entre sí.
+function filaFiltro(id){
+  const todas = (PORATLETA[id] || []).map(e => e.fecha).filter(Boolean).sort();
+  const primera = todas[0], ultima = todas[todas.length-1];
+  const fila = el('div',{class:'filtro'});
+  const presets = [
+    ['Todo el historial', ''],
+    ['Último año', 365],
+    ['Últimos 2 años', 730]
+  ];
+  presets.forEach(([lbl, dias]) => {
+    const activo = dias === '' ? (!FILTRO.desde && !FILTRO.hasta) : esPreset(dias);
+    fila.appendChild(el('button',{
+      class:'chip' + (activo ? ' chip-on' : ''), txt:lbl,
+      onclick: () => {
+        if (dias === '') FILTRO = { desde:'', hasta:'' };
+        else {
+          const d = new Date(); d.setDate(d.getDate() - dias);
+          FILTRO = { desde: d.toISOString().substring(0,10), hasta:'' };
+        }
+        abrirFicha(id);
+      }
+    }));
+  });
+  fila.appendChild(el('span',{class:'filtro-sep',txt:'o entre'}));
+  fila.appendChild(el('input',{type:'date',class:'fecha-in',value:FILTRO.desde || (primera||''),
+    'aria-label':'Desde', onchange:e => { FILTRO.desde = e.target.value; abrirFicha(id); }}));
+  fila.appendChild(el('span',{class:'filtro-sep',txt:'y'}));
+  fila.appendChild(el('input',{type:'date',class:'fecha-in',value:FILTRO.hasta || (ultima||''),
+    'aria-label':'Hasta', onchange:e => { FILTRO.hasta = e.target.value; abrirFicha(id); }}));
+  return fila;
+}
+function esPreset(dias){
+  if (!FILTRO.desde || FILTRO.hasta) return false;
+  const d = new Date(); d.setDate(d.getDate() - dias);
+  return FILTRO.desde === d.toISOString().substring(0,10);
+}
+
+// ── Lista ────────────────────────────────────────────────────────────────
+function pintarLista(){
+  const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const lista = document.getElementById('lista');
+  lista.textContent = '';
+  const filtrados = ATLETAS.filter(a => !q || (a.nombre || '').toLowerCase().includes(q));
+  if (!filtrados.length) { lista.appendChild(el('div',{class:'vacio',txt:'Sin resultados.'})); return; }
+  filtrados.forEach(a => {
+    const evs = PORATLETA[a.id] || [];
+    const ultima = evs.map(e => e.fecha).sort().pop();
+    const partes = [a.categoria, evs.length + (evs.length === 1 ? ' evaluación' : ' evaluaciones')].filter(Boolean);
+    lista.appendChild(el('button', {
+      class:'item', 'aria-current': String(a.id === SELECCIONADO),
+      onclick: () => abrirFicha(a.id)
+    }, [
+      el('div',{class:'item-nombre',txt:a.nombre}),
+      el('div',{class:'item-sub',txt: partes.join(' · ') + (ultima ? ' · ' + fechaMini(ultima) : '')})
+    ]));
+  });
+}
+
+// ── Ficha ────────────────────────────────────────────────────────────────
+function abrirFicha(id){
+  SELECCIONADO = id;
+  pintarLista();
+  const a = ATLETAS.find(x => x.id === id);
+  const cont = document.getElementById('ficha');
+  cont.textContent = '';
+  if (!a) return;
+
+  const evs = evaluacionesDe(id);
+  const ultimaFecha = evs.map(e => e.fecha).sort().pop();
+
+  // Cabecera
+  const datos = [
+    ['Sexo', a.sexo], ['Categoría', a.categoria], ['Deporte', a.deporte],
+    ['Organización', a.organizacion], ['Centro', a.centro],
+    ['Nacimiento', a.fecha_nacimiento ? fechaCorta(a.fecha_nacimiento) : null],
+    ['Edad actual', edadEn(a.fecha_nacimiento, null) != null ? edadEn(a.fecha_nacimiento,null) + ' años' : null]
+  ].filter(d => d[1]);
+  cont.appendChild(el('div',{class:'ficha-cab'},[
+    el('div',{class:'ficha-cab-fila'},[
+      el('div',{class:'ficha-nombre',txt:a.nombre}),
+      (PORATLETA[id] || []).length
+        ? el('button',{class:'boton-reporte',txt:'Generar reporte',onclick:() => abrirReporte(id)})
+        : null
+    ]),
+    el('div',{class:'ficha-datos'}, datos.map(d =>
+      el('div',{class:'dato'},[ el('b',{txt:d[0]}), document.createTextNode(d[1]) ])))
+  ]));
+
+  if ((PORATLETA[id] || []).length) cont.appendChild(filaFiltro(id));
+  if (!evs.length) {
+    cont.appendChild(el('div',{class:'aviso',txt:
+      (PORATLETA[id] || []).length ? 'No hay evaluaciones en el período elegido.'
+                                   : 'Este atleta todavía no tiene evaluaciones cargadas.'}));
+    return;
+  }
+
+  cont.appendChild(tarjetasResumen(id, evs, ultimaFecha));
+  const loehr = evaluacionesValidas(id,'loehr');
+  // El resultado más reciente va primero: es lo que se mira siempre;
+  // la evolución queda abajo, como contexto.
+  if (loehr.length)      cont.appendChild(seccionLoehrActual(loehr[loehr.length-1], loehr.length, hayInvalidas(id,'loehr')));
+  if (loehr.length >= 2) cont.appendChild(seccionEvolucionLoehr(loehr));
+  const ansiedad = evaluacionesValidas(id,'ansiedad');
+  if (ansiedad.length) cont.appendChild(seccionAnsiedad(ansiedad, hayInvalidas(id,'ansiedad')));
+  const temp = evaluacionesValidas(id,'temperamento');
+  if (temp.length) cont.appendChild(seccionTemperamento(temp[temp.length-1], hayInvalidas(id,'temperamento')));
+  cont.appendChild(seccionConclusiones(id));
+  cont.appendChild(seccionHistorial(evs));
+}
+
+function etiquetaNivel(n){
+  return el('div',{class:'etiqueta',style:'background:'+n.fondo+';color:'+n.color},
+    [ el('span',{'aria-hidden':'true',txt:n.icono}), document.createTextNode(n.lbl) ]);
+}
+
+function tarjetasResumen(id, evs, ultimaFecha){
+  const cajas = [];
+  // Se toma el último resultado VÁLIDO de cada prueba. Si lo único que hay es
+  // una aplicación inválida, la tarjeta lo dice en vez de quedar vacía.
+  const ci = evaluacionesValidas(id,'ci').slice(-1)[0] || evaluacionesDe(id,'ci').slice(-1)[0];
+  if (ci) {
+    const v = ci.invalida ? null : (ci.datos && ci.datos.ci);
+    cajas.push(tarjeta('Coeficiente intelectual', v != null ? String(v) : '—',
+      fechaCorta(ci.fecha), ci.invalida ? MARCA_INVALIDA : nivelCI(v)));
+  }
+  const temp = evaluacionesValidas(id,'temperamento').slice(-1)[0] || evaluacionesDe(id,'temperamento').slice(-1)[0];
+  if (temp)
+    cajas.push(tarjeta('Temperamento',
+      temp.invalida ? '—' : ((temp.datos && temp.datos.temperamento) || '—'),
+      fechaCorta(temp.fecha), temp.invalida ? MARCA_INVALIDA : null, 21));
+  const anx = evaluacionesValidas(id,'ansiedad').slice(-1)[0] || evaluacionesDe(id,'ansiedad').slice(-1)[0];
+  if (anx && anx.invalida)
+    cajas.push(tarjeta('Ansiedad', '—', fechaCorta(anx.fecha), MARCA_INVALIDA));
+  if (anx && !anx.invalida && anx.datos && anx.datos.estado != null)
+    cajas.push(tarjeta('Ansiedad estado', String(anx.datos.estado), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.estado)));
+  if (anx && !anx.invalida && anx.datos && anx.datos.rasgo != null)
+    cajas.push(tarjeta('Ansiedad rasgo', String(anx.datos.rasgo), fechaCorta(anx.fecha), nivelAnsiedad(anx.datos.rasgo)));
+  cajas.push(tarjeta('Evaluaciones', String(evs.length), 'última: ' + fechaCorta(ultimaFecha)));
+  return el('div',{class:'tarjetas'}, cajas);
+}
+function tarjeta(lbl, num, pie, nivel, tam){
+  return el('div',{class:'tarjeta'},[
+    el('div',{class:'tarjeta-lbl',txt:lbl}),
+    el('div',{class:'tarjeta-num',txt:num, style: tam ? 'font-size:'+tam+'px' : ''}),
+    el('div',{class:'tarjeta-pie',txt:pie}),
+    nivel ? etiquetaNivel(nivel) : null
+  ]);
+}
+
+function puntajeCompuesto(ev, c){
+  const e = (ev.datos && ev.datos.escalas) || {};
+  return c.escalas.reduce((s,k) => s + (Number(e[k]) || 0), 0);
+}
+
+// ── Evolución del Loehr: una línea por compuesto, eje en % ───────────────
+function seccionEvolucionLoehr(loehr){
+  const series = COMPUESTOS.map(c => ({
+    lbl: c.lbl, color: c.color,
+    puntos: loehr.map(ev => {
+      const v = puntajeCompuesto(ev, c);
+      return { fecha: ev.fecha, valor: v, max: c.max, pct: (v / c.max) * 100 };
+    })
+  }));
+  const fechas = loehr.map(ev => ev.fecha);
+  // El eje arranca en 50 % cuando todos los puntajes son altos: con 0 % a 100 %
+  // las líneas se apelotonan arriba y no se ve la evolución. Si algún puntaje
+  // baja de 60 %, el eje vuelve a 0 % para no recortar nada.
+  const minPct = Math.min.apply(null, series.flatMap(s => s.puntos.map(p => p.pct)));
+  const desde = minPct < 60 ? 0 : 50;
+  const sec = el('div',{class:'seccion'});
+  const idTabla = 'tabla-loehr';
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Evolución del perfil Loehr'}),
+    el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)})
+  ]));
+  sec.appendChild(el('div',{class:'seccion-sub',
+    txt:'Cada área como porcentaje de su puntaje máximo, para poder compararlas en un mismo eje.'}));
+  sec.appendChild(leyenda(series));
+  sec.appendChild(graficoLineas(series, fechas, {
+    min:desde, max:100, sufijo:'%',
+    bandas:[
+      { desde:86.67, hasta:100,   color:'rgba(12,163,12,.07)',  lbl:'Excelente' },
+      { desde:66.67, hasta:86.67, color:'rgba(236,131,90,.07)', lbl:'Mejorar' },
+      { desde:0,     hasta:66.67, color:'rgba(208,59,59,.06)',  lbl:'Atención' }
+    ],
+    formatoTip: p => p.valor + ' / ' + p.max + '  (' + Math.round(p.pct) + '%)'
+  }));
+  sec.appendChild(tablaSeries(series, fechas, idTabla, p => p.valor + ' / ' + p.max));
+  return sec;
+}
+
+// ── Perfil Loehr actual: magnitud → un solo tono + estado con icono ──────
+function avisoInvalidas(sec, hay){
+  if (!hay) return;
+  sec.appendChild(el('div',{class:'nota-invalida'},[
+    el('span',{'aria-hidden':'true',txt:'▲ '}),
+    document.createTextNode('Hay una aplicación marcada como prueba inválida en este período. No entra en los puntajes ni en los gráficos; figura en el historial.')
+  ]));
+}
+function seccionLoehrActual(ev, cuantas, hayInv){
+  const sec = el('div',{class:'seccion'});
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Perfil Loehr' + (cuantas > 1 ? ' más reciente' : '')})
+  ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Aplicado el ' + fechaCorta(ev.fecha) + ' · cada escala sobre 30 puntos'}));
+  const escalas = (ev.datos && ev.datos.escalas) || {};
+  ESCALAS.forEach(([k, nombre]) => {
+    const v = Number(escalas[k]) || 0, n = nivelDe(v/30);
+    sec.appendChild(el('div',{class:'barra-fila'},[
+      el('div',{class:'barra-nombre',txt:nombre}),
+      el('div',{class:'barra-pista'},[ el('div',{class:'barra-valor',style:'width:'+(v/30*100)+'%'}) ]),
+      el('div',{class:'barra-num',txt:String(v)}),
+      el('div',{class:'barra-nivel',style:'color:'+n.color},[
+        el('span',{'aria-hidden':'true',txt:n.icono+' '}), document.createTextNode(n.lbl)
+      ])
+    ]));
+  });
+  sec.appendChild(bloqueTexto('Interpretación', ev.interpretacion));
+  avisoInvalidas(sec, hayInv);
+  return sec;
+}
+
+// ── Ansiedad ─────────────────────────────────────────────────────────────
+function seccionAnsiedad(evs, hayInv){
+  const series = [
+    { lbl:'Estado', color:'var(--s1)', puntos: evs.map(e => ({ fecha:e.fecha, valor: e.datos && e.datos.estado != null ? Number(e.datos.estado) : null })) },
+    { lbl:'Rasgo',  color:'var(--s2)', puntos: evs.map(e => ({ fecha:e.fecha, valor: e.datos && e.datos.rasgo  != null ? Number(e.datos.rasgo)  : null })) }
+  ].filter(s => s.puntos.some(p => p.valor != null));
+  const sec = el('div',{class:'seccion'});
+  const idTabla = 'tabla-ansiedad';
+  sec.appendChild(el('div',{class:'seccion-cab'},[
+    el('h2',{class:'seccion-titulo',txt:'Ansiedad'}),
+    evs.length >= 2 ? el('button',{class:'enlace-tabla',txt:'Ver tabla',onclick:e=>alternarTabla(e,idTabla)}) : null
+  ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Puntajes de 20 a 80. Hasta 29 es bajo; de 30 a 44, medio; 45 o más, alto.'}));
+  if (series.length > 1) sec.appendChild(leyenda(series));
+  if (evs.length >= 2) sec.appendChild(graficoLineas(series, evs.map(e => e.fecha), {
+    min:20, max:80,
+    bandas:[
+      { desde:45, hasta:80, color:'rgba(208,59,59,.06)',  lbl:'Alto' },
+      { desde:30, hasta:45, color:'rgba(130,130,130,.07)',lbl:'Medio' },
+      { desde:20, hasta:30, color:'rgba(12,163,12,.07)',  lbl:'Bajo' }
+    ],
+    formatoTip: p => String(p.valor)
+  }));
+  sec.appendChild(tablaSeries(series, evs.map(e => e.fecha), idTabla,
+    p => p.valor == null ? '—' : String(p.valor), evs.length < 2));
+  sec.appendChild(bloqueTexto('Interpretación', evs[evs.length-1].interpretacion));
+  avisoInvalidas(sec, hayInv);
+  return sec;
+}
+
+// ── Temperamento ─────────────────────────────────────────────────────────
+function seccionTemperamento(ev, hayInv){
+  const sec = el('div',{class:'seccion'});
+  const t = (ev.datos && ev.datos.temperamento) || '—';
+  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Temperamento'}) ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Evaluado el ' + fechaCorta(ev.fecha)}));
+  sec.appendChild(el('div',{style:'font-size:22px;font-weight:800;margin-bottom:4px',txt:t}));
+  sec.appendChild(bloqueTexto('Descripción', ev.interpretacion));
+  avisoInvalidas(sec, hayInv);
+  return sec;
+}
+
+// ── Conclusiones y recomendaciones de cada sesión ────────────────────────
+function seccionConclusiones(id){
+  const ses = sesionesDe(id).filter(se => se.conclusion || se.recomendaciones);
+  const sec = el('div',{class:'seccion'});
+  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Conclusiones y recomendaciones'}) ]));
+  if (!ses.length) {
+    sec.appendChild(el('div',{class:'seccion-sub',txt:'Todavía no hay conclusiones escritas para este período.'}));
+    return sec;
+  }
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'De la evaluación más reciente a la más antigua.'}));
+  ses.forEach((se, i) => {
+    sec.appendChild(el('div',{class:'nota' + (i ? ' nota-vieja' : '')},[
+      el('div',{class:'nota-fecha',txt:fechaCorta(se.fecha) + (se.contexto ? ' · ' + se.contexto : '')}),
+      bloqueTexto('Conclusión', se.conclusion),
+      bloqueTexto('Recomendaciones', se.recomendaciones)
+    ]));
+  });
+  return sec;
+}
+
+// Un bloque de texto escrito por la psicóloga. Si está vacío lo dice, para que
+// se vea que falta redactarlo en vez de desaparecer de la página.
+function bloqueTexto(titulo, texto){
+  const caja = el('div',{class:'texto-bloque'});
+  caja.appendChild(el('div',{class:'texto-titulo',txt:titulo}));
+  if (texto && String(texto).trim())
+    caja.appendChild(el('p',{class:'texto-cuerpo',txt:String(texto).trim()}));
+  else
+    caja.appendChild(el('p',{class:'texto-vacio',txt:'Sin redactar'}));
+  return caja;
+}
+
+// ── Historial completo ───────────────────────────────────────────────────
+const NOMBRE_PRUEBA = { ci:'Coeficiente intelectual', temperamento:'Temperamento', ansiedad:'Ansiedad', loehr:'Inventario Loehr', prearranque:'Estado de prearranque' };
+function resumenEvaluacion(ev){
+  const d = ev.datos || {};
+  if (ev.invalida) return 'Prueba inválida';
+  if (ev.tipo === 'ci') return d.ci != null ? 'CI ' + d.ci + (d.diagnostico ? ' · ' + d.diagnostico : '') : (d.diagnostico || '—');
+  if (ev.tipo === 'temperamento') return d.temperamento || '—';
+  if (ev.tipo === 'ansiedad') return ['estado ' + (d.estado ?? '—'), 'rasgo ' + (d.rasgo ?? '—')].join(' · ');
+  if (ev.tipo === 'loehr') {
+    const e = d.escalas || {};
+    return COMPUESTOS.map(c => c.lbl + ' ' + c.escalas.reduce((s,k)=>s+(Number(e[k])||0),0) + '/' + c.max).join(' · ');
+  }
+  return JSON.stringify(d);
+}
+function seccionHistorial(evs){
+  const sec = el('div',{class:'seccion'});
+  sec.appendChild(el('div',{class:'seccion-cab'},[ el('h2',{class:'seccion-titulo',txt:'Historial completo'}) ]));
+  sec.appendChild(el('div',{class:'seccion-sub',txt:'Todas las pruebas aplicadas, de la más reciente a la más antigua.'}));
+  const cuerpo = el('tbody');
+  evs.slice().sort((a,b) => (b.fecha||'').localeCompare(a.fecha||'')).forEach(ev => {
+    cuerpo.appendChild(el('tr',null,[
+      el('td',{txt:fechaCorta(ev.fecha), style:'white-space:nowrap'}),
+      el('td',{txt:NOMBRE_PRUEBA[ev.tipo] || ev.tipo, style:'font-weight:700'}),
+      el('td',{txt:resumenEvaluacion(ev)})
+    ]));
+  });
+  sec.appendChild(el('table',{class:'tabla-datos'},[
+    el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}), el('th',{txt:'Prueba'}), el('th',{txt:'Resultado'}) ]) ]),
+    cuerpo
+  ]));
+  return sec;
+}
+
+// ── Gráfico de líneas con crosshair ──────────────────────────────────────
+function leyenda(series){
+  return el('div',{class:'leyenda'}, series.map(s =>
+    el('span',null,[ el('span',{class:'trazo',style:'background:'+s.color}), document.createTextNode(s.lbl) ])));
+}
+
+// El SVG se dibuja al ancho real del contenedor en vez de escalarse: si se
+// encoge para entrar en un celular, las etiquetas quedan ilegibles.
+function anchoDisponible(){
+  const c = document.getElementById('ficha');
+  return Math.max(300, Math.min(760, (c && c.clientWidth ? c.clientWidth : 760) - 40));
+}
+// Marcas del eje en números redondos: dividir el rango en partes iguales da
+// valores como 63 % u 88 %, que no se leen de un vistazo.
+function marcasEje(min, max, buscadas){
+  // Se elige un paso que además divida justo desde el mínimo, para que las
+  // marcas queden parejas y no aparezca una primera más pegada que el resto.
+  const paso = [1,2,5,10,20,25,50,100].find(p => (max-min)/p <= buscadas && min % p === 0) || (max-min);
+  const marcas = [];
+  for (let v = min; v <= max + 1e-9; v += paso) marcas.push(Math.round(v));
+  if (marcas[marcas.length-1] < max) marcas.push(max);
+  return marcas;
+}
+function graficoLineas(series, fechas, opc){
+  const W = (opc && opc.ancho) || anchoDisponible(), angosto = W < 520;
+  const H = angosto ? 250 : 300;
+  const mL = angosto ? 34 : 44, mR = angosto ? 46 : 124, mT = 14, mB = 34;
+  const ancho = W - mL - mR, alto = H - mT - mB;
+  const n = fechas.length;
+  const x = i => mL + (n === 1 ? ancho/2 : (i/(n-1)) * ancho);
+  const y = v => mT + alto - ((v - opc.min) / (opc.max - opc.min)) * alto;
+
+  const svg = svgEl('svg', { class:'grafico', viewBox:'0 0 '+W+' '+H, role:'img',
+    'aria-label':'Gráfico de evolución. Los valores están también en la tabla.' });
+
+  (opc.bandas || []).forEach(b => {
+    // Se recorta la banda al área visible: si el eje no arranca en cero, la
+    // banda más baja se dibujaría fuera del gráfico.
+    const arriba = Math.max(mT, y(Math.min(b.hasta, opc.max)));
+    const abajo  = Math.min(mT + alto, y(Math.max(b.desde, opc.min)));
+    if (abajo - arriba < 1) return;
+    svg.appendChild(svgEl('rect',{ x:mL, y:arriba, width:ancho, height:abajo-arriba, fill:b.color }));
+    // Las bandas se rotulan en su propia columna, más a la derecha que las
+    // etiquetas de fin de línea, para que nunca se pisen entre sí. En pantalla
+    // angosta no hay lugar: el color de la banda y el subtítulo las explican.
+    if (!angosto)
+      svg.appendChild(Object.assign(svgEl('text',{ x:mL+ancho+62, y:(arriba+abajo)/2+4,
+        'font-size':'11', 'font-weight':'700', fill:'var(--ink3)' }), { textContent:b.lbl }));
+  });
+
+  marcasEje(opc.min, opc.max, angosto ? 4 : 6).forEach(v => {
+    svg.appendChild(svgEl('line',{ x1:mL, x2:mL+ancho, y1:y(v), y2:y(v), stroke:'var(--linea)', 'stroke-width':1 }));
+    svg.appendChild(Object.assign(svgEl('text',{ x:mL-8, y:y(v)+4, 'text-anchor':'end',
+      'font-size':'11', fill:'var(--ink3)' }), { textContent: v + (opc.sufijo||'') }));
+  });
+  svg.appendChild(svgEl('line',{ x1:mL, x2:mL+ancho, y1:mT+alto, y2:mT+alto, stroke:'var(--eje)', 'stroke-width':1 }));
+  fechas.forEach((f,i) => {
+    svg.appendChild(Object.assign(svgEl('text',{ x:x(i), y:H-12, 'text-anchor': n===1?'middle':(i===0?'start':(i===n-1?'end':'middle')),
+      'font-size':'11', fill:'var(--ink3)' }), { textContent: fechaMini(f) }));
+  });
+
+  const cruz = svgEl('line',{ y1:mT, y2:mT+alto, stroke:'var(--eje)', 'stroke-width':1, opacity:0 });
+  svg.appendChild(cruz);
+
+  const finales = [];
+  series.forEach(s => {
+    const vis = s.puntos.map((p,i) => ({p,i})).filter(o => o.p.valor != null);
+    if (vis.length > 1) {
+      svg.appendChild(svgEl('path',{
+        d: vis.map((o,k) => (k?'L':'M') + x(o.i) + ' ' + y(valorGraf(o.p)) ).join(' '),
+        fill:'none', stroke:s.color, 'stroke-width':2, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+    }
+    vis.forEach(o => {
+      svg.appendChild(svgEl('circle',{ cx:x(o.i), cy:y(valorGraf(o.p)), r:4.5,
+        fill:s.color, stroke:'var(--superficie)', 'stroke-width':2 }));
+    });
+    const ult = vis[vis.length-1];
+    if (ult) finales.push({ x:x(ult.i)+9, y:y(valorGraf(ult.p)),
+      txt: Math.round(valorGraf(ult.p)) + (opc.sufijo||'') });
+  });
+  function valorGraf(p){ return p.pct != null ? p.pct : p.valor; }
+
+  // Las etiquetas de fin de línea se separan si quedarían encimadas: cuando dos
+  // series terminan en valores parecidos, los números se pisarían y no se leería ninguno.
+  const SEP = 14;
+  finales.sort((a,b) => a.y - b.y);
+  for (let i = 1; i < finales.length; i++)
+    if (finales[i].y - finales[i-1].y < SEP) finales[i].y = finales[i-1].y + SEP;
+  const exceso = finales.length ? finales[finales.length-1].y - (mT + alto) : 0;
+  if (exceso > 0) finales.forEach(f => { f.y -= exceso; });
+  for (let i = finales.length - 2; i >= 0; i--)
+    if (finales[i+1].y - finales[i].y < SEP) finales[i].y = finales[i+1].y - SEP;
+  finales.forEach(f => svg.appendChild(Object.assign(svgEl('text',{ x:f.x, y:f.y+4,
+    'font-size':'11.5', 'font-weight':'800', fill:'var(--ink2)' }), { textContent:f.txt })));
+
+  const capa = svgEl('rect',{ x:mL, y:mT, width:ancho, height:alto, fill:'transparent', style:'cursor:crosshair' });
+  svg.appendChild(capa);
+  function mover(ev){
+    const caja = svg.getBoundingClientRect();
+    const px = (ev.clientX - caja.left) / caja.width * W;
+    let i = 0, mejor = Infinity;
+    for (let k = 0; k < n; k++){ const d = Math.abs(x(k) - px); if (d < mejor) { mejor = d; i = k; } }
+    cruz.setAttribute('x1', x(i)); cruz.setAttribute('x2', x(i)); cruz.setAttribute('opacity', 1);
+    mostrarTip(ev, fechas[i], series.map(s => ({ s, p: s.puntos[i] })).filter(o => o.p && o.p.valor != null), opc.formatoTip);
+  }
+  capa.addEventListener('pointermove', mover);
+  capa.addEventListener('pointerdown', mover);
+  capa.addEventListener('pointerleave', () => { cruz.setAttribute('opacity', 0); ocultarTip(); });
+  return svg;
+}
+
+function mostrarTip(ev, fecha, filas, formato){
+  const t = document.getElementById('tip');
+  t.textContent = '';
+  t.appendChild(el('div',{class:'tip-fecha',txt:fechaCorta(fecha)}));
+  filas.forEach(o => {
+    t.appendChild(el('div',{class:'tip-fila'},[
+      el('span',{class:'trazo',style:'background:'+o.s.color}),
+      el('span',{class:'tip-val',txt:formato(o.p)}),
+      el('span',{class:'tip-nom',txt:o.s.lbl})
+    ]));
+  });
+  t.classList.add('ver');
+  const an = t.offsetWidth, al = t.offsetHeight;
+  let left = ev.clientX + 14, top = ev.clientY - al/2;
+  if (left + an > window.innerWidth - 8) left = ev.clientX - an - 14;
+  top = Math.max(8, Math.min(top, window.innerHeight - al - 8));
+  t.style.left = left + 'px'; t.style.top = top + 'px';
+}
+function ocultarTip(){ document.getElementById('tip').classList.remove('ver'); }
+
+function tablaSeries(series, fechas, id, formato, visible){
+  const cuerpo = el('tbody');
+  fechas.forEach((f,i) => {
+    cuerpo.appendChild(el('tr',null,[ el('td',{txt:fechaCorta(f)}) ].concat(
+      series.map(s => el('td',{txt: s.puntos[i] && s.puntos[i].valor != null ? formato(s.puntos[i]) : '—'})))));
+  });
+  return el('table',{class:'tabla-datos' + (visible ? '' : ' oculto'),id},[
+    el('thead',null,[ el('tr',null,[ el('th',{txt:'Fecha'}) ].concat(series.map(s => el('th',{txt:s.lbl})))) ]),
+    cuerpo
+  ]);
+}
+function alternarTabla(ev, id){
+  const t = document.getElementById(id);
+  const oculta = t.classList.toggle('oculto');
+  ev.target.textContent = oculta ? 'Ver tabla' : 'Ocultar tabla';
+}
+
+// ── Reporte para el atleta o el entrenador ───────────────────────────────
+// El CI viene desmarcado a propósito: es el dato más sensible del perfil y
+// normalmente no se comparte con el cuerpo técnico. Se activa con un clic.
+let REPORTE = { modo:'reciente', loehr:true, ansiedad:true, temperamento:true, ci:false, conclusiones:true };
+
+function abrirReporte(id){
+  REPORTE.atleta = id;
+  document.getElementById('reporte').classList.add('ver');
+  document.body.style.overflow = 'hidden';
+  pintarReporte();
+}
+function cerrarReporte(){
+  document.getElementById('reporte').classList.remove('ver');
+  document.body.style.overflow = '';
+}
+
+function pintarReporte(){
+  const caja = document.getElementById('rep-caja');
+  caja.textContent = '';
+  caja.appendChild(panelOpciones());
+  caja.appendChild(construirHoja(REPORTE.atleta));
+}
+// Al cambiar una opción se rehace solo la hoja: si se redibujara el panel
+// entero, el control recién tocado se reemplazaría y perdería el foco.
+function refrescarHoja(){
+  const vieja = document.getElementById('hoja');
+  const nueva = construirHoja(REPORTE.atleta);
+  if (vieja) vieja.replaceWith(nueva);
+  else document.getElementById('rep-caja').appendChild(nueva);
+}
+
+function panelOpciones(){
+  const panel = el('div',{class:'rep-barra'});
+
+  const modos = el('div',{class:'rep-grupo'});
+  modos.appendChild(el('div',{class:'rep-lbl',txt:'Qué mostrar'}));
+  [['reciente','Resultado más reciente'],['primera','Primera evaluación'],['evolucion','Evolución']]
+    .forEach(([v,lbl]) => modos.appendChild(el('button',{
+      class:'chip' + (REPORTE.modo === v ? ' chip-on' : ''), txt:lbl, 'data-modo':v,
+      onclick:() => {
+        REPORTE.modo = v;
+        modos.querySelectorAll('[data-modo]').forEach(c =>
+          c.classList.toggle('chip-on', c.getAttribute('data-modo') === v));
+        refrescarHoja();
+      }
+    })));
+  panel.appendChild(modos);
+
+  const secs = el('div',{class:'rep-grupo'});
+  secs.appendChild(el('div',{class:'rep-lbl',txt:'Qué incluir'}));
+  [['loehr','Perfil Loehr'],['ansiedad','Ansiedad'],['temperamento','Temperamento'],
+   ['ci','Coeficiente intelectual'],['conclusiones','Conclusiones y recomendaciones']]
+    .forEach(([k,lbl]) => {
+      const marca = el('input',{type:'checkbox'});
+      marca.checked = !!REPORTE[k];
+      marca.addEventListener('change', () => { REPORTE[k] = marca.checked; refrescarHoja(); });
+      secs.appendChild(el('label',{class:'rep-check' + (k === 'ci' ? ' sensible' : '')},
+        [ marca, document.createTextNode(lbl) ]));
+    });
+  secs.appendChild(el('div',{class:'rep-nota',
+    txt:'El coeficiente intelectual viene desmarcado: suele no compartirse con el cuerpo técnico.'}));
+  panel.appendChild(secs);
+
+  const acciones = el('div',{class:'rep-acciones'});
+  acciones.appendChild(el('button',{class:'boton-reporte',id:'btn-pdf',txt:'Descargar PDF',onclick:descargarPDF}));
+  acciones.appendChild(el('button',{class:'chip',txt:'Cerrar',onclick:cerrarReporte}));
+  panel.appendChild(acciones);
+  return panel;
+}
+
+function construirHoja(id){
+  const a = ATLETAS.find(x => x.id === id);
+  const hoja = el('div',{class:'hoja',id:'hoja'});
+  const loehr = evaluacionesValidas(id,'loehr');
+  const titulo = { reciente:'Reporte de perfil', primera:'Primera evaluación', evolucion:'Reporte de evolución' }[REPORTE.modo];
+
+  const intro = el('div',{class:'hoja-intro'});
+  hoja.appendChild(intro);
+  intro.appendChild(el('div',{class:'hoja-cab'},[
+    el('img',{src:'/assets/icono.png',alt:''}),
+    el('div',null,[
+      el('div',{class:'hoja-marca',txt:'Melany Ordóñez'}),
+      el('div',{class:'hoja-rol',txt:'Psicología del Deporte'})
+    ]),
+    el('div',{class:'hoja-tipo',txt:titulo})
+  ]));
+  intro.appendChild(el('div',{class:'hoja-atleta',txt:a.nombre}));
+
+  const meta = [];
+  if (a.categoria) meta.push(a.categoria);
+  if (a.sexo) meta.push(a.sexo);
+  if (a.deporte) meta.push(a.deporte);
+  if (a.organizacion) meta.push(a.organizacion);
+  if (a.centro) meta.push(a.centro);
+  const edad = edadEn(a.fecha_nacimiento, null);
+  if (edad != null) meta.push(edad + ' años');
+  intro.appendChild(el('div',{class:'hoja-meta'}, meta.map(m => el('span',{txt:m}))));
+  intro.appendChild(el('div',{class:'hoja-meta'},[ el('span',{txt:'Período: ' + textoPeriodo(id)}) ]));
+
+  if (REPORTE.loehr && loehr.length) hoja.appendChild(hojaLoehr(loehr));
+  if (REPORTE.ansiedad) hojaPrueba(hoja, id, 'ansiedad');
+  if (REPORTE.temperamento) hojaPrueba(hoja, id, 'temperamento');
+  if (REPORTE.ci) hojaPrueba(hoja, id, 'ci');
+  if (REPORTE.conclusiones) hojaConclusiones(hoja, id);
+
+  hoja.appendChild(el('div',{class:'hoja-pie'},[
+    el('span',{txt:'Lic. Melany Ordóñez · Máster en Psicología del Deporte'}),
+    el('span',{txt:'Emitido el ' + fechaCorta(hoyLocalISO())})
+  ]));
+  return hoja;
+}
+
+function hoyLocalISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function textoPeriodo(id){
+  const todas = (PORATLETA[id] || []).map(e => e.fecha).filter(Boolean).sort();
+  const evs = evaluacionesDe(id);
+  if (!evs.length) return 'sin evaluaciones';
+  const d = evs[0].fecha, h = evs[evs.length-1].fecha;
+  if (!FILTRO.desde && !FILTRO.hasta && todas.length) return 'historial completo (' + fechaCorta(d) + ' a ' + fechaCorta(h) + ')';
+  return fechaCorta(d) + ' a ' + fechaCorta(h);
+}
+function seccionHoja(titulo){
+  const sec = el('div',{class:'hoja-sec'});
+  sec.appendChild(el('h3',{txt:titulo}));
+  return sec;
+}
+function parrafoHoja(titulo, texto){
+  const caja = el('div',{style:'margin-top:12px'});
+  caja.appendChild(el('div',{class:'texto-titulo',style:'color:#767676',txt:titulo}));
+  caja.appendChild(texto && String(texto).trim()
+    ? el('p',{class:'hoja-p',txt:String(texto).trim()})
+    : el('p',{class:'hoja-vacio',txt:'Sin redactar'}));
+  return caja;
+}
+
+function hojaLoehr(loehr){
+  const primera = loehr[0], ultima = loehr[loehr.length-1];
+  const esEvol = REPORTE.modo === 'evolucion' && loehr.length > 1;
+  const base = REPORTE.modo === 'primera' ? primera : ultima;
+  const sec = seccionHoja('Perfil psicológico de rendimiento (Loehr)');
+  sec.appendChild(el('div',{class:'hoja-rol',style:'margin-bottom:12px',
+    txt: esEvol ? 'Comparación entre ' + fechaCorta(primera.fecha) + ' y ' + fechaCorta(ultima.fecha)
+               : 'Aplicado el ' + fechaCorta(base.fecha)}));
+
+  sec.appendChild(el('div',{class:'hoja-par'}, COMPUESTOS.map(c => {
+    const v = puntajeCompuesto(base, c), n = nivelDe(v/c.max);
+    const caja = el('div',{class:'hoja-caja'},[
+      el('div',{class:'hoja-caja-lbl',txt:c.lbl}),
+      el('div',{class:'hoja-caja-num',txt:v + ' / ' + c.max}),
+      el('div',{class:'hoja-caja-pie',style:'color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
+    ]);
+    if (esEvol) {
+      const antes = puntajeCompuesto(primera, c), d = v - antes;
+      caja.appendChild(el('div',{class:'hoja-delta',
+        style:'color:' + (d > 0 ? '#006300' : d < 0 ? '#b3261e' : '#767676'),
+        txt: (d > 0 ? '▲ +' : d < 0 ? '▼ ' : '= ') + (d === 0 ? 'sin cambio' : d + ' desde ' + fechaCorta(primera.fecha))}));
+    }
+    return caja;
+  })));
+
+  const escalas = (base.datos && base.datos.escalas) || {};
+  const det = el('div',{style:'margin-top:16px'});
+  ESCALAS.forEach(([k,nombre]) => {
+    const v = Number(escalas[k]) || 0, n = nivelDe(v/30);
+    const fila = el('div',{class:'hoja-fila'},[
+      el('div',{style:'font-weight:700',txt:nombre}),
+      el('div',{class:'hoja-pista'},[ el('div',{class:'hoja-llena',style:'width:'+(v/30*100)+'%'}) ]),
+      el('div',{style:'font-weight:800;text-align:right',txt:String(v)}),
+      el('div',{style:'font-weight:800;font-size:11.5px;color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
+    ]);
+    det.appendChild(fila);
+  });
+  sec.appendChild(det);
+
+  if (esEvol) sec.appendChild(graficoLineas(
+    COMPUESTOS.map(c => ({ lbl:c.lbl, color:colorPlano(c.color), puntos: loehr.map(ev => {
+      const v = puntajeCompuesto(ev, c);
+      return { fecha:ev.fecha, valor:v, max:c.max, pct:(v/c.max)*100 };
+    })})),
+    loehr.map(ev => ev.fecha),
+    { min:0, max:100, sufijo:'%', ancho:700, formatoTip:p => p.valor + ' / ' + p.max }
+  ));
+
+  sec.appendChild(parrafoHoja('Interpretación', base.interpretacion));
+  return sec;
+}
+
+// En la hoja impresa los colores van planos: las variables CSS del tema
+// oscuro harían ilegible el texto sobre blanco.
+function colorPlano(c){
+  return { 'var(--s1)':'#2a78d6','var(--s2)':'#eb6834','var(--s3)':'#1baf7a','var(--s4)':'#eda100',
+           'var(--bien)':'#0a7d0a','var(--serio)':'#c2622f','var(--critico)':'#b3261e',
+           'var(--ink2)':'#52514e' }[c] || c;
+}
+
+function hojaPrueba(hoja, id, tipo){
+  const validas = evaluacionesValidas(id, tipo);
+  const todas = evaluacionesDe(id, tipo);
+  if (!todas.length) return;
+  // Si solo hubo aplicaciones inválidas, el informe lo dice en vez de callarlo.
+  if (!validas.length) {
+    const ultima = todas[todas.length-1];
+    const sec = seccionHoja({ ci:'Coeficiente intelectual', ansiedad:'Ansiedad', temperamento:'Temperamento' }[tipo] || tipo);
+    sec.appendChild(el('div',{style:'font-size:17px;font-weight:800;color:#b3261e',txt:'▲ Prueba inválida'}));
+    sec.appendChild(el('div',{class:'hoja-rol',txt:'Aplicada el ' + fechaCorta(ultima.fecha) +
+      (ultima.motivo_invalidez ? ' · ' + ultima.motivo_invalidez : '')}));
+    sec.appendChild(parrafoHoja('Interpretación', ultima.interpretacion));
+    hoja.appendChild(sec);
+    return;
+  }
+  const evs = validas;
+  const ev = REPORTE.modo === 'primera' ? evs[0] : evs[evs.length-1];
+  if (tipo === 'ansiedad') {
+    const sec = seccionHoja('Ansiedad');
+    sec.appendChild(el('div',{class:'hoja-rol',style:'margin-bottom:12px',txt:'Evaluada el ' + fechaCorta(ev.fecha)}));
+    const cajas = [];
+    [['Ansiedad estado','estado'],['Ansiedad rasgo','rasgo']].forEach(([lbl,k]) => {
+      if (ev.datos && ev.datos[k] != null) {
+        const n = nivelAnsiedad(Number(ev.datos[k]));
+        cajas.push(el('div',{class:'hoja-caja'},[
+          el('div',{class:'hoja-caja-lbl',txt:lbl}),
+          el('div',{class:'hoja-caja-num',txt:String(ev.datos[k])}),
+          el('div',{class:'hoja-caja-pie',style:'color:'+colorPlano(n.color),txt:n.icono + ' ' + n.lbl})
+        ]));
+      }
+    });
+    if (REPORTE.modo === 'evolucion' && evs.length > 1) {
+      const p = evs[0];
+      if (p.datos && p.datos.estado != null)
+        cajas.push(el('div',{class:'hoja-caja'},[
+          el('div',{class:'hoja-caja-lbl',txt:'Estado en ' + fechaCorta(p.fecha)}),
+          el('div',{class:'hoja-caja-num',txt:String(p.datos.estado)}),
+          el('div',{class:'hoja-caja-pie',txt:'medición inicial'})
+        ]));
+    }
+    sec.appendChild(el('div',{class:'hoja-par'}, cajas));
+    sec.appendChild(parrafoHoja('Interpretación', ev.interpretacion));
+    hoja.appendChild(sec);
+  } else if (tipo === 'temperamento') {
+    const sec = seccionHoja('Temperamento');
+    sec.appendChild(el('div',{style:'font-size:21px;font-weight:800',txt:(ev.datos && ev.datos.temperamento) || '—'}));
+    sec.appendChild(el('div',{class:'hoja-rol',txt:'Evaluado el ' + fechaCorta(ev.fecha)}));
+    sec.appendChild(parrafoHoja('Descripción', ev.interpretacion));
+    hoja.appendChild(sec);
+  } else if (tipo === 'ci') {
+    const sec = seccionHoja('Coeficiente intelectual');
+    const d = ev.datos || {};
+    sec.appendChild(el('div',{style:'font-size:27px;font-weight:800',
+      txt: ev.invalida ? 'Prueba inválida' : (d.ci != null ? String(d.ci) : '—')}));
+    sec.appendChild(el('div',{class:'hoja-rol',
+      txt:(ev.invalida ? '' : (d.diagnostico ? d.diagnostico + ' · ' : '')) + 'Aplicado el ' + fechaCorta(ev.fecha)}));
+    sec.appendChild(parrafoHoja('Interpretación', ev.interpretacion));
+    hoja.appendChild(sec);
+  }
+}
+
+function hojaConclusiones(hoja, id){
+  const todas = sesionesDe(id).filter(se => se.conclusion || se.recomendaciones);
+  const ses = REPORTE.modo === 'primera' ? todas.slice(-1)
+            : REPORTE.modo === 'evolucion' ? todas
+            : todas.slice(0,1);
+  const sec = seccionHoja('Conclusiones y recomendaciones');
+  if (!ses.length) {
+    sec.appendChild(parrafoHoja('Conclusión', null));
+    sec.appendChild(parrafoHoja('Recomendaciones', null));
+  } else ses.forEach((se,i) => {
+    if (ses.length > 1) sec.appendChild(el('div',{class:'hoja-rol',
+      style:'margin-top:' + (i ? '18px' : '0') + ';font-weight:800;color:#0b7fae',txt:fechaCorta(se.fecha)}));
+    sec.appendChild(parrafoHoja('Conclusión', se.conclusion));
+    sec.appendChild(parrafoHoja('Recomendaciones', se.recomendaciones));
+  });
+  hoja.appendChild(sec);
+}
+
+// El PDF se arma bloque por bloque (encabezado, cada sección, pie) en vez de
+// cortar una imagen larga a ciegas: así el salto de página nunca parte una
+// línea de texto ni un gráfico por la mitad.
+async function descargarPDF(){
+  const btn = document.getElementById('btn-pdf');
+  const a = ATLETAS.find(x => x.id === REPORTE.atleta);
+  btn.disabled = true; btn.textContent = 'Generando…';
+  try {
+    const hoja = document.getElementById('hoja');
+    const bloques = [hoja.querySelector('.hoja-intro')]
+      .concat(Array.from(hoja.querySelectorAll('.hoja-sec')))
+      .concat([hoja.querySelector('.hoja-pie')])
+      .filter(Boolean);
+
+    const pdf = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const anchoP = pdf.internal.pageSize.getWidth();
+    const altoP  = pdf.internal.pageSize.getHeight();
+    const margen = 12;
+    const anchoUtil = anchoP - margen*2;
+    const altoUtil  = altoP - margen*2;
+    let y = margen;
+
+    for (const bloque of bloques) {
+      const lienzo = await html2canvas(bloque, { scale:2, backgroundColor:'#ffffff', useCORS:true });
+      const alto = lienzo.height * anchoUtil / lienzo.width;
+      const img = lienzo.toDataURL('image/jpeg', 0.94);
+
+      if (alto > altoUtil) {
+        // Una sección más alta que una página: se reparte, pero solo esa.
+        let resto = alto, desplazamiento = 0;
+        while (resto > 0.5) {
+          if (y > margen) { pdf.addPage(); y = margen; }
+          pdf.addImage(img, 'JPEG', margen, y - desplazamiento, anchoUtil, alto, undefined, 'FAST');
+          resto -= (altoUtil - (y - margen));
+          desplazamiento += (altoUtil - (y - margen));
+          y = margen + altoUtil;
+        }
+        y = margen + altoUtil;
+      } else {
+        if (y + alto > margen + altoUtil) { pdf.addPage(); y = margen; }
+        pdf.addImage(img, 'JPEG', margen, y, anchoUtil, alto, undefined, 'FAST');
+        y += alto + 4;
+      }
+    }
+
+    const limpio = (a && a.nombre ? a.nombre : 'atleta').replace(/[^\p{L}\p{N}]+/gu,'_').replace(/^_|_$/g,'');
+    pdf.save('Reporte_' + limpio + '_' + hoyLocalISO() + '.pdf');
+  } catch(e) {
+    console.error(e);
+    alert('No se pudo generar el PDF. Probá de nuevo.');
+  }
+  btn.disabled = false; btn.textContent = 'Descargar PDF';
+}
+
+document.getElementById('reporte').addEventListener('click', e => { if (e.target.id === 'reporte') cerrarReporte(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarReporte(); });
+
+let temporizadorTamano = null;
+window.addEventListener('resize', () => {
+  clearTimeout(temporizadorTamano);
+  temporizadorTamano = setTimeout(() => { if (SELECCIONADO) abrirFicha(SELECCIONADO); }, 180);
+});
+
+// ── Sesión ───────────────────────────────────────────────────────────────
+(async function(){
+  const { data } = await sb.auth.getSession();
+  if (data && data.session && sessionStorage.getItem('tds-auth') === 'ok') arrancar();
+})();
+</script>
+</body>
+</html>
