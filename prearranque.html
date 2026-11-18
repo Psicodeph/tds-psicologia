@@ -92,7 +92,7 @@ h2{font-size:12px;font-weight:800;color:var(--marca-fuerte);text-transform:upper
 
 /* Carga */
 .tabla-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-table.carga{width:100%;border-collapse:collapse;min-width:620px}
+table.carga{width:100%;border-collapse:collapse;min-width:760px}
 table.carga th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink3);font-weight:800;padding:7px 6px;border-bottom:1px solid var(--linea);text-align:left}
 table.carga td{padding:7px 6px;border-bottom:1px solid var(--linea);vertical-align:middle}
 table.carga tr:last-child td{border-bottom:none}
@@ -645,7 +645,7 @@ function tarjetaCarga(){
     ]));
     fila.appendChild(el('td',null,[ botonera(a.id, 'energia', v.e) ]));
     fila.appendChild(el('td',null,[ botonera(a.id, 'control', v.c) ]));
-    fila.appendChild(el('td',null,[ selectorDificultad(a.id, v.dif) ]));
+    fila.appendChild(el('td',null,[ botonera(a.id, 'dificultad', v.dif) ]));
     const celda = el('td');
     if (est) {
       celda.appendChild(el('span',{class:'chapa',
@@ -675,7 +675,6 @@ function tarjetaCarga(){
     }
   });
 
-  t.appendChild(tarjetaObservacion());
   t.appendChild(el('div',{class:'tabla-scroll'},[
     el('table',{class:'carga'},[
       el('thead',null,[ el('tr',null,[
@@ -686,6 +685,7 @@ function tarjetaCarga(){
       cuerpo
     ])
   ]));
+  t.appendChild(tarjetaObservacion());
   return t;
 }
 
@@ -701,15 +701,6 @@ function botonera(atletaId, campo, valor){
   }
   return caja;
 }
-function selectorDificultad(atletaId, valor){
-  const sel = el('select',{class:'sel-dif','aria-label':'Dificultad percibida'});
-  sel.appendChild(el('option',{value:'0',txt:'—'}));
-  for (let v = 1; v <= 5; v++) sel.appendChild(el('option',{value:String(v),txt:String(v)}));
-  sel.value = String(valor || 0);
-  sel.addEventListener('change', () => guardarValor(atletaId, 'dificultad', Number(sel.value)));
-  return sel;
-}
-
 // Se guarda al toque, pero en cola por atleta: dos clics rápidos sobre el
 // mismo jugador crearían dos registros si salieran en paralelo.
 const colas = {};
@@ -758,7 +749,7 @@ function tarjetaObservacion(){
     placeholder:'Observaciones de esta medición: clima del grupo, contexto del día, qué se trabajó…' });
   caja.value = APL.notas || '';
   caja.addEventListener('change', () => guardarObservacion(caja.value));
-  return el('div',{style:'margin:4px 0 18px'},[
+  return el('div',{style:'margin:20px 0 4px'},[
     el('h2',{style:'margin-bottom:8px',txt:'Observaciones de la medición'}), caja
   ]);
 }
