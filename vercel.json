@@ -10,10 +10,6 @@
       "destination": "/atletas.html"
     },
     {
-      "source": "/evaluar",
-      "destination": "/index.html"
-    },
-    {
       "source": "/clasico",
       "destination": "/clasico.html"
     },
@@ -24,6 +20,13 @@
     {
       "source": "/prearranque",
       "destination": "/prearranque.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/evaluar",
+      "destination": "/",
+      "permanent": false
     }
   ]
 }
