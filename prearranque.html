@@ -106,6 +106,8 @@ table.carga tr:last-child td{border-bottom:none}
 .chapa{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:800;white-space:nowrap}
 .sin-perfil{font-size:11px;color:var(--fie-t);font-weight:800}
 .alerta{display:inline-block;margin-left:5px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:800;background:var(--alerta-f);color:var(--alerta-t);border:1px solid var(--alerta-b);white-space:nowrap}
+.borde{display:inline-block;margin-left:5px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:800;color:var(--ink3);border:1px dashed var(--eje);white-space:nowrap}
+.pie-panel{font-size:13px;color:var(--ink2);font-weight:600;margin-top:10px;padding-top:10px;border-top:1px solid var(--linea)}
 
 /* Panel */
 .metricas{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
@@ -262,6 +264,18 @@ function estadoDe(e, c){
 // una lectura errónea del rival.
 function tieneAlerta(estado, dificultad){
   return !!(estado && estado.id === 'combativa' && dificultad && dificultad <= 1);
+}
+// Un 3 en cualquiera de los dos ejes cae justo sobre la línea de corte. El
+// estado que sale es el que corresponde, pero conviene volver a preguntarle
+// antes de decidir. No es un estado aparte ni cambia el protocolo.
+function enElBorde(e, c){
+  return !!((e || c) && (e === 3 || c === 3));
+}
+function marcaBorde(e, c){
+  if (!enElBorde(e, c)) return null;
+  const cuales = [e === 3 ? 'energía' : null, c === 3 ? 'control' : null].filter(Boolean);
+  return el('span',{class:'borde', title:'Está sobre la línea de corte (' +
+    cuales.join(' y ') + ' = 3). Conviene recontrolar antes de decidir.', txt:'en el borde'});
 }
 const REFERENCIA = [
   { titulo:'Energía', items:[
@@ -651,6 +665,8 @@ function tarjetaCarga(){
       celda.appendChild(el('span',{class:'chapa',
         style:'background:'+est.f+';color:'+est.t+';border:1px solid '+est.b, txt:est.lbl}));
       if (tieneAlerta(est, v.dif)) celda.appendChild(el('span',{class:'alerta',txt:'optimismo'}));
+      const mb = marcaBorde(v.e, v.c);
+      if (mb) celda.appendChild(mb);
     } else celda.appendChild(el('span',{style:'color:var(--ink3)',txt:'—'}));
     fila.appendChild(celda);
 
@@ -831,6 +847,10 @@ function tarjetasAnalisis(){
     el('span',{class:'punto',style:'background:'+s.b}), document.createTextNode(s.lbl)
   ])));
   panel.appendChild(leyenda);
+  const enBorde = plantel().filter(a => { const v = valoresDe(a.id, APL.id); return enElBorde(v.e, v.c); });
+  if (enBorde.length) panel.appendChild(el('div',{class:'pie-panel',
+    txt:'En el borde (energía o control = 3), conviene recontrolar antes de decidir: ' +
+        enBorde.map(a => a.nombre).join(', ') + '.'}));
   salida.push(panel);
 
   const detalle = el('div',{class:'tarjeta'});
@@ -1032,6 +1052,8 @@ function tarjetaCotejo(){
     if (eb) {
       celda.appendChild(el('span',{class:'chapa',style:'background:'+eb.f+';color:'+eb.t+';border:1px solid '+eb.b,txt:eb.lbl}));
       if (tieneAlerta(eb, vb.dif)) celda.appendChild(el('span',{class:'alerta',txt:'optimismo'}));
+      const mbc = marcaBorde(vb.e, vb.c);
+      if (mbc) celda.appendChild(mbc);
     } else celda.appendChild(el('span',{style:'color:var(--ink3)',txt:'—'}));
     if (vb.nota) celda.appendChild(el('span',{class:'alerta',
       style:'background:var(--marca-suave);color:var(--marca-fuerte);border-color:var(--marca)',

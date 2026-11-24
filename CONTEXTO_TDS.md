@@ -58,11 +58,90 @@ El calendario del ciclo es de agosto a junio. Antes de iniciar el trabajo de con
 
 ## 6. Capa neurocognitiva por posición
 
-Es una capa avanzada que se monta sobre la secuencia de conceptos existente y conserva el trabajo psicológico de base. Especializa las mismas funciones cognitivas que instala la primera mitad, atención, percepción y decisión, según las demandas de cada posición de juego. Se ubica en Sub-14, la categoría techo de TDS, y se trabaja por familias de posición más que por puestos rígidos. No se ancla a CES ni a Sub-16, para no depender de una participación que decide un tercero. La entrega la hace la psicóloga en sus visitas y formaciones. El riesgo de diseño es el hueco entre visitas, de unas seis semanas. La app es una herramienta de uso permanente y no solo para ese hueco, y entre otras cosas ayuda a sostener la capa cognitiva mientras la psicóloga no está.
+Es una capa avanzada que se monta sobre la secuencia de conceptos existente y conserva el trabajo psicológico de base. Especializa las mismas funciones cognitivas que instala la primera mitad, atención, percepción y decisión, según las demandas de cada posición de juego. Se ubica en Sub-14, la categoría techo de TDS, y se trabaja por familias de posición más que por puestos rígidos. No se ancla a CES ni a Sub-16, para no depender de una participación que decide un tercero. La entrega la hace la psicóloga en sus visitas y formaciones. Hay un hueco de unas seis semanas entre visitas y la app ayuda a cubrirlo, pero la app no es un parche para ese hueco: es una herramienta de uso permanente, dentro y fuera de las visitas. Lo que nunca hace es sumar carga al entrenador.
+
+## 6b. Cómo accede un atleta a una toma
+
+El atleta no es usuario de la app. Darle usuario le daría acceso a información
+sensible de todo el plantel, así que entra por una puerta aparte, pensada solo
+para responder una prueba.
+
+- Se le hace llegar un **código de acceso o un QR**, que la psicóloga genera.
+- El código **permite entrar dos veces y se gasta al abrir**: una por si entra
+  por error, otra para la toma real. No se deja abierto hasta que envíe.
+- **La toma es corrida, de una sola vez.** No se pausa ni se retoma: una toma
+  interrumpida queda viciada y no sirve como dato. Si algo se corta, el atleta
+  avisa y se le manda un código nuevo para rehacerla entera. Por eso el acceso
+  no puede quedar vivo esperando el envío: eso alargaría la ventana en que el
+  enlace circula sin que nadie esté mirando.
+- Ese acceso **solo permite responder**. No deja leer ningún dato, ni de otros
+  atletas ni los suyos propios.
+- Antes de empezar, el atleta **revisa y confirma sus datos**: nombre y fecha
+  de nacimiento, para quedar identificado aunque no esté cargado de antes.
+  Cuando la psicóloga sabe a quién le manda la prueba, el código ya lleva al
+  atleta adentro y él solo confirma, para no duplicar fichas.
+- **Una vez enviada, la prueba no se cambia.** El atleta corrige sus datos
+  antes de empezar; después, solo la psicóloga edita, desde la ficha.
 
 ## 7. Instrumentos de evaluación
 
-La práctica aplica instrumentos psicométricos que la app registra y versiona por atleta. Incluyen el inventario Loehr IPRD con sus siete escalas, la ansiedad de Spielberger en estado y rasgo, el temperamento de Eysenck, CI, el Stroop para atención, BARSIT y el estado de prearranque competitivo basado en energía y control, que cruza ambos ejes con el corte en 3, de 3 o más contra 2 o menos, sobre una grilla de 5 por 5 y da cuatro estados, combativa, subactivación controlada, fiebre de arrancada y apatía, sin zona media. La capa neurocognitiva por posición se incorpora como instrumentos nuevos dentro de esta misma lógica.
+La práctica aplica instrumentos psicométricos que la app registra y versiona por atleta.
+
+| Instrumento | Qué mide | Estado en la app |
+| --- | --- | --- |
+| Loehr IPRD | Siete escalas de habilidad psicológica para el rendimiento | Implementado |
+| Spielberger | Ansiedad estado y ansiedad rasgo | Implementado |
+| Eysenck | Temperamento | Implementado |
+| BARSIT | Coeficiente intelectual | Implementado, guardado como tipo `ci` |
+| Prearranque | Energía y control antes de competir | Implementado |
+| Stroop | Atención selectiva e interferencia | En papel, pendiente de digitalizar |
+
+El CI se mide con **BARSIT**. Antes se usaba Purdue, que resultó demasiado
+exigente para estas edades y daba resultados erráticos. En la app el tipo de
+evaluación sigue llamándose `ci` porque nombra el constructo, no el
+instrumento; BARSIT es la prueba que lo produce hoy.
+
+El **Stroop** se viene aplicando en papel y es el cuello de botella de la
+práctica: lo aplica el entrenador, manda los resultados, y recién entonces se
+interpretan. El circuito tarda días y por eso solo se aplicó cuatro veces.
+Digitalizarlo con un enlace que se manda al atleta es el motivo principal de la
+capa neurocognitiva, no una mejora cosmética.
+
+La capa neurocognitiva por posición se incorpora como instrumentos nuevos
+dentro de esta misma lógica: un tipo de evaluación nuevo y los puntajes en
+`datos`, sin tocar el esquema.
+
+### Estado de prearranque (decisión cerrada)
+
+Modelo: cuatro estados, operacionalización dimensional del prearranque.
+
+- Eje 1, **Energía** (1-5), traduce el balance excitación-inhibición.
+- Eje 2, **Control** (1-5), operacionaliza la regulación que separa la
+  disposición combativa de la fiebre de arrancada.
+
+Reglas de corte, que cubren las 25 casillas:
+
+| Energía | Control | Estado |
+| --- | --- | --- |
+| 3-5 | 3-5 | Disposición combativa |
+| 1-2 | 3-5 | Subactivación controlada (estado de medición, no clásico) |
+| 3-5 | 1-2 | Fiebre de arrancada |
+| 1-2 | 1-2 | Apatía |
+
+La tercera pregunta, **dificultad percibida** (1-5), no cambia el estado. Si el
+atleta está en disposición combativa y marca 1, se levanta la alerta de
+optimismo infundado.
+
+**Marca de borde:** si Energía = 3 o Control = 3, se indica "en el borde" para
+recontrolar. No es un estado ni cambia el protocolo.
+
+**No usar nueve zonas como estados.** Se guardan siempre los tres valores
+crudos y el estado se calcula, nunca se guarda calculado.
+
+Aplicación: solo antes de torneos TDS y competencias externas.
+
+Las herramientas reservadas (globo, apretar y soltar) no se usan en protocolos
+de prearranque.
 
 ## 8. Qué debe soportar la app
 
@@ -76,6 +155,7 @@ El modelo de datos actual ya resuelve lo esencial y la capa neurocognitiva debe 
 
 Requisitos que debe cumplir la capa neurocognitiva dentro de la app:
 
-- El entrenador no diseña ni administra la prueba. El registro lo ingresa el jugador, siempre con supervisión, del entrenador en presencial o de la psicóloga en virtual, nunca autoadministrado sin acompañamiento.
+- **El entrenador no diseña ni administra la prueba.** La captura la psicóloga en la visita, o la ingresa el atleta; nunca es una tarea más para el cuerpo técnico.
+- **El atleta nunca responde solo.** Siempre hay supervisión: del entrenador en lo presencial, o de la psicóloga en lo virtual. No se manda un enlace para que lo llene por su cuenta y sin testigo. Esto condiciona el diseño: la prueba se aplica en un momento acordado, no es una tarea para hacer cuando quiera.
 - La medición por posición se etiqueta por puesto, apoyándose en la posición del atleta o en el contenido de la evaluación.
-- La app es de uso permanente y, entre otras funciones, sostiene la continuidad entre visitas para que la capa cognitiva no se enfríe en el hueco de seis semanas.
+- La app sostiene la continuidad entre visitas, de modo que la capa cognitiva no se enfríe en el hueco de seis semanas.
