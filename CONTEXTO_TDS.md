@@ -67,15 +67,21 @@ sensible de todo el plantel, así que entra por una puerta aparte, pensada solo
 para responder una prueba.
 
 - Se le hace llegar un **código de acceso o un QR**, que la psicóloga genera.
-- El código sirve para **una toma**, con margen para un ingreso en falso: si
-  entra por error, no se le quema el acceso. Se consume al enviar la prueba,
-  no al abrirla.
+- El código **permite entrar dos veces y se gasta al abrir**: una por si entra
+  por error, otra para la toma real. No se deja abierto hasta que envíe.
+- **La toma es corrida, de una sola vez.** No se pausa ni se retoma: una toma
+  interrumpida queda viciada y no sirve como dato. Si algo se corta, el atleta
+  avisa y se le manda un código nuevo para rehacerla entera. Por eso el acceso
+  no puede quedar vivo esperando el envío: eso alargaría la ventana en que el
+  enlace circula sin que nadie esté mirando.
 - Ese acceso **solo permite responder**. No deja leer ningún dato, ni de otros
   atletas ni los suyos propios.
-- En la toma, el atleta registra su nombre y fecha de nacimiento, de modo que
-  quede identificado aunque no esté cargado de antes.
-- Lo cargado se puede **corregir después**: la psicóloga desde la ficha, y el
-  atleta mientras no haya enviado.
+- Antes de empezar, el atleta **revisa y confirma sus datos**: nombre y fecha
+  de nacimiento, para quedar identificado aunque no esté cargado de antes.
+  Cuando la psicóloga sabe a quién le manda la prueba, el código ya lleva al
+  atleta adentro y él solo confirma, para no duplicar fichas.
+- **Una vez enviada, la prueba no se cambia.** El atleta corrige sus datos
+  antes de empezar; después, solo la psicóloga edita, desde la ficha.
 
 ## 7. Instrumentos de evaluación
 
