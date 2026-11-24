@@ -155,7 +155,7 @@ El modelo de datos actual ya resuelve lo esencial y la capa neurocognitiva debe 
 
 Requisitos que debe cumplir la capa neurocognitiva dentro de la app:
 
-- El registro no recae en el entrenador. Lo captura la psicóloga en la visita, o lo ingresa el atleta, nunca es una tarea más para el cuerpo técnico.
-- **El atleta nunca responde solo.** Siempre hay supervisión, presencial de la psicóloga o del entrenador, o virtual. No se manda un enlace para que lo llene por su cuenta y sin testigo. Esto condiciona el diseño: la prueba se aplica en un momento acordado, no es una tarea para hacer cuando quiera.
+- **El entrenador no diseña ni administra la prueba.** La captura la psicóloga en la visita, o la ingresa el atleta; nunca es una tarea más para el cuerpo técnico.
+- **El atleta nunca responde solo.** Siempre hay supervisión: del entrenador en lo presencial, o de la psicóloga en lo virtual. No se manda un enlace para que lo llene por su cuenta y sin testigo. Esto condiciona el diseño: la prueba se aplica en un momento acordado, no es una tarea para hacer cuando quiera.
 - La medición por posición se etiqueta por puesto, apoyándose en la posición del atleta o en el contenido de la evaluación.
 - La app sostiene la continuidad entre visitas, de modo que la capa cognitiva no se enfríe en el hueco de seis semanas.
