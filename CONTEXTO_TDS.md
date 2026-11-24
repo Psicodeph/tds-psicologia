@@ -62,7 +62,35 @@ Es una capa avanzada que se monta sobre la secuencia de conceptos existente y co
 
 ## 7. Instrumentos de evaluación
 
-La práctica aplica instrumentos psicométricos que la app registra y versiona por atleta. Incluyen el inventario Loehr IPRD con sus siete escalas, la ansiedad de Spielberger en estado y rasgo, el temperamento de Eysenck, CI, el Stroop para atención, BARSIT y el estado de prearranque competitivo basado en energía y control con una matriz de nueve zonas. La capa neurocognitiva por posición se incorpora como instrumentos nuevos dentro de esta misma lógica.
+La práctica aplica instrumentos psicométricos que la app registra y versiona por atleta.
+
+| Instrumento | Qué mide | Estado en la app |
+| --- | --- | --- |
+| Loehr IPRD | Siete escalas de habilidad psicológica para el rendimiento | Implementado |
+| Spielberger | Ansiedad estado y ansiedad rasgo | Implementado |
+| Eysenck | Temperamento | Implementado |
+| BARSIT | Coeficiente intelectual | Implementado, guardado como tipo `ci` |
+| Prearranque | Energía y control antes de competir | Implementado |
+| Stroop | Atención selectiva e interferencia | En papel, pendiente de digitalizar |
+
+El CI se mide con **BARSIT**. Antes se usaba Purdue, que resultó demasiado
+exigente para estas edades y daba resultados erráticos. En la app el tipo de
+evaluación sigue llamándose `ci` porque nombra el constructo, no el
+instrumento; BARSIT es la prueba que lo produce hoy.
+
+El **Stroop** se viene aplicando en papel y es el cuello de botella de la
+práctica: lo aplica el entrenador, manda los resultados, y recién entonces se
+interpretan. El circuito tarda días y por eso solo se aplicó cuatro veces.
+Digitalizarlo con un enlace que se manda al atleta es el motivo principal de la
+capa neurocognitiva, no una mejora cosmética.
+
+La capa neurocognitiva por posición se incorpora como instrumentos nuevos
+dentro de esta misma lógica: un tipo de evaluación nuevo y los puntajes en
+`datos`, sin tocar el esquema.
+
+**Pendiente de definir:** si el prearranque se lee con los cuatro estados que
+implementa la app (energía y control, corte en 3) o con una matriz de nueve
+zonas. Hasta que se resuelva, manda lo implementado: cuatro estados.
 
 ## 8. Qué debe soportar la app
 
