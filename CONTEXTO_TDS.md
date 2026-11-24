@@ -58,7 +58,24 @@ El calendario del ciclo es de agosto a junio. Antes de iniciar el trabajo de con
 
 ## 6. Capa neurocognitiva por posición
 
-Es una capa avanzada que se monta sobre la secuencia de conceptos existente y conserva el trabajo psicológico de base. Especializa las mismas funciones cognitivas que instala la primera mitad, atención, percepción y decisión, según las demandas de cada posición de juego. Se ubica en Sub-14, la categoría techo de TDS, y se trabaja por familias de posición más que por puestos rígidos. No se ancla a CES ni a Sub-16, para no depender de una participación que decide un tercero. La entrega la hace la psicóloga en sus visitas y formaciones. El riesgo de diseño es el hueco entre visitas, de unas seis semanas, que se cubre con la app como puente, no con carga extra al entrenador.
+Es una capa avanzada que se monta sobre la secuencia de conceptos existente y conserva el trabajo psicológico de base. Especializa las mismas funciones cognitivas que instala la primera mitad, atención, percepción y decisión, según las demandas de cada posición de juego. Se ubica en Sub-14, la categoría techo de TDS, y se trabaja por familias de posición más que por puestos rígidos. No se ancla a CES ni a Sub-16, para no depender de una participación que decide un tercero. La entrega la hace la psicóloga en sus visitas y formaciones. Hay un hueco de unas seis semanas entre visitas y la app ayuda a cubrirlo, pero la app no es un parche para ese hueco: es una herramienta de uso permanente, dentro y fuera de las visitas. Lo que nunca hace es sumar carga al entrenador.
+
+## 6b. Cómo accede un atleta a una toma
+
+El atleta no es usuario de la app. Darle usuario le daría acceso a información
+sensible de todo el plantel, así que entra por una puerta aparte, pensada solo
+para responder una prueba.
+
+- Se le hace llegar un **código de acceso o un QR**, que la psicóloga genera.
+- El código sirve para **una toma**, con margen para un ingreso en falso: si
+  entra por error, no se le quema el acceso. Se consume al enviar la prueba,
+  no al abrirla.
+- Ese acceso **solo permite responder**. No deja leer ningún dato, ni de otros
+  atletas ni los suyos propios.
+- En la toma, el atleta registra su nombre y fecha de nacimiento, de modo que
+  quede identificado aunque no esté cargado de antes.
+- Lo cargado se puede **corregir después**: la psicóloga desde la ficha, y el
+  atleta mientras no haya enviado.
 
 ## 7. Instrumentos de evaluación
 
@@ -104,6 +121,7 @@ El modelo de datos actual ya resuelve lo esencial y la capa neurocognitiva debe 
 
 Requisitos que debe cumplir la capa neurocognitiva dentro de la app:
 
-- El registro no recae en el entrenador. Lo captura la psicóloga en la visita, o lo ingresa el jugador, nunca es una tarea más para el cuerpo técnico.
+- El registro no recae en el entrenador. Lo captura la psicóloga en la visita, o lo ingresa el atleta, nunca es una tarea más para el cuerpo técnico.
+- **El atleta nunca responde solo.** Siempre hay supervisión, presencial de la psicóloga o del entrenador, o virtual. No se manda un enlace para que lo llene por su cuenta y sin testigo. Esto condiciona el diseño: la prueba se aplica en un momento acordado, no es una tarea para hacer cuando quiera.
 - La medición por posición se etiqueta por puesto, apoyándose en la posición del atleta o en el contenido de la evaluación.
 - La app sostiene la continuidad entre visitas, de modo que la capa cognitiva no se enfríe en el hueco de seis semanas.
