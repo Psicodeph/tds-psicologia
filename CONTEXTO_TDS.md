@@ -111,9 +111,37 @@ La capa neurocognitiva por posición se incorpora como instrumentos nuevos
 dentro de esta misma lógica: un tipo de evaluación nuevo y los puntajes en
 `datos`, sin tocar el esquema.
 
-**Pendiente de definir:** si el prearranque se lee con los cuatro estados que
-implementa la app (energía y control, corte en 3) o con una matriz de nueve
-zonas. Hasta que se resuelva, manda lo implementado: cuatro estados.
+### Estado de prearranque (decisión cerrada)
+
+Modelo: cuatro estados, operacionalización dimensional del prearranque.
+
+- Eje 1, **Energía** (1-5), traduce el balance excitación-inhibición.
+- Eje 2, **Control** (1-5), operacionaliza la regulación que separa la
+  disposición combativa de la fiebre de arrancada.
+
+Reglas de corte, que cubren las 25 casillas:
+
+| Energía | Control | Estado |
+| --- | --- | --- |
+| 3-5 | 3-5 | Disposición combativa |
+| 1-2 | 3-5 | Subactivación controlada (estado de medición, no clásico) |
+| 3-5 | 1-2 | Fiebre de arrancada |
+| 1-2 | 1-2 | Apatía |
+
+La tercera pregunta, **dificultad percibida** (1-5), no cambia el estado. Si el
+atleta está en disposición combativa y marca 1, se levanta la alerta de
+optimismo infundado.
+
+**Marca de borde:** si Energía = 3 o Control = 3, se indica "en el borde" para
+recontrolar. No es un estado ni cambia el protocolo.
+
+**No usar nueve zonas como estados.** Se guardan siempre los tres valores
+crudos y el estado se calcula, nunca se guarda calculado.
+
+Aplicación: solo antes de torneos TDS y competencias externas.
+
+Las herramientas reservadas (globo, apretar y soltar) no se usan en protocolos
+de prearranque.
 
 ## 8. Qué debe soportar la app
 
