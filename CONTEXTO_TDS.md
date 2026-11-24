@@ -94,18 +94,52 @@ La práctica aplica instrumentos psicométricos que la app registra y versiona p
 | Eysenck | Temperamento | Implementado |
 | BARSIT | Coeficiente intelectual | Implementado, guardado como tipo `ci` |
 | Prearranque | Energía y control antes de competir | Implementado |
-| Stroop | Atención selectiva e interferencia | En papel, pendiente de digitalizar |
+| Stroop de Golden | Atención selectiva e interferencia | En papel; se digitaliza en dos modos |
 
 El CI se mide con **BARSIT**. Antes se usaba Purdue, que resultó demasiado
 exigente para estas edades y daba resultados erráticos. En la app el tipo de
 evaluación sigue llamándose `ci` porque nombra el constructo, no el
 instrumento; BARSIT es la prueba que lo produce hoy.
 
-El **Stroop** se viene aplicando en papel y es el cuello de botella de la
-práctica: lo aplica el entrenador, manda los resultados, y recién entonces se
-interpretan. El circuito tarda días y por eso solo se aplicó cuatro veces.
-Digitalizarlo con un enlace que se manda al atleta es el motivo principal de la
-capa neurocognitiva, no una mejora cosmética.
+### Stroop (decisión cerrada)
+
+Se usa el **Stroop de Golden**: tres láminas —palabras, colores, palabra-color—
+con **ventana fija de 45 segundos** cada una. No se usa "completar todas lo más
+rápido posible" ni un minuto: los baremos de Golden existen solo para los 45
+segundos, y con cien ítems por lámina lo que se termina midiendo en estas
+edades es fatiga y velocidad lectora.
+
+Se viene aplicando en papel y es el cuello de botella de la práctica: lo aplica
+el entrenador, manda los resultados, y recién entonces se interpretan. El
+circuito tarda días y por eso solo se aplicó cuatro veces. Digitalizarlo es el
+motivo principal de la capa neurocognitiva, no una mejora cosmética.
+
+**Dos modos, que son dos cosas distintas y no se mezclan.**
+
+| | Modo examinador | Modo autoadministrado |
+| --- | --- | --- |
+| Para qué | Medición | Entrenamiento |
+| Quién | El entrenador como recolector, o la psicóloga | El atleta, con supervisión virtual |
+| Tarea | Oral: el atleta lee en voz alta | Táctil: el atleta toca el color |
+| Comparable con | Las tomas en papel y los baremos de Golden | Solo con su propia serie |
+
+En el modo examinador el entrenador **recolecta, no interpreta**: carga hasta
+dónde llegó el atleta y cuántos errores cometió en cada lámina. La app
+cronometra, puntúa y calcula la interferencia. Ninguna decisión clínica pasa
+por el cuerpo técnico.
+
+**Las dos series se guardan separadas y nunca se grafican juntas.** Son tareas
+distintas —nombrar es más rápido que reconocer y tocar—, así que mezclarlas
+mostraría como progreso lo que es un cambio de formato.
+
+**Cuidados al interpretar**, que la app deja a la vista:
+
+- Entrenar Stroop mejora el Stroop. La transferencia a la atención en campo es
+  débil en la literatura, así que la lectura defendible es "entrenamos control
+  de interferencia", no "mejoramos la atención del jugador".
+- La práctica contamina la medición. Las mediciones se espacian y no se toman
+  justo después de una tanda de entrenamiento. La ficha muestra cuántas
+  sesiones de entrenamiento hubo entre una medición y la siguiente.
 
 La capa neurocognitiva por posición se incorpora como instrumentos nuevos
 dentro de esta misma lógica: un tipo de evaluación nuevo y los puntajes en
