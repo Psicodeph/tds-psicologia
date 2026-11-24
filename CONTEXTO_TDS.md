@@ -10,7 +10,7 @@ Firme: el ciclo corre de agosto a junio, con cierre de la generación en junio y
 
 ## 1. Qué es TDS y el rol
 
-TDS (Talent Development Scheme) es el programa de desarrollo de talento de la Federación Nacional Autónoma de Fútbol de Honduras (FENAFUTH), de respaldo FIFA. Melany Ordóñez es Coordinadora Nacional de Psicología Deportiva, cargo de medio tiempo. El trabajo psicológico es transversal al desarrollo técnico, táctico y físico del jugador, y es el hilo que los une.
+TDS (Talent Development Scheme) es el programa de desarrollo de talento de la Federación de Fútbol de Honduras (FFH), de respaldo FIFA. Melany Ordóñez es Coordinadora Nacional de Psicología Deportiva, cargo de medio tiempo. El trabajo psicológico es transversal al desarrollo técnico, táctico y físico del jugador, y es el hilo que los une.
 
 En 2026 el programa cubrió nueve centros y las categorías Sub-11, Sub-13 y Sub-15, masculino y femenino según el centro. Para 2027, y como panorama sujeto a cambio, el alcance de TDS se reduce a cuatro centros de formación, Ceiba, San Pedro, Tegucigalpa y Choluteca, con categorías masculinas Sub-13 y Sub-14, y femenino solo en San Pedro y Tegucigalpa con definición pendiente atada a la preparación de un mundial. Sub-15 y Sub-16 pasan a CES, en negociación. Sub-11 y el Sub-13 de los centros que no quedan en TDS pasan a CONDEPOR.
 
