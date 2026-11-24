@@ -10,7 +10,7 @@ Firme: el ciclo corre de agosto a junio, con cierre de la generación en junio y
 
 ## 1. Qué es TDS y el rol
 
-TDS (Talent Development Scheme) es el programa de desarrollo de talento de la Federación Nacional Autónoma de Fútbol de Honduras (FENAFUTH), de respaldo FIFA. Melany Ordóñez es Coordinadora Nacional de Psicología Deportiva, cargo de medio tiempo. El trabajo psicológico es transversal al desarrollo técnico, táctico y físico del jugador, y es el hilo que los une.
+TDS (Talent Development Scheme) es el programa de desarrollo de talento de la Federación de Fútbol de Honduras (FFH), de respaldo FIFA. Melany Ordóñez es Coordinadora Nacional de Psicología Deportiva, cargo de medio tiempo. El trabajo psicológico es transversal al desarrollo técnico, táctico y físico del jugador, y es el hilo que los une.
 
 En 2026 el programa cubrió nueve centros y las categorías Sub-11, Sub-13 y Sub-15, masculino y femenino según el centro. Para 2027, y como panorama sujeto a cambio, el alcance de TDS se reduce a cuatro centros de formación, Ceiba, San Pedro, Tegucigalpa y Choluteca, con categorías masculinas Sub-13 y Sub-14, y femenino solo en San Pedro y Tegucigalpa con definición pendiente atada a la preparación de un mundial. Sub-15 y Sub-16 pasan a CES, en negociación. Sub-11 y el Sub-13 de los centros que no quedan en TDS pasan a CONDEPOR.
 
@@ -58,11 +58,11 @@ El calendario del ciclo es de agosto a junio. Antes de iniciar el trabajo de con
 
 ## 6. Capa neurocognitiva por posición
 
-Es una capa avanzada que se monta sobre la secuencia de conceptos existente y conserva el trabajo psicológico de base. Especializa las mismas funciones cognitivas que instala la primera mitad, atención, percepción y decisión, según las demandas de cada posición de juego. Se ubica en Sub-14, la categoría techo de TDS, y se trabaja por familias de posición más que por puestos rígidos. No se ancla a CES ni a Sub-16, para no depender de una participación que decide un tercero. La entrega la hace la psicóloga en sus visitas y formaciones. El riesgo de diseño es el hueco entre visitas, de unas seis semanas, que se cubre con la app como puente, no con carga extra al entrenador.
+Es una capa avanzada que se monta sobre la secuencia de conceptos existente y conserva el trabajo psicológico de base. Especializa las mismas funciones cognitivas que instala la primera mitad, atención, percepción y decisión, según las demandas de cada posición de juego. Se ubica en Sub-14, la categoría techo de TDS, y se trabaja por familias de posición más que por puestos rígidos. No se ancla a CES ni a Sub-16, para no depender de una participación que decide un tercero. La entrega la hace la psicóloga en sus visitas y formaciones. El riesgo de diseño es el hueco entre visitas, de unas seis semanas. La app es una herramienta de uso permanente y no solo para ese hueco, y entre otras cosas ayuda a sostener la capa cognitiva mientras la psicóloga no está.
 
 ## 7. Instrumentos de evaluación
 
-La práctica aplica instrumentos psicométricos que la app registra y versiona por atleta. Incluyen el inventario Loehr IPRD con sus siete escalas, la ansiedad de Spielberger en estado y rasgo, el temperamento de Eysenck, CI, el Stroop para atención, BARSIT y el estado de prearranque competitivo basado en energía y control con una matriz de nueve zonas. La capa neurocognitiva por posición se incorpora como instrumentos nuevos dentro de esta misma lógica.
+La práctica aplica instrumentos psicométricos que la app registra y versiona por atleta. Incluyen el inventario Loehr IPRD con sus siete escalas, la ansiedad de Spielberger en estado y rasgo, el temperamento de Eysenck, CI, el Stroop para atención, BARSIT y el estado de prearranque competitivo basado en energía y control, que cruza ambos ejes con el corte en 3, de 3 o más contra 2 o menos, sobre una grilla de 5 por 5 y da cuatro estados, combativa, subactivación controlada, fiebre de arrancada y apatía, sin zona media. La capa neurocognitiva por posición se incorpora como instrumentos nuevos dentro de esta misma lógica.
 
 ## 8. Qué debe soportar la app
 
@@ -76,6 +76,6 @@ El modelo de datos actual ya resuelve lo esencial y la capa neurocognitiva debe 
 
 Requisitos que debe cumplir la capa neurocognitiva dentro de la app:
 
-- El registro no recae en el entrenador. Lo captura la psicóloga en la visita, o lo ingresa el jugador, nunca es una tarea más para el cuerpo técnico.
+- El entrenador no diseña ni administra la prueba. El registro lo ingresa el jugador, siempre con supervisión, del entrenador en presencial o de la psicóloga en virtual, nunca autoadministrado sin acompañamiento.
 - La medición por posición se etiqueta por puesto, apoyándose en la posición del atleta o en el contenido de la evaluación.
-- La app sostiene la continuidad entre visitas, de modo que la capa cognitiva no se enfríe en el hueco de seis semanas.
+- La app es de uso permanente y, entre otras funciones, sostiene la continuidad entre visitas para que la capa cognitiva no se enfríe en el hueco de seis semanas.
